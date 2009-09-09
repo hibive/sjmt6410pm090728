@@ -1,0 +1,173 @@
+;
+; Copyright (c) Microsoft Corporation.  All rights reserved.
+;
+;
+; Use of this source code is subject to the terms of the Microsoft end-user
+; license agreement (EULA) under which you licensed this SOFTWARE PRODUCT.
+; If you did not accept the terms of the EULA, you are not authorized to use
+; this source code. For a copy of the EULA, please see the LICENSE.RTF on your
+; install media.
+;
+
+MEMORY
+
+IF IMGMULTIXIP !
+
+#define     NKNAME      NK         ; for Single NK.bin
+#define     RAMNAME		RAM
+
+#define     NKSTART     80100000
+#define     NKLEN       03F00000    ; 63MB (Max size, to match image_cfg.* files. This will be auto-sized)
+#define     RAMSTART    84000000
+IF BSP_DISPLAY_BROADSHEET
+#define     RAMLEN      04000000    ; 64MB (Will be auto-sized from the end of NK)
+ELSE
+#define     RAMLEN      02500000    ; 37MB (Will be auto-sized from the end of NK)
+ENDIF BSP_DISPLAY_BROADSHEET
+
+;   Single XIP
+;-----------------------------------------------------
+;   NAME        ADDRESS     SIZE            TYPE
+;-----------------------------------------------------
+    $(NKNAME)   $(NKSTART)  $(NKLEN)        RAMIMAGE
+    $(RAMNAME)	$(RAMSTART) $(RAMLEN)       RAM
+
+ENDIF
+
+IF IMGMULTIXIP
+
+#define     NKNAME          XIPKERNEL
+#define     SYSTEMNAME      NK
+#define		RAMNAME			RAM
+
+IF WINCEDEBUG == debug
+
+#define     NKSTART         80100000
+#define     NKLEN           00600000
+
+#define     SYSTEMSTART     80700000
+#define     SYSTEMLEN       038FC000
+
+#define     RAMSTART        80700000
+#define     RAMLEN          05E00000
+
+ELSE
+
+IF IMGPROFILER
+
+#define     NKSTART         80100000
+#define     NKLEN           00600000
+
+#define     SYSTEMSTART     80700000
+#define     SYSTEMLEN       038FC000
+
+#define     RAMSTART        80400000
+#define     RAMLEN          06100000
+
+ELSE
+
+#define     NKSTART         80100000
+#define     NKLEN           00300000
+
+#define     SYSTEMSTART     80400000
+#define     SYSTEMLEN       03BFC000
+
+#define     RAMSTART        80400000
+IF BSP_DISPLAY_BROADSHEET
+#define     RAMLEN          07C00000
+ELSE
+#define     RAMLEN          06100000
+ENDIF BSP_DISPLAY_BROADSHEET
+
+ENDIF
+
+ENDIF
+
+#define     CHAINSTART      83FFC000
+#define     CHAINLEN        00004000
+
+
+;   Kernel and RAM region setting
+;-----------------------------------------------------
+;   NAME        ADDRESS     SIZE            TYPE
+;-----------------------------------------------------
+    $(NKNAME)		$(NKSTART)		$(NKLEN)		RAMIMAGE
+    $(SYSTEMNAME)	$(SYSTEMSTART)	$(SYSTEMLEN)	NANDIMAGE
+    $(RAMNAME)		$(RAMSTART)		$(RAMLEN)       RAM
+    CHAIN           $(CHAINSTART)   $(CHAINLEN)    RESERVED     ; XIP CHAIN information
+
+ENDIF		; IMGMULTIXIP
+
+; Common RAM areas
+
+    AUD_DMA     80002000    00002000        RESERVED
+    TEMPS       80010000    00010000        RESERVED
+    ARGS        80020800    00000800        RESERVED
+    DBGSER_DMA  80022000    00002000        RESERVED
+    SER_DMA     80024000    00002000        RESERVED
+    IR_DMA      80026000    00002000        RESERVED
+    SLEEP       80028000    00002000        RESERVED
+    EDBG        80030000    00020000        RESERVED
+IF BSP_DISPLAY_BROADSHEET !
+    CMM         86500000    00300000        RESERVED
+    DISPLAY     86800000    00C00000        RESERVED
+    MFC_JPEG    87400000    00C00000        RESERVED
+ENDIF BSP_DISPLAY_BROADSHEET !
+
+CONFIG                  ; Other System Configuration for making image
+
+    COMPRESSION=ON      ; Binary compression for minimizing download transfer data
+    KERNELFIXUPS=ON     ; Kernel address fixup
+    AUTOSIZE=ON         ; ROM and RAM size will be resizing automatically for padding region
+
+IF EBOOK2_VER
+;	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
+	FSRAMPERCENT=0x30303030	; object store(12.5%)
+ENDIF EBOOK2_VER
+
+IF IMGMULTIXIP
+
+    ROM_AUTOSIZE=OFF     ; you can measure how much rom is needed to each binary image if you set this flag as ON
+    RAM_AUTOSIZE=OFF     ; RAM size will be resizing automatically only when ROM_AUTOSIZE is ON
+    DLLADDR_AUTOSIZE=ON
+
+    XIPSCHAIN=$(CHAINSTART)
+
+    AUTOSIZE_ROMGAP=10000
+    AUTOSIZE_DLLADDRGAP=0
+    AUTOSIZE_DLLDATAADDRGAP=0
+    AUTOSIZE_DLLCODEADDRGAP=0
+
+;
+; ROMFLAGS is a bitmask of options for the kernel
+;   ROMFLAGS    0x0000
+;   ROMFLAGS    0x0001      Disallow Paging
+;   ROMFLAGS    0x0010      Trust Module only
+;
+    ROMFLAGS=0
+    
+ELSE
+
+IF IMGTRUSTROMONLY
+    ROMFLAGS=10
+ELSE
+    ROMFLAGS=00
+ENDIF   ; END of IMGTRUSTROMONLY
+    ROMSTART = $(NKSTART)
+    ROMWIDTH = 32
+    ROMSIZE  = $(NKLEN)
+
+ENDIF
+
+IF IMGPROFILER
+    PROFILE=ON
+ELSE
+    PROFILE=OFF
+ENDIF
+
+
+IF IMGMULTIXIP
+#include "$(_TARGETPLATROOT)\FILES\MultipleXIP.bib"
+ENDIF
+
+    

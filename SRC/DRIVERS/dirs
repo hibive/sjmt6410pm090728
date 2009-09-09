@@ -1,0 +1,54 @@
+!if 0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+!endif
+!if 0
+Use of this source code is subject to the terms of the Microsoft end-user
+license agreement (EULA) under which you licensed this SOFTWARE PRODUCT.
+If you did not accept the terms of the EULA, you are not authorized to use
+this source code. For a copy of the EULA, please see the LICENSE.RTF on your
+install media.
+!endif
+
+DIRS =    \
+    DMA         \
+    Display     \
+    Display_Broadsheet	\
+    Backlight   \
+    Etc			\
+    Battery		\
+# @CESYSGEN IF CE_MODULES_DEVICE
+    Camera      \
+# @CESYSGEN IF CE_MODULES_ATAPI
+    CF_ATAPI    \
+# @CESYSGEN ENDIF CE_MODULES_ATAPI
+# @CESYSGEN IF CE_MODULES_SDBUS
+    HSMMC        \
+# @CESYSGEN ENDIF CE_MODULES_SDBUS
+    IIC            \
+    Jpeg        \
+    Keybd        \
+    Mfc        \
+# @CESYSGEN IF CE_MODULES_USBFN 
+    OTG             \
+# @CESYSGEN ENDIF CE_MODULES_USBFN
+    PowerButton     \
+    PowerControl    \
+# @CESYSGEN IF CE_MODULES_SERIAL    
+    Serial      \
+# @CESYSGEN ENDIF CE_MODULES_SERIAL
+    SPI         \
+# @CESYSGEN IF CE_MODULES_POINTER
+    Touch       \
+    Touch_Uart	\
+# @CESYSGEN ENDIF CE_MODULES_POINTER
+# @CESYSGEN IF CE_MODULES_USBD
+    USB         \
+# @CESYSGEN ENDIF CE_MODULES_USBD
+# @CESYSGEN IF CE_MODULES_WAVEAPI
+    Wavedev     \
+# @CESYSGEN ENDIF CE_MODULES_WAVEAPI 
+# @CESYSGEN ENDIF CE_MODULES_DEVICE
+    NANDFLASH   \
+    CMM          \
+    FIMG        \    
+    UAO

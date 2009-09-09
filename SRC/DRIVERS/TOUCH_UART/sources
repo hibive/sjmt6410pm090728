@@ -1,0 +1,48 @@
+# Copyright (c) Microsoft Corporation.  All rights reserved.
+# Use of this source code is subject to the terms of the Microsoft end-user
+# license agreement (EULA) under which you licensed this SOFTWARE PRODUCT.
+# If you did not accept the terms of the EULA, you are not authorized to use
+# this source code. For a copy of the EULA, please see the LICENSE.RTF on your
+# install media.
+# 
+# 
+# Module Name:
+#     sources.
+# 
+# Abstract:
+#     This file specifies the target component being built and the list of
+#     sources files needed to build that component.  Also specifies optional
+#     compiler switches and libraries that are unique for the component being
+#     built.
+# 
+
+!if "$(BSP_TOUCH_UART)" != "1"
+SKIPBUILD=1
+!endif
+
+
+SYNCHRONIZE_DRAIN=1
+RELEASETYPE=PLATFORM
+NOMIPS16CODE=1
+TARGETNAME=s3c6410_touch_uart
+DEFFILE=ebook2_touch.def
+TARGETTYPE=DYNLINK
+DLLENTRY=TSP_DllMain
+
+TARGETLIBS=\
+	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
+	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\ceddk.lib\
+    
+SOURCELIBS=\
+
+SOURCES=\
+	ebook2_touch.cpp\
+
+FILE_VIEW_INCLUDES_FOLDER=\
+	ebook2_touch.h\
+
+CPPBROWSE=1
+FILE_VIEW_ROOT_FOLDER=\
+
+FILE_VIEW_RESOURCE_FOLDER=\
+
