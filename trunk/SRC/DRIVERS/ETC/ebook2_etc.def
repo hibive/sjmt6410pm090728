@@ -1,0 +1,9 @@
+LIBRARY 	ETC
+
+EXPORTS ETC_Init
+	ETC_Deinit
+	ETC_Open
+	ETC_Close
+	ETC_IOControl
+	ETC_PowerDown
+	ETC_PowerUp
