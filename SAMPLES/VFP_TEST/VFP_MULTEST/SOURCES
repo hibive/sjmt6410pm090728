@@ -4,6 +4,10 @@ NOTE:   This app willtest VFP.
            
 !ENDIF
 
+!if "$(SAMPLES_VFP_TEST)" != "1"
+SKIPBUILD=1
+!endif
+
 WINCEOEM=1
 
 RELEASETYPE=PLATFORM
