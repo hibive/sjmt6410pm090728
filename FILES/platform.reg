@@ -1141,9 +1141,6 @@ ENDIF BSP_DISPLAY_BROADSHEET
 [HKEY_LOCAL_MACHINE\Software\Microsoft\Shell\AutoHide]
 	@="1"
 
-[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-	"Startup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
-
 [HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Power\Timeouts]
 	"BattUserIdle"=dword:0000003c	; 1min
 	"BattSystemIdle"=dword:0000003c	; 1min
@@ -1155,8 +1152,19 @@ ENDIF BSP_DISPLAY_BROADSHEET
 [HKEY_LOCAL_MACHINE\SYSTEM\GWE]
 	"Animate"=dword:0
 
+IF BSP_IROMBOOT
+[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
+	"Startup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
+ENDIF BSP_IROMBOOT
+
+IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
+[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
+	"Startup"="\\SDMMCDisk\\DemoEBook2\\DemoEBook2.exe"
+[HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
+	"Favorites"="\\SDMMCDisk\\Favorites"
+ENDIF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
 
 ENDIF EBOOK2_VER
 
