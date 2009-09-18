@@ -25,7 +25,11 @@
 //
 //  Prefix used to generate device name for bootload/KITL
 //
+#ifdef	EBOOK2_VER
+#define	BSP_DEVICE_PREFIX		"SJMT6410"
+#else	EBOOK2_VER
 #define BSP_DEVICE_PREFIX       "SMDK6410"        // Device name prefix
+#endif	EBOOK2_VER
 
 //------------------------------------------------------------------------------
 // SMDK6410 Display Dimension

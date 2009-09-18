@@ -144,6 +144,40 @@ static void Delay(UINT32 count)
 }
 #endif	DISPLAY_BROADSHEET
 
+#ifdef	EBOOK2_VER
+#define	DEC2HEXCHAR(x)	((9 < x) ? ((x%10)+'A') : (x+'0'))
+static void CvtMAC2UUID(PBOOT_CFG pBootCfg, BSP_ARGS* pArgs)
+{
+	UINT8 bValue, cnt=0;
+
+	pArgs->uuid[cnt++] = 'S';
+	pArgs->uuid[cnt++] = 'N';
+	pArgs->uuid[cnt++] = 'R';
+	pArgs->uuid[cnt++] = '-';
+
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[0] & 0x00FF);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[0] >> 8);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[1] & 0x00FF);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[1] >> 8);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[2] & 0x00FF);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[2] >> 8);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
+	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
+}
+#endif	EBOOK2_VER
+
 static USHORT GetIPString(char *szDottedD)
 {
 	USHORT InChar = 0;
@@ -412,6 +446,9 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                   pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
                   pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
                   pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
+#ifdef	EBOOK2_VER
+		CvtMAC2UUID(pBootCfg, pBSPArgs);
+#endif	EBOOK2_VER
     }
     else
     {
@@ -976,6 +1013,14 @@ BOOL OEMPlatformInit(void)
 		// use default settings
 		TOC_Init(DEFAULT_IMAGE_DESCRIPTOR, (IMAGE_TYPE_RAMIMAGE), 0, 0, 0);
 	}
+#ifdef	EBOOK2_VER
+{
+	BSP_ARGS *pArgs = (BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START;
+	CvtMAC2UUID(g_pBootCfg, pArgs);
+	EdbgOutputDebugString("pArgs->uuid : %s\r\n", pArgs->uuid);
+	EdbgOutputDebugString("pArgs->deviceId : %s\r\n", pArgs->deviceId);
+}
+#endif	EBOOK2_VER
 
 	// Display boot message - user can halt the autoboot by pressing any key on the serial terminal emulator.
 	BootDelay = g_pBootCfg->BootDelay;

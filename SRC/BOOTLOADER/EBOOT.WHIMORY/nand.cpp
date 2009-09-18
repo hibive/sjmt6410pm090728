@@ -750,6 +750,10 @@ BOOL ReadOSImageFromBootMedia()
 #endif	DISPLAY_BROADSHEET
 		}
 
+#ifdef	DISPLAY_BROADSHEET
+		EPDShowProgress(dwNumPage, dwNumPage);
+#endif	DISPLAY_BROADSHEET
+
 		OALMSG(TRUE, (TEXT("\r\nRead OS image to BootMedia Success \r\n")));
 	}
 
