@@ -94,6 +94,26 @@ static BOOL OALIoCtlHalGetHWEntropy(
 
 #ifdef	EBOOK2_VER
 	UniqueID = NULL;
+	if (lpInBuf || nInBufSize || !lpOutBuf || (nOutBufSize < 8))
+	{
+	}
+	else
+	{
+		OAL_KITL_ARGS *pKITLArgs;
+		UCHAR *cp = lpOutBuf;
+
+		pKITLArgs = (OAL_KITL_ARGS*) OALArgsQuery(OAL_ARGS_QUERY_KITL);
+
+		memcpy(cp, "SJ", 2);
+		memcpy(cp+2, pKITLArgs->mac, 6);
+		if (lpBytesReturned)
+			*lpBytesReturned = 8;
+
+		OALMSG(OAL_FUNC, (TEXT("OALIoCtlHalGetHWEntropy: %02x %02x %02x %02x %02x %02x %02x %02x\r\n"),
+			cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]));
+		rc = TRUE;
+	}
+
 #else	EBOOK2_VER
     UniqueID = (UINT8 *)OALArgsQuery(OAL_ARGS_QUERY_UUID);
 
