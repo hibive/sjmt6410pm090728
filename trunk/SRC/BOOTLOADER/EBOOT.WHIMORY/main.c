@@ -151,9 +151,9 @@ static void CvtMAC2UUID(PBOOT_CFG pBootCfg, BSP_ARGS* pArgs)
 	UINT8 bValue, cnt=0;
 
 	pArgs->uuid[cnt++] = 'S';
-	pArgs->uuid[cnt++] = 'N';
-	pArgs->uuid[cnt++] = 'R';
-	pArgs->uuid[cnt++] = '-';
+	pArgs->uuid[cnt++] = 'J';
+	pArgs->uuid[cnt++] = 'M';
+	pArgs->uuid[cnt++] = 'T';
 
 	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[0] & 0x00FF);
 	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
