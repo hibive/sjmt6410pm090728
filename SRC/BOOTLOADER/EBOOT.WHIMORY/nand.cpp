@@ -108,6 +108,12 @@ static void BootConfigInit(DWORD dwIndex)
 
     g_pBootCfg->SubnetMask = inet_addr("255.255.255.0");
 
+#ifdef	EBOOK2_VER
+	g_pBootCfg->ConfigFlags |=  BOOT_TYPE_DIRECT;	// 5) Startup image: LAUNCH EXISTING
+	g_pBootCfg->ConfigFlags |=  TARGET_TYPE_NAND;	// 6) Program disk image into SmartMedia card: Disabled
+	g_pBootCfg->ConfigFlags &= ~CONFIG_FLAGS_KITL;	// 8) KITL Configuration: Disabled
+#endif	EBOOK2_VER
+
     EdbgOutputDebugString("-BootConfigInit\r\n");
     return;
 }

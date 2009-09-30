@@ -180,6 +180,19 @@ ResetHandler
 
 ;   CLKDIV & PLL Change code was here.
 
+	IF :DEF: EBOOK2_VER
+;------------------------------------
+;     Setting EPLL for iROM SDMMC
+;------------------------------------
+
+        ldr          r0, =EPLL_CON1
+        ldr          r1, =EPLL_KVAL
+        str          r1, [r0]
+
+        ldr          r0, =EPLL_CON0
+        ldr          r1, =((1<<31)+(EPLL_MVAL<<16)+(EPLL_PVAL<<8)+(EPLL_SVAL))
+        str          r1, [r0]
+	ENDIF	;EBOOK2_VER
 
 ;------------------------------------
 ;     Expand Memory Port 1 to x32

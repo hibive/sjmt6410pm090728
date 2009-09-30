@@ -78,18 +78,25 @@ TARGETLIBS= \
 	$(_TARGETPLATROOT)\src\Whimory\Lib\$(_TGTCPU)\$(WINCEDEBUG)\bootpart.lib        \
 	$(_TARGETPLATROOT)\src\Whimory\Lib\$(_TGTCPU)\$(WINCEDEBUG)\WMR_Utils.lib	\
 
+SOURCELIBS = \
+    $(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib
+
 SOURCES= \
     main.c		\
     debug.c    \
     ether.c	\
     flash.c		\
     nand.cpp	\
+    sdmmc_drv.c	\
+    sdmmc_fat32.c	\
+    sdmmc.c		\
     i2c_polling.c	\
     display_epd.c	\
     usb.c
 
 ARM_SOURCES =	\
     startup.s	\
+    sdmmc_copy.s	\
     usbs.s
 
 WINCETARGETFILES=EbootImage
