@@ -41,6 +41,12 @@
 #include <WMR_Utils.h>
 //#include <WMR_Eboot.h>
 
+#ifdef	EBOOK2_VER
+extern BOOL InitializeSDMMC(void);
+extern BOOL ChooseImageFromSDMMC(void);
+extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
+#endif	EBOOK2_VER
+
 
 // For USB Download function
 extern BOOL InitializeUSB();
@@ -108,6 +114,9 @@ DWORD			g_dwTocEntry;
 BOOL			g_bBootMediaExist = FALSE;
 BOOL			g_bDownloadImage  = TRUE;
 BOOL 			g_bWaitForConnect = TRUE;
+#ifdef	EBOOK2_VER
+BOOL			g_bSDMMCDownload = FALSE;
+#endif	EBOOK2_VER
 BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
 
@@ -502,6 +511,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "D) Download image now\r\n");
         EdbgOutputDebugString ( "L) LAUNCH existing Boot Media image\r\n");
         EdbgOutputDebugString ( "R) Read Configuration \r\n");
+#ifdef	EBOOK2_VER
+		EdbgOutputDebugString ( "S) DOWNLOAD image now(SDMMCCard)\r\n");
+#endif	EBOOK2_VER
         EdbgOutputDebugString ( "U) DOWNLOAD image now(USB)\r\n");
         EdbgOutputDebugString ( "W) Write Configuration Right Now\r\n");
 #ifdef	DISPLAY_BROADSHEET
@@ -519,6 +531,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'T') || (KeySelect == 't') ) ||
                    ( (KeySelect == 'L') || (KeySelect == 'l') ) ||
                    ( (KeySelect == 'R') || (KeySelect == 'r') ) ||
+#ifdef	EBOOK2_VER
+                   ( (KeySelect == 'S') || (KeySelect == 's') ) ||
+#endif	EBOOK2_VER
                    ( (KeySelect == 'U') || (KeySelect == 'u') ) ||
 #ifdef	DISPLAY_BROADSHEET
                    ( (KeySelect == 'X') || (KeySelect == 'x') ) ||
@@ -823,6 +838,18 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			TOC_Print();
             // TODO
             break;
+#ifdef	EBOOK2_VER
+		case 'S':
+		case 's':
+			if (FALSE == InitializeSDMMC())
+			{
+				OALMSG(OAL_ERROR, (L"ERROR: InitializeSDMMC call failed\r\n"));;
+				SpinForever();
+			}
+			g_bSDMMCDownload = TRUE;
+			bDownload = TRUE;
+			goto MENU_DONE;
+#endif	EBOOK2_VER
         case 'U':           // Download? No.
         case 'u':
             //bConfigChanged = TRUE;  // Write to NAND too frequently causes wearout
@@ -1205,7 +1232,11 @@ BOOL OEMPlatformInit(void)
 	}
 
 	// Configure Ethernet controller.
+#ifdef	EBOOK2_VER
+	if (g_bDownloadImage && (g_bUSBDownload == FALSE) && (g_bSDMMCDownload == FALSE))
+#else	EBOOK2_VER
 	if ( g_bDownloadImage && (g_bUSBDownload == FALSE))
+#endif	EBOOK2_VER
 	{
 		if (!InitEthDevice(g_pBootCfg))
 		{
@@ -1244,7 +1275,11 @@ DWORD OEMPreDownload(void)
     OALKitlCreateName(BSP_DEVICE_PREFIX, pBSPArgs->kitl.mac, pBSPArgs->deviceId);
     OALMSG(OAL_INFO, (L"INFO: *** Device Name '%hs' ***\r\n", pBSPArgs->deviceId));
 
+#ifdef	EBOOK2_VER
+	if (g_bUSBDownload == FALSE && g_bSDMMCDownload == FALSE)
+#else	EBOOK2_VER
 	if ( g_bUSBDownload == FALSE)
+#endif	EBOOK2_VER
 	{
 		// If the user wants to use a static IP address, don't request an address
 		// from a DHCP server.  This is done by passing in a NULL for the DHCP
@@ -1308,6 +1343,17 @@ DWORD OEMPreDownload(void)
 	{
 		OALMSG(TRUE, (TEXT("Please send the Image through USB.\r\n")));
 	}
+#ifdef	EBOOK2_VER
+	else if (g_bSDMMCDownload == TRUE)
+	{
+		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
+		if (FALSE == ChooseImageFromSDMMC())
+		{
+			OALMSG(OAL_ERROR, (L"ERROR: ChooseImageFromSDMMC call failed\r\n"));;
+			SpinForever();
+		}
+	}
+#endif	EBOOK2_VER
 
     return(bGotJump ? BL_JUMP : BL_DOWNLOAD);
 }
@@ -1326,7 +1372,11 @@ BOOL OEMReadData(DWORD dwData, PUCHAR pData)
    	OALMSG(OAL_FUNC, (TEXT("+OEMReadData.\r\n")));
 	//OALMSG(TRUE, (TEXT("\r\nINFO: dwData = 0x%x, pData = 0x%x \r\n"), dwData, pData));
 
+#ifdef	EBOOK2_VER
+	if (g_bUSBDownload == FALSE && g_bSDMMCDownload == FALSE)
+#else	EBOOK2_VER
 	if ( g_bUSBDownload == FALSE )
+#endif	EBOOK2_VER
 	{
 		ret = EbootEtherReadData(dwData, pData);
 	}
@@ -1335,6 +1385,12 @@ BOOL OEMReadData(DWORD dwData, PUCHAR pData)
 	{
 		ret = UbootReadData(dwData, pData);
 	}
+#ifdef	EBOOK2_VER
+	else if (g_bSDMMCDownload == TRUE)
+	{
+		ret = SDMMCReadData(dwData, pData);
+	}
+#endif	EBOOK2_VER
 
 /*
 	OALMSG(TRUE, (TEXT("\r\n")));
@@ -2080,5 +2136,4 @@ static int GetKeypad(void)
 	return Keypad;
 }
 #endif	EBOOK2_VER
-
 
