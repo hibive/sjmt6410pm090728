@@ -1951,6 +1951,8 @@ static void InitializeDisplay(void)
 {
 #ifdef	DISPLAY_BROADSHEET
 	EPDInitialize();
+	EPDWriteEngFont8x16("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+	EPDFlushEngFont8x16();
 #else	DISPLAY_BROADSHEET
     tDevInfo RGBDevInfo;
 
