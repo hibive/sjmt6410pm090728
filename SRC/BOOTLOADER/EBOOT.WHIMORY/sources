@@ -87,6 +87,7 @@ SOURCES= \
     ether.c	\
     flash.c		\
     nand.cpp	\
+    keypad.c	\
     sdmmc_drv.c	\
     sdmmc_fat32.c	\
     sdmmc.c		\

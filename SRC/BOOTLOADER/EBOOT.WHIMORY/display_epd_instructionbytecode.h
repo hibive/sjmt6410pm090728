@@ -1,4 +1,7 @@
 
+#ifndef _INSTRUCTION_BYTE_CODE_H_
+#define _INSTRUCTION_BYTE_CODE_H_
+
 
 #define	GRAY_00		1
 #define	GRAY_08		2
@@ -5893,3 +5896,5 @@ const unsigned char Instruction_Byte_Code[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 };
 #endif	16_GRAY
+
+#endif	_INSTRUCTION_BYTE_CODE_H_
