@@ -21,6 +21,7 @@ RELEASETYPE=LOCAL
 EXEENTRY=mainWCRTStartup
 
 INCLUDES= \
+	$(_TARGETPLATROOT)\src\inc;	\
 	$(_WINCEROOT)\public\common\oak\inc; \
 	$(_WINCEROOT)\public\common\sdk\inc; \
 	$(_PUBLICROOT)\GDIEX\SDK\INC; \
