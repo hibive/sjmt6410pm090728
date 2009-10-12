@@ -42,9 +42,28 @@
 //#include <WMR_Eboot.h>
 
 #ifdef	EBOOK2_VER
+// +++ keypad settings +++
+#include "keypad.h"
+// --- keypad settings ---
+
+// +++ i2c settings +++
+#define	PMIC_ADDR	0xCC
+extern void IICInitialize(void);
+extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
+extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
+// --- i2c settings ---
+
+#ifdef	DISPLAY_BROADSHEET
+// +++ epd settings +++
+#include "display_epd.h"
+// --- epd settings ---
+#endif	DISPLAY_BROADSHEET
+
+// +++ sdmmc settings +++
 extern BOOL InitializeSDMMC(void);
 extern BOOL ChooseImageFromSDMMC(void);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
+// --- sdmmc settings ---
 #endif	EBOOK2_VER
 
 
@@ -56,29 +75,6 @@ extern void OTGDEV_SetSoftDisconnect();
 // To change Voltage for higher clock.
 extern void LTC3714_Init();
 extern void LTC3714_VoltageSet(UINT32,UINT32,UINT32);
-
-#ifdef	EBOOK2_VER
-// +++ i2c settings +++
-#define	PMIC_ADDR	0xCC
-extern void IICInitialize(void);
-extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
-extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
-// --- i2c settings ---
-
-// +++ keypad settings +++
-static void InitializeKeypad(void);
-static int GetKeypad(void);
-BOOL	g_bKeypadUpdate = FALSE;
-// --- keypad settings ---
-#endif	EBOOK2_VER
-
-#ifdef	DISPLAY_BROADSHEET
-// +++ epd settings +++
-extern void EPDInitialize(void);
-extern void EPDDisplayImage(int nType);
-extern int EPDSerialFlashWrite(void);
-// --- epd settings ---
-#endif	DISPLAY_BROADSHEET
 
 // For Ethernet Download function.
 char *inet_ntoa(DWORD dwIP);
@@ -115,6 +111,7 @@ BOOL			g_bBootMediaExist = FALSE;
 BOOL			g_bDownloadImage  = TRUE;
 BOOL 			g_bWaitForConnect = TRUE;
 #ifdef	EBOOK2_VER
+BOOL			g_bKeypadUpdate = FALSE;
 BOOL			g_bSDMMCDownload = FALSE;
 #endif	EBOOK2_VER
 BOOL			g_bUSBDownload = FALSE;
@@ -142,16 +139,6 @@ void main(void)
     //
     SpinForever();
 }
-#ifdef	DISPLAY_BROADSHEET
-static void Delay(UINT32 count)
-{
-    volatile int i, j = 0;
-    volatile static int loop = S3C6410_ACLK/100000;
-    
-    for(;count > 0;count--)
-        for(i=0;i < loop; i++) { j++; }
-}
-#endif	DISPLAY_BROADSHEET
 
 #ifdef	EBOOK2_VER
 #define	DEC2HEXCHAR(x)	((9 < x) ? ((x%10)+'A') : (x+'0'))
@@ -521,6 +508,19 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #endif	DISPLAY_BROADSHEET
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
 
+#ifdef	DISPLAY_BROADSHEET
+		EPDWriteEngFont8x16("\r\nBootloader Version %d.%d Built %s %s\r\n",
+			EBOOT_VERSION_MAJOR, EBOOT_VERSION_MINOR, __DATE__, __TIME__);
+		EPDWriteEngFont8x16("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
+		EPDWriteEngFont8x16("L-0) LAUNCH existing Boot Media image\r\n");
+		EPDWriteEngFont8x16("S-1) DOWNLOAD image now(SDMMCCard)\r\n");
+		EPDWriteEngFont8x16("U-2) DOWNLOAD image now(USB)\r\n");
+		EPDWriteEngFont8x16("X-3) Epson Instruction byte code update\r\n");
+		EPDWriteEngFont8x16("A-4) Format FIL (Erase All Blocks)\r\n");
+		EPDWriteEngFont8x16("\r\nEnter your selection: ");
+		EPDFlushEngFont8x16();
+#endif	DISPLAY_BROADSHEET
+
         while (! ( ( (KeySelect >= '0') && (KeySelect <= '8') ) ||
                    ( (KeySelect == 'A') || (KeySelect == 'a') ) ||
                    ( (KeySelect == 'B') || (KeySelect == 'b') ) ||
@@ -544,14 +544,20 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #ifdef	EBOOK2_VER
 			if ((TRUE == g_bKeypadUpdate) && ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 			{
-				KeySelect = GetKeypad();
-				if (KeySelect == 0x04)	// KEY_F18(QUICKMENU)
+				switch (GetKeypad())
 				{
+				case KEY_MENU:	// DOWNLOAD image now(USB)
 					KeySelect = 'U';
-				}
-				else if (KeySelect == 0x08)	// KEY_LEFT
-				{
+					break;
+				case KEY_LEFT:	// Format FTL (Erase FTL Area + FTL Format)
 					KeySelect = 'C';
+					break;
+				case KEY_RIGHT:	// DOWNLOAD image now(SDMMCCard)
+					KeySelect = 'S';
+					break;
+				default:
+					KeySelect = OEM_DEBUG_READ_NODATA;
+					break;
 				}
 			}
 #endif	EBOOK2_VER
@@ -1083,7 +1089,7 @@ BOOL OEMPlatformInit(void)
 	{
 		KeySelect = OEMReadDebugByte();
 #ifdef	EBOOK2_VER
-		if (GetKeypad() & (0x10 | 0x01))	// KEY_HOLD | KEY_F16
+		if (GetKeypad() & (KEY_HOLD | KEY_F16))
 		{
 			g_bKeypadUpdate = TRUE;
 			KeySelect = 0x20;
@@ -1140,8 +1146,7 @@ BOOL OEMPlatformInit(void)
 	{
 	case 0x20: // Boot menu.
 #ifdef	DISPLAY_BROADSHEET
-		Delay(4000);
-		EPDDisplayImage(1); // BootMenu
+		//EPDDisplayImage(IMAGE_BOOTMENU);
 #endif	DISPLAY_BROADSHEET
 		g_pBootCfg->ConfigFlags &= ~BOOT_OPTION_CLEAN;		// Always clear CleanBoot Flags before Menu
 		g_bDownloadImage = MainMenu(g_pBootCfg);
@@ -1215,8 +1220,7 @@ BOOL OEMPlatformInit(void)
 			OTGDEV_SetSoftDisconnect();
 			OALMSG(TRUE, (TEXT("OEMPlatformInit: IMAGE_TYPE_RAMIMAGE\r\n")));
 #ifdef	DISPLAY_BROADSHEET
-			Delay(500);
-			EPDDisplayImage(0);	// BootUp
+			EPDDisplayImage(IMAGE_BOOTUP);	// BootUp
 #endif	DISPLAY_BROADSHEET
 			if ( !ReadOSImageFromBootMedia( ) )
 			{
@@ -2089,6 +2093,10 @@ static void InitializeDisplay(void)
 static void SpinForever(void)
 {
 	EdbgOutputDebugString("SpinForever...\r\n");
+#ifdef	DISPLAY_BROADSHEET
+	EPDWriteEngFont8x16("SpinForever...\r\n");
+	EPDFlushEngFont8x16();
+#endif	DISPLAY_BROADSHEET
 
 #ifdef	EBOOK2_VER
 {
@@ -2102,38 +2110,4 @@ static void SpinForever(void)
 		;
 	}
 }
-
-#ifdef	EBOOK2_VER
-static void InitializeKeypad(void)
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-
-	// GPL[3:0] : output[3:0]
-	pGPIOReg->GPLCON0 = (pGPIOReg->GPLCON0 & ~(0xFFFF<<0)) | (0x1111<<0);
-	pGPIOReg->GPLDAT =  (pGPIOReg->GPLDAT & ~(0xF<<0)) | (0xD<<0);
-	// GPK[11:8] : input[3:0]
-	pGPIOReg->GPKCON1 = (pGPIOReg->GPKCON1 & ~(0xFFFF<<0)) | (0x0000<<0);
-	// GPN[6] : input[13:12] - KEY_HOLD
-	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<12)) | (0x0<<12);	// input
-	pGPIOReg->GPNPUD = (pGPIOReg->GPNPUD & ~(0x3<<12)) | (0x1<<12);	// pull-down enable
-}
-static int GetKeypad(void)
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-	int Keypad = 0x00;
-
-	if (0 == (pGPIOReg->GPKDAT & (1<<8)))
-		Keypad |= 0x01;
-	if (0 == (pGPIOReg->GPKDAT & (1<<9)))
-		Keypad |= 0x02;
-	if (0 == (pGPIOReg->GPKDAT & (1<<10)))
-		Keypad |= 0x04;
-	if (0 == (pGPIOReg->GPKDAT & (1<<11)))
-		Keypad |= 0x08;
-	if (pGPIOReg->GPNDAT & (1<<6))
-		Keypad |= 0x10;
-
-	return Keypad;
-}
-#endif	EBOOK2_VER
 

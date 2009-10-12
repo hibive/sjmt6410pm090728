@@ -15,6 +15,8 @@
 
 #include <HSMMCDrv.h>
 #include "sdmmc_fat32.h"
+#include "keypad.h"
+#include "display_epd.h"
 
 
 #define IMAGE_NB0		0
@@ -38,44 +40,69 @@ BOOL InitializeSDMMC(void)
 BOOL ChooseImageFromSDMMC(void)
 {
 	BYTE KeySelect = 0;
-	const char file_name[4][12] = {
-		"BLOCK0  NB0",	// 0 : block0img.nb0
-		"EBOOT   BIN",	// 1 :
-		"NK      BIN",	// 2 :
-		"CHAIN   LST"	// 3 : chain.lst = XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin
-	};
+	const char file_name[][12] = {
+		"BLOCK0  NB0",	// 0 : block0img.nb0 or stepldr.nb0("STEPLDR NB0")
+		"EBOOT   BIN",	// 1
+		"CHAIN   LST",	// 2 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
+	}, *pSelFile;
 	BOOL bRet = FALSE;
 
-	EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
-	EdbgOutputDebugString("0) BLOCK0.NB0\r\n");
-	EdbgOutputDebugString("1) EBOOT.BIN\r\n");
-	EdbgOutputDebugString("2) NK.BIN\r\n");
-	EdbgOutputDebugString("3) CHAIN.LST\r\n");
-	EdbgOutputDebugString("\r\nEnter your selection: ");
+	EPDWriteEngFont8x16("\r\nChoose Download Image:\r\n\r\n");
+	EPDWriteEngFont8x16("0) BLOCK0.NB0\r\n");
+	EPDWriteEngFont8x16("1) EBOOT.BIN\r\n");
+	EPDWriteEngFont8x16("2) CHAIN.LST\r\n");
+	EPDWriteEngFont8x16("3) Power Off ...\r\n");
+	EPDWriteEngFont8x16("\r\nEnter your selection: ");
+	EPDFlushEngFont8x16();
 	while (!(((KeySelect >= '0') && (KeySelect <= '3'))))
 	{
 		KeySelect = OEMReadDebugByte();
+		if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
+		{
+			switch (GetKeypad())
+			{
+			case KEY_F13:
+				KeySelect = '0';
+				break;
+			case KEY_F14:
+				KeySelect = '1';
+				break;
+			case KEY_F15:
+				KeySelect = '2';
+				break;
+			case KEY_F16:
+				KeySelect = '3';
+				break;
+			default:
+				KeySelect = OEM_DEBUG_READ_NODATA;
+				break;
+			}
+		}
 	}
-	EdbgOutputDebugString("%c\r\n", KeySelect);
+	EPDWriteEngFont8x16("%c\r\n", KeySelect);
 
 	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 
 	switch (KeySelect)
 	{
-	case '0':
-		bRet = parsingImageFromSD(IMAGE_NB0, file_name[0]);
+	case '0':	// BLOCK0.NB0
+		pSelFile = file_name[0];
+		bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
 		break;
-	case '1':
-		bRet = parsingImageFromSD(IMAGE_BIN, file_name[1]);
+	case '1':	// EBOOT.BIN
+		pSelFile = file_name[1];
+		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
-	case '2':
-		bRet = parsingImageFromSD(IMAGE_BIN, file_name[2]);
+	case '2':	// CHAIN.LST
+		pSelFile = file_name[2];
+		bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
 		break;
 	case '3':
-		bRet = parsingImageFromSD(IMAGE_LST, file_name[3]);
-		break;
+		return FALSE;
 	}
+	EPDWriteEngFont8x16("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure" );
+	EPDFlushEngFont8x16();
 
 	return bRet;
 }
@@ -294,7 +321,7 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		return FALSE;
 	}
 
-	EdbgOutputDebugString("\r\n\tjhlee build date(%s) time(%s)\r\n", __DATE__, __TIME__);
+	//EdbgOutputDebugString("\r\n\tjhlee build date(%s) time(%s)\r\n", __DATE__, __TIME__);
 	return TRUE;
 }
 
