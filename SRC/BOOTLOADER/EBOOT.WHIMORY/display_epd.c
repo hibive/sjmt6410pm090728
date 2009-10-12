@@ -242,7 +242,11 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 			g_bTextLine++;
 		}
 		if (MAX_TEXT_LINE <= g_bTextLine)
-			break;
+		{
+			for (in=0; in<MAX_TEXT_LINE-1; in++)
+				memcpy(g_szTextBuf[in], g_szTextBuf[in+1], MAX_TEXT_WIDTH);
+			g_bTextLine = MAX_TEXT_LINE - 1;
+		}
 	}
 }
 void EPDFlushEngFont8x16(void)
