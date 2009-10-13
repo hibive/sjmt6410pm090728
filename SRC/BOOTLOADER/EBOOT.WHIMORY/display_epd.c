@@ -216,7 +216,7 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 	va_end(sarg);
 	*buf = '\0';
 
-	EdbgOutputDebugString(szLine);
+	//EdbgOutputDebugString(szLine);
 
 	buf = szLine;
 	i = 0;
