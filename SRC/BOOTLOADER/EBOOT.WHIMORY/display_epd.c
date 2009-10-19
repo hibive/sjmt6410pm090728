@@ -123,18 +123,19 @@ void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal)
 	{
 		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 
-		//EdbgOutputDebugString("%d, ", bPercent);
+		//EdbgOutputDebugString("dwCurrent(%d), dwTotal(%d), bPercent(%d)\r\n", dwCurrent, dwTotal, bPercent);
 		if (0 == bPercent)
 		{
 			S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
+			memset(g_ids.pBuffer, 0x00, LCD_FB_SIZE);	// black clear
 		}
-		else if (!(bPercent%10))
+		else if (0 == (bPercent%10))
 		{
 			g_ids.pRect->right = g_ids.pRect->left + 34;
 			S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGEDATAS), (PVOID)&g_ids, 0, NULL);
 			g_ids.pRect->left = g_ids.pRect->right;
 		}
-		OEMWriteDebugLED( 0, (bPercent%4));
+		OEMWriteDebugLED(0, (bPercent%4));
 
 		g_bOldPercent = bPercent;
 	}
@@ -142,11 +143,11 @@ void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal)
 
 #define	FONT_WIDTH		8
 #define	FONT_HEIGHT		16
-#define	MAX_TEXT_WIDTH	(S1D13521_ORI_WIDTH / FONT_WIDTH)
-#define	MAX_TEXT_LINE	(S1D13521_ORI_HEIGHT / FONT_HEIGHT)
+#define	MAX_TEXT_WIDTH	(LCD_WIDTH / FONT_WIDTH)
+#define	MAX_TEXT_LINE	(LCD_HEIGHT / FONT_HEIGHT)
 static char g_szTextBuf[MAX_TEXT_LINE][MAX_TEXT_WIDTH] = {0,};
-static BYTE g_bTextLine = 0;
-static RECT g_rectText = {0, 0, S1D13521_ORI_WIDTH, S1D13521_ORI_HEIGHT};
+static BYTE g_bTextXPos = 0, g_bTextLine = 0;
+static RECT g_rectText = {0, 0, LCD_WIDTH, LCD_HEIGHT};
 static IMAGEDATAS g_idsText = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rectText};
 void EPDWriteEngFont8x16(const char *fmt, ...)
 {
@@ -219,7 +220,6 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 	//EdbgOutputDebugString(szLine);
 
 	buf = szLine;
-	i = 0;
 	while (c = *buf++)
 	{
 		switch (c)
@@ -228,17 +228,17 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 		case '\t':
 			break;
 		case '\n':
-			g_szTextBuf[g_bTextLine++][i] = '\0';
-			i = 0;
+			g_szTextBuf[g_bTextLine++][g_bTextXPos] = '\0';
+			g_bTextXPos = 0;
 			break;
 		default:
-			g_szTextBuf[g_bTextLine][i++] = c;
+			g_szTextBuf[g_bTextLine][g_bTextXPos++] = c;
 			break;
 		}
 
-		if (MAX_TEXT_WIDTH <= i)
+		if (MAX_TEXT_WIDTH <= g_bTextXPos)
 		{
-			i = 0;
+			g_bTextXPos = 0;
 			g_bTextLine++;
 		}
 		if (MAX_TEXT_LINE <= g_bTextLine)
@@ -256,7 +256,7 @@ void EPDFlushEngFont8x16(void)
 
 	if (WAVEFORM_DU != S1d13521DrvEscape(DRVESC_GET_WAVEFORMMODE, 0, NULL, 0, NULL))
 		S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
-	memset(g_idsText.pBuffer, 0xFF, S1D13521_FB_SIZE);	// white clear
+	memset(g_idsText.pBuffer, 0xFF, LCD_FB_SIZE);	// white clear
 
 	for (y=0; y<MAX_TEXT_LINE; y++)
 	{
@@ -268,7 +268,7 @@ void EPDFlushEngFont8x16(void)
 			if (0x7F < code)
 				continue;
 
-			ptr = g_idsText.pBuffer + ((y*FONT_HEIGHT*S1D13521_ORI_WIDTH + x*FONT_WIDTH)>>1);
+			ptr = g_idsText.pBuffer + ((y*FONT_HEIGHT*LCD_WIDTH + x*FONT_WIDTH)>>1);
 			for (h=0; h<FONT_HEIGHT; h++)
 			{
 				font_data = (unsigned char)(Eng_Font_8x16[(code*FONT_HEIGHT) + h] >> 8);
@@ -291,7 +291,7 @@ void EPDFlushEngFont8x16(void)
 					}
 				}
 
-				ptr += (S1D13521_ORI_WIDTH>>1);
+				ptr += (LCD_WIDTH>>1);
 			}
 		}
 	}
