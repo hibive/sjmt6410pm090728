@@ -45,6 +45,27 @@ typedef struct
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.
     DWORD                 g_SDCardState;            //For USB MSF , check SD Card insert & remove.
 #endif	EBOOK2_VER
+
+#ifdef	DISPLAY_BROADSHEET
+	WORD	BS_wRevsionCode;
+	WORD	BS_wProductCode;
+
+	WORD	CMD_wType;	// (little-endian, 0x0000 or 'bs' -> 0x6273)
+	BYTE	CMD_bMinor;
+	BYTE	CMD_bMajor;
+
+	DWORD	WFM_dwFileSize;
+	DWORD	WFM_dwSerialNumber;		// (little-endian)
+	BYTE	WFM_bRunType;			// (0x00=[B]aseline, 0x01=[T]est/trial, 0x02=[P]roduction, 0x03=[Q]ualification)
+	BYTE	WFM_bFPLPlatform;		// (0x00=2.0, 0x01=2.1, 0x02=2.3; 0x03=Vizplex 110; other values undefined)
+	WORD	WFM_wFPLLot;			// (little-endian)
+	BYTE	WFM_bModeVersion;		// (0x01 -> 0 INIT, 1 DU, 2 GC16, 3 GC4)
+	BYTE	WFM_bWaveformVersion;	// (BCD)
+	BYTE	WFM_bWaveformSubVersion;// (BCD)
+	BYTE	WFM_bWaveformType;		// (0x0B=TE, 0x0E=WE; other values undefined)
+	BYTE	WFM_bFPLSize;			// (0x32=5", 0x3C=6", 0x50=8", 0x61=9.7")
+	BYTE	WFM_bMFGCode;			// (0x01=PVI, 0x02=LGD)
+#endif	DISPLAY_BROADSHEET
 } BSP_ARGS;
 
 //------------------------------------------------------------------------------

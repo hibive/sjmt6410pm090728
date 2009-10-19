@@ -78,6 +78,39 @@ void EPDInitialize(void)
 
 	S1d13521Initialize((void *)pS1D13521Reg, (void *)pGPIOReg);
 	//S1d13521SetDibBuffer((void *)EBOOT_FRAMEBUFFER_UA_START);
+
+	{
+		volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+		BYTE Buf[FLASH_PAGE_SIZE];
+		int idx;
+
+		pArgs->BS_wRevsionCode = RegRead(0x0000);
+		pArgs->BS_wProductCode = RegRead(0x0002);
+
+		init_spi();
+
+		read_flash(0, Buf);
+		memcpy((void *)&pArgs->CMD_wType, (Buf+0), 2);
+		pArgs->CMD_bMinor = Buf[2];
+		pArgs->CMD_bMajor = Buf[3];
+
+		idx = FLASH_WFM_ADDR / FLASH_PAGE_SIZE;
+		read_flash(idx, Buf);
+		idx = FLASH_WFM_ADDR % FLASH_PAGE_SIZE;
+		memcpy((void *)&pArgs->WFM_dwFileSize, (Buf+idx+4), 4);
+		memcpy((void *)&pArgs->WFM_dwSerialNumber, (Buf+idx+8), 4);
+		pArgs->WFM_bRunType = Buf[idx+0x0C];
+		pArgs->WFM_bFPLPlatform = Buf[idx+0x0D];
+		memcpy((void *)&pArgs->WFM_wFPLLot, (Buf+idx+0x0E), 2);
+		pArgs->WFM_bModeVersion = Buf[idx+0x10];
+		pArgs->WFM_bWaveformVersion = Buf[idx+0x11];
+		pArgs->WFM_bWaveformSubVersion = Buf[idx+0x12];
+		pArgs->WFM_bWaveformType = Buf[idx+0x13];
+		pArgs->WFM_bFPLSize = Buf[idx+0x14];
+		pArgs->WFM_bMFGCode = Buf[idx+0x15];
+
+		exit_spi();
+	}
 }
 
 void EPDDisplayImage(EIMAGE_TYPE eImageType)
@@ -154,7 +187,8 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 	char szLine[256], *buf;
 	char c, *p, tmp[11];	//int형의 최대크기의 길이는 10자리수 이므로
 	unsigned char uc;
-	int i, tmp_index, in;
+	int i, tmp_index, in, j;
+	unsigned long ul;
 	va_list sarg;
 
 	buf = szLine;
@@ -166,7 +200,7 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 			i++;
 			switch (fmt[i])
 			{
-			case 'B':	//
+			case 'B':	//1바이트 16진수
 				uc = (unsigned char)va_arg(sarg, unsigned char);
 				if (in = (uc / 16))
 					*buf++ = (9 < in) ? (in - 10 + 'A') : (in + '0');
@@ -205,6 +239,36 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 					p++;
 				}
 				break;
+			case 'W':	//2바이트 16진수
+				ul = (unsigned long)va_arg(sarg, unsigned long);
+				for (j=0; j<2; j++)
+				{
+					uc = (unsigned char)(ul>>(8*(1-j)));
+					if (in = (uc / 16))
+						*buf++ = (9 < in) ? (in - 10 + 'A') : (in + '0');
+					else
+						*buf++ = '0';
+					if (in = (uc % 16))
+						*buf++ = (9 < in) ? (in - 10 + 'A') : (in + '0');
+					else
+						*buf++ = '0';
+				}
+				break;
+			case 'X':	//4바이트 16진수
+				ul = (unsigned long)va_arg(sarg, unsigned long);
+				for (j=0; j<4; j++)
+				{
+					uc = (unsigned char)(ul>>(8*(3-j)));
+					if (in = (uc / 16))
+						*buf++ = (9 < in) ? (in - 10 + 'A') : (in + '0');
+					else
+						*buf++ = '0';
+					if (in = (uc % 16))
+						*buf++ = (9 < in) ? (in - 10 + 'A') : (in + '0');
+					else
+						*buf++ = '0';
+				}
+				break;
 			default:	// % 뒤에 엉뚱한 문자인 경우
 				break;
 			}
@@ -225,8 +289,16 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 		switch (c)
 		{
 		case '\r':
-		case '\t':
 			break;
+		case '\t':
+			j = 4 - (g_bTextXPos % 4);
+			if (MAX_TEXT_WIDTH > (g_bTextXPos+j))
+			{
+				for (i=0; i<j; i++)
+					g_szTextBuf[g_bTextLine][g_bTextXPos++] = ' ';
+				break;
+			}
+			// else => new line...
 		case '\n':
 			g_szTextBuf[g_bTextLine++][g_bTextXPos] = '\0';
 			g_bTextXPos = 0;

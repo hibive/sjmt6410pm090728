@@ -111,7 +111,6 @@ BOOL			g_bBootMediaExist = FALSE;
 BOOL			g_bDownloadImage  = TRUE;
 BOOL 			g_bWaitForConnect = TRUE;
 #ifdef	EBOOK2_VER
-BOOL			g_bKeypadUpdate = FALSE;
 BOOL			g_bSDMMCDownload = FALSE;
 #endif	EBOOK2_VER
 BOOL			g_bUSBDownload = FALSE;
@@ -509,14 +508,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
 
 #ifdef	DISPLAY_BROADSHEET
-		EPDWriteEngFont8x16("\r\nBootloader Version %d.%d Built %s %s\r\n",
-			EBOOT_VERSION_MAJOR, EBOOT_VERSION_MINOR, __DATE__, __TIME__);
 		EPDWriteEngFont8x16("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
 		EPDWriteEngFont8x16("L-0) LAUNCH existing Boot Media image\r\n");
 		EPDWriteEngFont8x16("S-1) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDWriteEngFont8x16("U-2) DOWNLOAD image now(USB)\r\n");
-		EPDWriteEngFont8x16("X-3) Epson Instruction byte code update\r\n");
-		EPDWriteEngFont8x16("A-4) Format FIL (Erase All Blocks)\r\n");
+		EPDWriteEngFont8x16("C-3) Format FTL (Erase FTL Area + FTL Format)\r\n");
+		EPDWriteEngFont8x16("X-4) Epson Instruction byte code update\r\n");
 		EPDWriteEngFont8x16("\r\nEnter your selection: ");
 		EPDFlushEngFont8x16();
 #endif	DISPLAY_BROADSHEET
@@ -542,18 +539,24 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         {
             KeySelect = OEMReadDebugByte();
 #ifdef	EBOOK2_VER
-			if ((TRUE == g_bKeypadUpdate) && ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
+			if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 			{
 				switch (GetKeypad())
 				{
-				case KEY_MENU:	// DOWNLOAD image now(USB)
+				case KEY_F13:	// LAUNCH existing Boot Media image
+					KeySelect = 'L';
+					break;
+				case KEY_F14:	// DOWNLOAD image now(SDMMCCard)
+					KeySelect = 'S';
+					break;
+				case KEY_F15:	// DOWNLOAD image now(USB)
 					KeySelect = 'U';
 					break;
-				case KEY_LEFT:	// Format FTL (Erase FTL Area + FTL Format)
+				case KEY_F16:	// Format FTL (Erase FTL Area + FTL Format)
 					KeySelect = 'C';
 					break;
-				case KEY_RIGHT:	// DOWNLOAD image now(SDMMCCard)
-					KeySelect = 'S';
+				case KEY_F17:	// Epson Instruction byte code update
+					KeySelect = 'X';
 					break;
 				default:
 					KeySelect = OEM_DEBUG_READ_NODATA;
@@ -564,6 +567,11 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         }
 
         EdbgOutputDebugString ( "%c\r\n", KeySelect);
+
+#ifdef	DISPLAY_BROADSHEET
+		EPDWriteEngFont8x16("%c\r\n", KeySelect);
+		EPDFlushEngFont8x16();
+#endif	DISPLAY_BROADSHEET
 
         switch(KeySelect)
         {
@@ -1091,7 +1099,6 @@ BOOL OEMPlatformInit(void)
 #ifdef	EBOOK2_VER
 		if (GetKeypad() & (KEY_HOLD | KEY_F16))
 		{
-			g_bKeypadUpdate = TRUE;
 			KeySelect = 0x20;
 		}
 #endif	EBOOK2_VER
@@ -1951,7 +1958,29 @@ static void InitializeDisplay(void)
 {
 #ifdef	DISPLAY_BROADSHEET
 	EPDInitialize();
+
 	EPDWriteEngFont8x16("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+{
+	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+
+	EPDWriteEngFont8x16("\t[Disp] %W : Revision Code\r\n", pArgs->BS_wRevsionCode);
+	EPDWriteEngFont8x16("\t[Disp] %W : Product Code\r\n", pArgs->BS_wProductCode);
+
+	EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
+	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
+
+	EPDWriteEngFont8x16("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
+	EPDWriteEngFont8x16("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
+	EPDWriteEngFont8x16("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);
+}
 	EPDFlushEngFont8x16();
 #else	DISPLAY_BROADSHEET
     tDevInfo RGBDevInfo;

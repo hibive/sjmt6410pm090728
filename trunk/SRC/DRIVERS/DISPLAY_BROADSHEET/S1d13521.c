@@ -32,6 +32,7 @@
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_WIDTH
 #endif
 #define	S1D13521_HRDY_TIMEOUT	250
+#define FLASH_WFM_ADDR			0x0886
 #define FLASH_PAGE_SIZE			0x100	// 256 bytes
 
 
@@ -163,7 +164,7 @@ static void initDisplay(BOOL bClean)
 
 	MYMSG((_T("[S1D13521] RD_WFM_INFO\r\n")));
 	CmdArgs.bCmd = 0x30;
-	CmdArgs.pArgv[0] = 0x0886;
+	CmdArgs.pArgv[0] = FLASH_WFM_ADDR;
 	CmdArgs.pArgv[1] = 0x0000;
 	CmdArgs.nArgc = 2;
 	Command(CmdArgs);

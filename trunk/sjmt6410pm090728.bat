@@ -118,7 +118,7 @@ if /i "%IMGHIVEREG%"=="1" set PRJ_ENABLE_FSREGHIVE=1
 if /i "%IMGHIVEREG%"=="1" set PRJ_ENABLE_REGFLUSH_THREAD=1
 
 @REM Multipl-XIP using demand paging, BINFS must be turned on
-set IMGMULTIXIP=1
+set IMGMULTIXIP=
 
 @REM Does not support
 set IMGMULTIBIN=
