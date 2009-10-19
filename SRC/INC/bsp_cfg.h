@@ -100,6 +100,7 @@
 #define LCD_WIDTH			600
 #define LCD_HEIGHT			800
 #define LCD_BPP				4	// 4 or 8 = 16 or 256 gray
+#define LCD_FB_SIZE			(LCD_WIDTH * LCD_HEIGHT * LCD_BPP / 8)
 #else
 #error LCD_MODULE_UNDEFINED_ERROR
 #endif
