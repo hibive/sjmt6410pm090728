@@ -752,7 +752,7 @@ BOOL ReadOSImageFromBootMedia()
 			if (dwPage%PAGES_PER_BLOCK == (PAGES_PER_BLOCK-1)) OALMSG(TRUE, (TEXT(".")));
 
 #ifdef	DISPLAY_BROADSHEET
-			EPDShowProgress(dwPage+1, dwNumPage);
+			EPDShowProgress(dwPage-dwStartPage, dwNumPage);
 #endif	DISPLAY_BROADSHEET
 		}
 
