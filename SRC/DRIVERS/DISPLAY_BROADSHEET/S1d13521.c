@@ -893,7 +893,7 @@ void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
 	initChip();
 	initDisplay(TRUE);
 #else	_EBOOT_
-	Sleep(500);
+	Sleep(1000);
 #endif	_EBOOT_
 }
 
