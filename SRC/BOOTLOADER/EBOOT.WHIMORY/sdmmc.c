@@ -43,18 +43,20 @@ BOOL ChooseImageFromSDMMC(void)
 	const char file_name[][12] = {
 		"BLOCK0  NB0",	// 0 : block0img.nb0 or stepldr.nb0("STEPLDR NB0")
 		"EBOOT   BIN",	// 1
-		"CHAIN   LST",	// 2 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
+		"NK      BIN",	// 2
+		"CHAIN   LST",	// 3 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
 	}, *pSelFile;
 	BOOL bRet = FALSE;
 
 	EPDWriteEngFont8x16("\r\nChoose Download Image:\r\n\r\n");
 	EPDWriteEngFont8x16("0) BLOCK0.NB0\r\n");
 	EPDWriteEngFont8x16("1) EBOOT.BIN\r\n");
-	EPDWriteEngFont8x16("2) CHAIN.LST\r\n");
-	EPDWriteEngFont8x16("3) Power Off ...\r\n");
+	EPDWriteEngFont8x16("2) NK.BIN\r\n");
+	EPDWriteEngFont8x16("3) CHAIN.LST\r\n");
+	EPDWriteEngFont8x16("4) Power Off ...\r\n");
 	EPDWriteEngFont8x16("\r\nEnter your selection: ");
 	EPDFlushEngFont8x16();
-	while (!(((KeySelect >= '0') && (KeySelect <= '3'))))
+	while (!(((KeySelect >= '0') && (KeySelect <= '4'))))
 	{
 		KeySelect = OEMReadDebugByte();
 		if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
@@ -73,6 +75,9 @@ BOOL ChooseImageFromSDMMC(void)
 			case KEY_F16:
 				KeySelect = '3';
 				break;
+			case KEY_F17:
+				KeySelect = '4';
+				break;
 			default:
 				KeySelect = OEM_DEBUG_READ_NODATA;
 				break;
@@ -80,6 +85,7 @@ BOOL ChooseImageFromSDMMC(void)
 		}
 	}
 	EPDWriteEngFont8x16("%c\r\n", KeySelect);
+	EPDFlushEngFont8x16();
 
 	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
@@ -94,11 +100,15 @@ BOOL ChooseImageFromSDMMC(void)
 		pSelFile = file_name[1];
 		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
-	case '2':	// CHAIN.LST
+	case '2':	// NK.BIN
 		pSelFile = file_name[2];
+		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+		break;
+	case '3':	// CHAIN.LST
+		pSelFile = file_name[3];
 		bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
 		break;
-	case '3':
+	case '4':
 		return FALSE;
 	}
 	EPDWriteEngFont8x16("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure" );
@@ -291,7 +301,6 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		memset((void *)&MultiBin, 0, sizeof(MultiBINInfo));
 		MultiBin.dwNumRegions = 1;
 		strcpy(MultiBin.Region[0].szFileName, sFileName);
-
 		dwImageSize = makeManifestImage(dwImageType, &MultiBin, (UINT8 *)g_pDownPt);
 		if ((UINT32)-1 == dwImageSize)
 			return FALSE;
@@ -302,7 +311,6 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		dwImageSize = FATFileRead(sFileName, (UINT8 *)g_pDownPt);
 		if ((UINT32)-1 == dwImageSize)
 			return FALSE;
-
 		g_pDownPt += dwImageSize;
 		break;
 
@@ -310,7 +318,6 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		memset((void *)&MultiBin, 0, sizeof(MultiBINInfo));
 		if (FALSE == parsingChainListFile(sFileName, &MultiBin))
 			return FALSE;
-
 		dwImageSize = makeManifestImage(dwImageType, &MultiBin, (UINT8 *)g_pDownPt);
 		if ((UINT32)-1 == dwImageSize)
 			return FALSE;
