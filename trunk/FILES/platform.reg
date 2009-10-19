@@ -610,11 +610,11 @@ IF BSP_USBFNCLASS == SERIAL
 	"DefaultClientDriver"="Serial_Class"
 
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers\Serial_Class]
-	"FriendlyName"=LOC_USBFN_SERIAL_NAME
+	"FriendlyName"=LOC_USBFN_SERIAL_NAME			; "USB Cable:"
 	"idVendor"=dword:0547
-	"Manufacturer"=LOC_USBFN_SERIAL_MANUFACTURER
+	"Manufacturer"=LOC_USBFN_SERIAL_MANUFACTURER	; "Samsung"
 	"idProduct"=dword:2720
-	"Product"=LOC_USBFN_SERIAL_PRODUCT
+	"Product"=LOC_USBFN_SERIAL_PRODUCT				; "Generic USB Serial"
 	"Index"=dword:5
 
 ENDIF BSP_USBFNCLASS
