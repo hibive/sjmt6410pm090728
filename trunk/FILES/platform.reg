@@ -1146,7 +1146,7 @@ ENDIF BSP_DISPLAY_BROADSHEET
 [HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Power\Timeouts]
 	"BattUserIdle"=dword:0000003c	; 1min
 	"BattSystemIdle"=dword:0000003c	; 1min
-	"BattSuspend"=dword:000000b4	; 3min
+	"BattSuspend"=dword:0000003c	; 1min(3c), 3min(b4)
 
 [HKEY_LOCAL_MACHINE\System\GDI\Cleartype]
 	"Default"=dword:00000001
@@ -1156,7 +1156,7 @@ ENDIF BSP_DISPLAY_BROADSHEET
 
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-	"Startup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
+	"Startup"="\\PocketMory1\\DemoEBook2\\DemoEBook2.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
 ENDIF BSP_IROMBOOT
