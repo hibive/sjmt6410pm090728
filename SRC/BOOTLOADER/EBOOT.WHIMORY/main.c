@@ -131,7 +131,9 @@ DWORD			wNUM_BLOCKS;
 void main(void)
 {
     //GPIOTest_Function();
+#ifndef	EBOOK2_VER
     OTGDEV_SetSoftDisconnect();
+#endif	EBOOK2_VER
     BootloaderMain();
 
     // Should never get here.
@@ -867,11 +869,29 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         case 'U':           // Download? No.
         case 'u':
             //bConfigChanged = TRUE;  // Write to NAND too frequently causes wearout
+#ifdef	EBOOK2_VER
+{
+	volatile S3C6410_SYSCON_REG *pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);    
+	UINT8 data[2];
+
+	// ELDO3, ELDO8 On
+	data[0] = 0x32 | (1<<3);	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+	IICWriteByte(PMIC_ADDR, 0x00, data[0]);
+	data[0] = 0x91 | (1<<5);	// [bit5] ELDO8 - VDD_OTG(3.3V)
+	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+
+	InitializeInterrupt();
+    pSysConReg->HCLK_GATE |= (1<<20);
+	OTGDEV_SetSoftDisconnect();
+	InitializeUSB();
+}
+#else	EBOOK2_VER
 /*        if (!InitializeUSB())
 			{
 				DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
 				return(FALSE);
         }*/
+#endif	EBOOK2_VER
 
 			g_bUSBDownload = TRUE;
             bDownload = TRUE;
@@ -938,12 +958,6 @@ BOOL OEMPlatformInit(void)
 	UINT8 data[2];
 
 	IICInitialize();
-
-	// ELDO3, ELDO8 On
-	data[0] = 0x32 | (1<<3);	// [bit3] ELDO3 - VDD_OTGI(1.2V)
-	IICWriteByte(PMIC_ADDR, 0x00, data[0]);
-	data[0] = 0x91 | (1<<5);	// [bit5] ELDO8 - VDD_OTG(3.3V)
-	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
 
 	// 1.30V(B), 1.20V(9), 1.10V(7), 1.05V(6)
 	data[0] = 0x79;	// DVSARM2[7:4]=1.10V, DVSARM1[3:0]=1.20V
@@ -1020,7 +1034,9 @@ BOOL OEMPlatformInit(void)
 }
 #endif	EBOOK2_VER
 
+#ifndef	EBOOK2_VER
 	InitializeInterrupt();
+#endif	EBOOK2_VER
 
 	g_dwImageStartBlock = IMAGE_START_BLOCK;
 
@@ -1082,11 +1098,13 @@ BOOL OEMPlatformInit(void)
 	dwCurrTime  = dwStartTime;
 	KeySelect   = 0;
 
+#ifndef	EBOOK2_VER
         if (!InitializeUSB())
         {
             DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
             return(FALSE);
         }
+#endif	EBOOK2_VER
 
 #ifdef	EBOOK2_VER
 	InitializeKeypad();
@@ -1637,9 +1655,19 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 	unsigned char buf[2];
 
 	IICReadByte(PMIC_ADDR, 0x00, buf);
+	if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+	{
+		buf[0] |= (1<<3);	// on
+		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+	}
 	pArgs->bPMICRegister_00 = buf[0];
 	EdbgOutputDebugString("PMIC_ADDR(0x00) = 0x%Xh\r\n", pArgs->bPMICRegister_00);
 	IICReadByte(PMIC_ADDR, 0x01, buf);
+	if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+	{
+		buf[0] |= (1<<5);	// on
+		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+	}
 	pArgs->bPMICRegister_01 = buf[0];
 	EdbgOutputDebugString("PMIC_ADDR(0x01) = 0x%Xh\r\n", pArgs->bPMICRegister_01);
 }
@@ -1966,7 +1994,7 @@ static void InitializeDisplay(void)
 	EPDWriteEngFont8x16("\t[Disp] %W : Revision Code\r\n", pArgs->BS_wRevsionCode);
 	EPDWriteEngFont8x16("\t[Disp] %W : Product Code\r\n", pArgs->BS_wProductCode);
 
-	EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
+	/*EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
 	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
 
 	EPDWriteEngFont8x16("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
@@ -1979,7 +2007,7 @@ static void InitializeDisplay(void)
 	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
 	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
 	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
 }
 	EPDFlushEngFont8x16();
 #else	DISPLAY_BROADSHEET
