@@ -1991,8 +1991,12 @@ static void InitializeDisplay(void)
 {
 	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
 
-	EPDWriteEngFont8x16("\t[Disp] %W : Revision Code\r\n", pArgs->BS_wRevsionCode);
-	EPDWriteEngFont8x16("\t[Disp] %W : Product Code\r\n", pArgs->BS_wProductCode);
+	EPDWriteEngFont8x16("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
+	EPDWriteEngFont8x16("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EPDWriteEngFont8x16("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+
+	EPDWriteEngFont8x16("\t[Disp] Revision(%W), Product(%W)\r\n",
+		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
 
 	/*EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
 	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
