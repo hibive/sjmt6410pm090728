@@ -116,13 +116,13 @@ ENDIF BSP_DISPLAY_BROADSHEET !
 
 CONFIG                  ; Other System Configuration for making image
 
-    COMPRESSION=ON      ; Binary compression for minimizing download transfer data
+    COMPRESSION=OFF      ; Binary compression for minimizing download transfer data
     KERNELFIXUPS=ON     ; Kernel address fixup
     AUTOSIZE=ON         ; ROM and RAM size will be resizing automatically for padding region
 
 IF EBOOK2_VER
-;	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
-	FSRAMPERCENT=0x30303030	; object store(12.5%)
+	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
+;	FSRAMPERCENT=0x30303030	; object store(12.5%)
 ENDIF EBOOK2_VER
 
 IF IMGMULTIXIP
