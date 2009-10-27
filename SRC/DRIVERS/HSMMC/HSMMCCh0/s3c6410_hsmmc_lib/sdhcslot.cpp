@@ -1182,11 +1182,11 @@ EXIT:
     BOOL CSDHCSlotBase::IsCardPresent()
     {
         BOOL fRetVal;
-#ifdef	EBOOK2_VER
+#if (EBOOK2_VER == 2)
 		fRetVal = FALSE;
 		if (v_gBspArgs)
 			fRetVal = v_gBspArgs->bSDMMCCH0CardDetect;
-#else	EBOOK2_VER
+#else	(EBOOK2_VER == 2)
         volatile S3C6410_GPIO_REG *pIOPreg = NULL;
 
         PHYSICAL_ADDRESS    ioPhysicalBase = {0,0};
@@ -1207,7 +1207,7 @@ EXIT:
         }
 
         MmUnmapIoSpace((PVOID)pIOPreg, sizeof(S3C6410_GPIO_REG));
-#endif
+#endif	(EBOOK2_VER == 2)
 
         return fRetVal;
     }
