@@ -106,6 +106,10 @@ IF BSP_NOHSMMC_CH1 !
     s3c6410_hsmmc1.dll    $(_FLATRELEASEDIR)\s3c6410_hsmmc1.dll     NK        SHMK
 ENDIF BSP_NOHSMMC_CH1 !
 ENDIF BSP_IROM_SDMMC_CH1_BOOT !
+
+IF BSP_NOHSMMC_CH2 !
+    s3c6410_hsmmc2.dll    $(_FLATRELEASEDIR)\s3c6410_hsmmc2.dll     NK        SHMK
+ENDIF BSP_NOHSMMC_CH2 !
 ; @CESYSGEN ENDIF CE_MODULES_SDBUS
 ;---------------------------------------------------------------------------------------
 
@@ -330,17 +334,19 @@ ENDIF BSP_NOOES !
 IF EBOOK2_VER
 	cerdisp2.exe				$(_FLATRELEASEDIR)\cerdisp2.exe				NK	U
 
-IF BSP_DISPLAY_BROADSHEET
 IF APPS_EBOOK2_STARTUP
 	ebook2startup.exe			$(_FLATRELEASEDIR)\ebook2startup.exe		NK	U
 ENDIF APPS_EBOOK2_STARTUP
+
+IF BSP_DISPLAY_BROADSHEET
+	ebook2_wallpaper.gif		$(_FLATRELEASEDIR)\ebook2_wallpaper.gif		NK	S
+ENDIF BSP_DISPLAY_BROADSHEET
+
 IF APPS_EBOOK2_COMMAND
 	ebook2command.exe			$(_FLATRELEASEDIR)\ebook2command.exe		NK	U
-ENDIF APPS_EBOOK2_COMMAND
-	ebook2_wallpaper.gif		$(_FLATRELEASEDIR)\ebook2_wallpaper.gif		NK	S
 	ebook2_shutdown.bmp			$(_FLATRELEASEDIR)\ebook2_shutdown.bmp		NK	S
 	ebook2_lowbattery.bmp		$(_FLATRELEASEDIR)\ebook2_lowbattery.bmp	NK	S
-ENDIF BSP_DISPLAY_BROADSHEET
+ENDIF APPS_EBOOK2_COMMAND
 
 ENDIF EBOOK2_VER
 ;####################################################################

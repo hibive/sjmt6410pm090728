@@ -403,8 +403,22 @@ IF BSP_NOHSMMC_CH1 !
 ENDIF BSP_NOHSMMC_CH1 !
 ENDIF BSP_IROM_SDMMC_CH1_BOOT !
 
+IF BSP_NOHSMMC_CH2 !
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\HSMMC2]
+	"InterfaceType"=dword:0					; Internal
+	"Order"=dword:15
+	"Dll"="s3c6410_hsmmc2.dll"
+	"Prefix"="HSC"
+	"ObjectCreationProc"="CreateHSMMCHCCh2Object"
+	"MemBase"=dword:7C400000
+	"MemLen"=dword:100
+	"Irq"=dword:57							; HSMMC2 Virtual IRQ = 87 (0x57), Physical IRQ = 49
+	"BaseClockFrequency"=dword:2DC6C00		; 5B8D800->96MHz, 2DC6C00->48MHz, 16E3600->24MHz, B71B00->12MHz
+	"TimeoutClockFrequency"=dword:2DC6C00		; 5B8D800->96MHz, 2DC6C00->48MHz, 16E3600->24MHz, B71B00->12MHz
+ENDIF BSP_NOHSMMC_CH2 !
+
 ; @CESYSGEN IF CE_MODULES_SDMEMORY
-IF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 !
+IF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 ! || BSP_NOHSMMC_CH2 !
   ; SD Memory Storage class driver
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
 	"Dll"="SDMemory.dll"
@@ -452,7 +466,7 @@ IF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 !
 	"IClass"=multi_sz:"{A4E7EDDA-E575-4252-9D6B-4195D48BB865}",
 					  "{8DD679CE-8AB4-43c8-A14A-EA4963FAA715}"
 
-ENDIF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 !
+ENDIF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 ! || BSP_NOHSMMC_CH2 !
 ; @CESYSGEN ENDIF CE_MODULES_SDMEMORY
 ; @CESYSGEN ENDIF CE_MODULES_SDBUS
 ;---------------------------------------------------------------------------
@@ -1169,6 +1183,12 @@ IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
 	"Favorites"="\\SDMMCDisk\\Favorites"
 ENDIF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
 ENDIF BSP_IROMBOOT !
+
+IF APPS_EBOOK2_COMMAND
+[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
+	"Image_Shutdown"="\\Windows\\ebook2_shutdown.bmp"
+	"Image_Lowbattery"="\\Windows\\ebook2_lowbattery.bmp"
+ENDIF APPS_EBOOK2_COMMAND
 
 ENDIF EBOOK2_VER
 
