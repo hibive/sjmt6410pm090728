@@ -8,9 +8,19 @@
 ; this source code. For a copy of the EULA, please see the LICENSE.RTF on your
 ; install media.
 ;
-IF EBOOK2_VER
+IF APPS_EBOOK2_STARTUP
 Directory(LOC_DIRWINDOWSSTARTUP):-File("ebook2startup.exe","\windows\ebook2startup.exe")
-Root:-Directory("PocketMory\Favorites")
 ELSE
 Directory(LOC_DIRWINDOWSSTARTUP):-File("TouchCalibration.exe","\windows\TouchCalibration.exe")
+ENDIF APPS_EBOOK2_STARTUP
+
+IF EBOOK2_VER
+IF BSP_IROMBOOT
+Root:-Directory("PocketMory\Favorites")
+ENDIF BSP_IROMBOOT
+IF BSP_IROMBOOT !
+IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
+Root:-Directory("SDMMCDisk\Favorites")
+ENDIF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
+ENDIF BSP_IROMBOOT !
 ENDIF EBOOK2_VER
