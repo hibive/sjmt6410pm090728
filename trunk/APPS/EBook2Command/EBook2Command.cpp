@@ -8,6 +8,51 @@
 #include "s1d13521.h"
 
 
+#define SJMT_REG_KEY				_T("Software\\SeojeonMediaTech")
+#define IMAGE_SHUTDOWN_REG_STRING	_T("Image_Shutdown")
+#define IMAGE_LOWBATTERY_REG_STRING	_T("Image_Lowbattery")
+
+
+static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
+{
+	HKEY hKey;
+	DWORD dwValue, dwType = REG_MULTI_SZ;
+	BOOL bRet = TRUE;
+
+	if (ERROR_SUCCESS != RegCreateKeyEx(HKEY_LOCAL_MACHINE,
+		lpSubKey,
+		0,
+		NULL,
+		0,	// REG_OPTION_NON_VOLATILE
+		0,
+		0,
+		&hKey,
+		&dwValue))
+	{
+		return FALSE;
+	}
+
+	if (FALSE == bCreate && REG_CREATED_NEW_KEY == dwValue)
+	{
+		bRet = FALSE;
+	}
+	else if (REG_OPENED_EXISTING_KEY == dwValue)
+	{
+		if (ERROR_SUCCESS == RegQueryValueEx(hKey, lpName, 0, &dwType, (BYTE *)lpData, &dwCnt))
+			RETAILMSG(0, (_T("%s\r\n"), lpData));
+		else
+			bRet = FALSE;
+	}
+	else
+	{
+		bRet = FALSE;
+	}
+
+	RegCloseKey(hKey);
+
+	return bRet;
+}
+
 static BOOL drawImage(HDC hDC, LPCTSTR lpszFileName)
 {
 	IImagingFactory* pImageFactory = NULL;
@@ -110,14 +155,26 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	hDC = GetDC(HWND_DESKTOP);
 	if (0 == _tcsnicmp(_T("SHUTDOWN"), argv[1], _tcslen(_T("SHUTDOWN"))))
 	{
-		LPCTSTR lpszFileName = _T("\\Windows\\ebook2_shutdown.bmp");
-		bRet = displayShutDown(hDC, lpszFileName);
+		TCHAR szShutdown[MAX_PATH] = {0,};
+		if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, IMAGE_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
+		{
+			LPCTSTR lpszDefShutdown = _T("\\Windows\\ebook2_shutdown.bmp");
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_SHUTDOWN_REG_STRING));
+			_tcscpy_s(szShutdown, _countof(szShutdown), lpszDefShutdown);
+		}
+		bRet = displayShutDown(hDC, szShutdown);
 		RETAILMSG(1, (_T("EBook2Command => SHUTDOWN(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
 	{
-		LPCTSTR lpszFileName = _T("\\Windows\\ebook2_lowbattery.bmp");
-		bRet = displayShutDown(hDC, lpszFileName);
+		TCHAR szLowbattery[MAX_PATH] = {0,};
+		if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, IMAGE_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
+		{
+			LPCTSTR lpszDefLowbattery = _T("\\Windows\\ebook2_lowbattery.bmp");
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_LOWBATTERY_REG_STRING));
+			_tcscpy_s(szLowbattery, _countof(szLowbattery), lpszDefLowbattery);
+		}
+		bRet = displayShutDown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("EBook2Command => LOWBATTERY(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
@@ -187,3 +244,4 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 // _T("\\Windows\\EBook2Command.exe DSPUPDSTATE [0(full) or 1(part)]");
 // _T("\\Windows\\EBook2Command.exe BORDER [0(off) or 1(on)]");
 // _T("\\Windows\\EBook2Command.exe WAVEFORMMODE [0(init), 1(du), 2(gu), 3(gc), 4(autodugu)]");
+

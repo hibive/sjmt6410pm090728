@@ -6,7 +6,7 @@
 #include "s1d13521.h"
 
 
-#define STARTUP_REG_KEY			_T("Software\\SeojeonMediaTech")
+#define SJMT_REG_KEY			_T("Software\\SeojeonMediaTech")
 #define STARTUP_REG_STRING		_T("Startup")
 
 
@@ -95,8 +95,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				   int nCmdShow)
 {
 	TCHAR szStartup[MAX_PATH] = {0,};
-	if (FALSE == RegOpenCreateStr(STARTUP_REG_KEY, STARTUP_REG_STRING, szStartup, MAX_PATH, FALSE))
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), szStartup));
+	if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, STARTUP_REG_STRING, szStartup, MAX_PATH, FALSE))
+		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), STARTUP_REG_STRING));
 
 	if (IsProgram(szStartup))
 	{
