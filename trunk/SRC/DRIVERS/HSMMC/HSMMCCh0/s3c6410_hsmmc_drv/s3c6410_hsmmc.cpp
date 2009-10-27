@@ -233,11 +233,11 @@ SD_API_STATUS CSDHControllerCh0::Start() {
     }
 
     // allocate the card detect event
-#ifdef	EBOOK2_VER
+#if (EBOOK2_VER == 2)
 	m_hevCardDetectEvent = CreateEvent(NULL, FALSE, FALSE, _T("SDMMCCH0CardDetect_Event"));
-#else	EBOOK2_VER
+#else	(EBOOK2_VER == 2)
     m_hevCardDetectEvent = CreateEvent(NULL, FALSE, FALSE,NULL);
-#endif	EBOOK2_VER
+#endif	(EBOOK2_VER == 2)
 
     if (NULL == m_hevCardDetectEvent) {
         goto EXIT;

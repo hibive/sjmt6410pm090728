@@ -12,6 +12,7 @@ install media.
 DIRS= \
   HSMMCCh1          \
   HSMMCCh0          \
+  HSMMCCh2          \
   SDBus             \
   SDMemory
 

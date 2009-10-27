@@ -14,8 +14,10 @@
 #include "../s3c6410_hsmmc_lib/SDHC.h"
 #include <oal_intr.h>
 
+#ifdef _SMDK6410_CH0_EXTCD_
 // for card detect pin of HSMMC ch0 on SMDK6410.
 #define SD_CD0_IRQ    IRQ_EINT13
+#endif	_SMDK6410_CH0_EXTCD_
 
 typedef class CSDHControllerCh0 : public CSDHCBase {
     public:
