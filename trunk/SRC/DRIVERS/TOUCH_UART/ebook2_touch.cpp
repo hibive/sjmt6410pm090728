@@ -14,7 +14,9 @@
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
+#if	(EBOOK2_VER == 2)
 static volatile BSP_ARGS *g_gBspArgs = NULL;
+#endif	(EBOOK2_VER == 2)
 static HANDLE m_MutexTouch = NULL;
 
 static DWORD g_dwSysIntrPenDet = SYSINTR_UNDEFINED;
@@ -273,9 +275,11 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 		g_pGPIOReg->EINT0PEND = (0x1<<4);	// Clear pending EINT4
 		InterruptDone(g_dwSysIntrPenDet);
 
+#if	(EBOOK2_VER == 2)
 		if (g_gBspArgs->bKeyHold)
 			bPenDet = FALSE;
 		else
+#endif	(EBOOK2_VER == 2)
 			bPenDet = (g_pGPIOReg->GPNDAT & (0x1<<4));
 		bRet = TSP_IOControl(0, IOCTL_TSP_SET_ENABLE, NULL, bPenDet, NULL, 0, NULL);
 		MYMSG((_T("[TSP] IOCTL_TSP_SET_ENABLE(%d) = %d\n\r"), bPenDet, bRet));
@@ -301,6 +305,7 @@ DWORD TSP_Init(DWORD dwContext)
 		goto goto_err;
 	}
 
+#if	(EBOOK2_VER == 2)
 	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
 	g_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
 	if (NULL == g_gBspArgs)
@@ -308,6 +313,7 @@ DWORD TSP_Init(DWORD dwContext)
 		MYERR((_T("[TSP] NULL == g_gBspArgs\r\n")));
 		goto goto_err;
 	}
+#endif	(EBOOK2_VER == 2)
 
 	m_MutexTouch = CreateMutex(NULL, FALSE, NULL);
 	if (NULL == m_MutexTouch)
@@ -377,11 +383,13 @@ BOOL TSP_Deinit(DWORD InitHandle)
 		m_MutexTouch = NULL;
 	}
 
+#if	(EBOOK2_VER == 2)
 	if (g_gBspArgs)
 	{
 		MmUnmapIoSpace((PVOID)g_gBspArgs, sizeof(BSP_ARGS));
 		g_gBspArgs = NULL;
 	}
+#endif	(EBOOK2_VER == 2)
 
 	if (g_pGPIOReg)
 	{
