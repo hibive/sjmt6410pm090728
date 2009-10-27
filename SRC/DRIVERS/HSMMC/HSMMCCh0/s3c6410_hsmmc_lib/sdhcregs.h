@@ -322,7 +322,6 @@ typedef union __SSDHC_VERSION {
 #define SDHC_CONTROL2_ENCMDCNFMSK     0x40000000    // Command Conflict Mask Enable
 #define SDHC_CONTROL4_STABUSY         0x1
 
-
 // Returns the timeout control value given a timeout clock rate and 
 // timeout in seconds.
 inline

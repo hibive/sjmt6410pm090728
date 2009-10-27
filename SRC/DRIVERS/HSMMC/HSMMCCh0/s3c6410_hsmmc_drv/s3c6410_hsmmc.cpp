@@ -79,15 +79,14 @@ BOOL CSDHControllerCh0::InitClkPwr() {
     RETAILMSG(TRUE, (TEXT("[HSMMC0] Setting registers for the EPLL (for SDCLK) : SYSCon.\n")));
     // SCLK_HSMMC#  : EPLLout, MPLLout, PLL_source_clk or CLK27 clock
     // (from SYSCON block, can be selected by MMC#_SEL[1:0] fields of the CLK_SRC register in SYSCON block)
-    // Set the clock source to EPLL out for CLKMMC1
+    // Set the clock source to EPLL out for CLKMMC0
     pCLKPWR->CLK_SRC   = (pCLKPWR->CLK_SRC & ~(0x3<<18) & ~(0x1<<2)) |  // Control MUX(MMC0:MOUT EPLL)
         (0x1<<2); // Control MUX(EPLL:FOUT EPLL)
     pCLKPWR->HCLK_GATE |= (0x1<<17);  // Gating HCLK for HSMMC0
-    pCLKPWR->SCLK_GATE  = (pCLKPWR->SCLK_GATE) | (0x1<<24);  // Gating special clock for HSMMC1 (SCLK_MMC0)
+    pCLKPWR->SCLK_GATE  = (pCLKPWR->SCLK_GATE) | (0x1<<24);  // Gating special clock for HSMMC0 (SCLK_MMC0)
 #endif
 
     MmUnmapIoSpace((PVOID)pCLKPWR, sizeof(S3C6410_SYSCON_REG));
-
     return TRUE;
 }
 
@@ -95,12 +94,15 @@ BOOL CSDHControllerCh0::InitClkPwr() {
 BOOL CSDHControllerCh0::InitGPIO() {
     PHYSICAL_ADDRESS    ioPhysicalBase = {0,0};
 
-    ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
-    pIOPreg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
-    if (pIOPreg == NULL) {
-        RETAILMSG(TRUE, (TEXT("[HSMMC0] GPIO registers is *NOT* mapped.\n")));
-        return FALSE;
-    }
+	if (NULL == pIOPreg)
+	{
+	    ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
+	    pIOPreg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
+	    if (pIOPreg == NULL) {
+	        RETAILMSG(TRUE, (TEXT("[HSMMC0] GPIO registers is *NOT* mapped.\n")));
+	        return FALSE;
+	    }
+	}
     RETAILMSG(TRUE, (TEXT("[HSMMC0] Setting registers for the GPIO.\n")));
     pIOPreg->GPGCON  = (pIOPreg->GPGCON & ~(0xFFFFFF)) | (0x222222);  // 4'b0010 for the MMC 0
     pIOPreg->GPGPUD &= ~(0xFFF); // Pull-up/down disabled
@@ -121,10 +123,10 @@ BOOL CSDHControllerCh0::InitGPIO() {
     pIOPreg->GPNPUD         = ( pIOPreg->GPNPUD & ~(0x3<<26) ) | (0x0<<26);  // pull-up/down disabled
 
     pIOPreg->EINT0CON0 = ( pIOPreg->EINT0CON0 & ~(0x7<<24)) | (0x7<<24);    // Both edge triggered
-    pIOPreg->EINT0PEND = ( pIOPreg->EINT0PEND | (0x1<<13) );     //clear EINT19 pending bit
-    pIOPreg->EINT0MASK = ( pIOPreg->EINT0MASK & ~(0x1<<13));     //enable EINT19
+    pIOPreg->EINT0PEND = ( pIOPreg->EINT0PEND | (0x1<<13) );     //clear EINT13 pending bit
+    pIOPreg->EINT0MASK = ( pIOPreg->EINT0MASK & ~(0x1<<13));     //enable EINT13
 #endif
-    MmUnmapIoSpace((PVOID)pIOPreg, sizeof(S3C6410_GPIO_REG));
+    //MmUnmapIoSpace((PVOID)pIOPreg, sizeof(S3C6410_GPIO_REG));
     return TRUE;
 }
 
