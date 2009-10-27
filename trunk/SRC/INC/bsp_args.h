@@ -37,8 +37,12 @@ typedef struct
     DWORD                nfsblk;                    // for NAND Lock Tight
 #ifdef	EBOOK2_VER
 	BYTE	bBoardRevision;
-	BOOL	bKeyHold;
+#if	(EBOOK2_VER == 3)
+	BOOL	bSDMMCCH2CardDetect;
+#elif (EBOOK2_VER == 2)
 	BOOL	bSDMMCCH0CardDetect;
+	BOOL	bKeyHold;
+#endif
 	BYTE	bPMICRegister_00;
 	BYTE	bPMICRegister_01;
 #else	EBOOK2_VER

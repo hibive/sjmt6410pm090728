@@ -45,7 +45,7 @@
 #define LCD_MODULE_LTP700       (8)    // Landscape 7" WVGA RGB24
 #define LCD_MODULE_LTM030DK     (9)     // Portrait 3.5" WVGA RGB16
 #ifdef	DISPLAY_BROADSHEET
-#define LCD_MODULE_EPD600		(15)    // _EBOOK2_ SVGA (800x600) 16Gray
+#define LCD_MODULE_EPD600		(15)    // Portrait 6" SVGA 16Gray as 800x600
 #endif	DISPLAY_BROADSHEET
 
 #ifdef	DISPLAY_BROADSHEET
@@ -144,7 +144,11 @@
 #define LAYOUT0                (0)        // 8*8 Keypad board
 #define LAYOUT1                (1)        // On-Board Key
 #define LAYOUT2                (2)        // Qwerty Key board
+#if (EBOOK2_VER == 3)
+#define MATRIX_LAYOUT        (LAYOUT2)
+#elif (EBOOK2_VER == 2)
 #define MATRIX_LAYOUT        (LAYOUT1)
+#endif
 
 #endif // __BSP_CFG_H
 
