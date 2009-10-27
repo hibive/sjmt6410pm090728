@@ -9,6 +9,10 @@ void Port_Init(void)
     // GPA[3:2] for LED
     rGPACON = (rGPACON & ~(0xff<<8)) | (0x11<<8);	// GPA[3:2] set to output
     rGPAPUD = (rGPAPUD & ~(0xf<<4));				// Pull Up/Down Disable
+
+    // GPA[7:6] for LED
+    rGPACON = (rGPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
+    rGPAPUD = (rGPAPUD & ~(0xf<<12));				// Pull Up/Down Disable
 #else	EBOOK2_VER
 	// GPN[15:12] for LED
     rGPNCON = (rGPNCON & ~(0xff<<24))|(0x55<<24); // GPN[15:12] as output

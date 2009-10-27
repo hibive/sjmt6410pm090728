@@ -27,8 +27,8 @@
 #ifndef	DISPLAY_BROADSHEET
 #include "s3c6410_ldi.h"
 #include "s3c6410_display_con.h"
-#endif	DISPLAY_BROADSHEET
 #include "InitialImage_rgb16_320x240.h"
+#endif	DISPLAY_BROADSHEET
 
 // header files for whimory - hmseo-061028
 #include <WMRTypes.h>
@@ -494,7 +494,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "B) Format VFL (Format FIL + VFL Format)\r\n");
         EdbgOutputDebugString ( "C) Format FTL (Erase FTL Area + FTL Format)\r\n");
         EdbgOutputDebugString ( "E) Erase Physical Block 0\r\n");
+#ifndef	EBOOK2_VER
         EdbgOutputDebugString ( "F) Make Initial Bad Block Information (Warning)\r\n");
+#endif	EBOOK2_VER
         EdbgOutputDebugString ( "T) MLC Low level test \r\n");
         EdbgOutputDebugString ( "D) Download image now\r\n");
         EdbgOutputDebugString ( "L) LAUNCH existing Boot Media image\r\n");
@@ -526,7 +528,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'C') || (KeySelect == 'c') ) ||
                    ( (KeySelect == 'D') || (KeySelect == 'd') ) ||
                    ( (KeySelect == 'E') || (KeySelect == 'e') ) ||
+#ifndef	EBOOK2_VER
                    ( (KeySelect == 'F') || (KeySelect == 'f') ) ||
+#endif	EBOOK2_VER
                    ( (KeySelect == 'T') || (KeySelect == 't') ) ||
                    ( (KeySelect == 'L') || (KeySelect == 'l') ) ||
                    ( (KeySelect == 'R') || (KeySelect == 'r') ) ||
@@ -724,6 +728,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			OALMSG(TRUE, (TEXT(" --Erase Physical Block 0\r\n")));
 		}
 		break;
+#ifndef	EBOOK2_VER
 	case 'F' :
 	case 'f' :
 		{
@@ -836,6 +841,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			OALMSG(TRUE, (TEXT(" --Make Initial Bad Block Information (Warning)\r\n")));
 		}
 		break;
+#endif	EBOOK2_VER
         case 'T':           // Download? Yes.
         case 't':
 			MLC_LowLevelTest();
@@ -997,10 +1003,15 @@ BOOL OEMPlatformInit(void)
 	// GPA[7] LED_R, GPA[6] LED_B
 	pGPIOReg->GPACON = (pGPIOReg->GPACON & ~(0xFF<<24)) | (0x11<<24);	// Output
 	pGPIOReg->GPAPUD = (pGPIOReg->GPAPUD & ~(0xF<<12)) | (0x0<<12);		// Pull-up/down disable
-	// GPA[7] LED_R, GPA[6] LED_B On : High Active
+#if (EBOOK2_VER == 3)
+	// GPA[7] LED_R#, GPA[6] LED_B On
+	pGPIOReg->GPADAT = (pGPIOReg->GPADAT & ~(0x3<<6)) | (1<<6);
+#elif (EBOOK2_VER == 2)
+	// GPA[7] LED_R, GPA[6] LED_B On
 	pGPIOReg->GPADAT = (pGPIOReg->GPADAT & ~(0x3<<6)) | (3<<6);
+#endif
 
-	// GPE[2] TOUCH_SLP, GPE[1] GPS_PD#, GPE[0] WLAN_PD#
+	// GPE[2] TOUCH_SLP, GPE[1] WCDMA_PD#, GPE[0] WLAN_PD#
 	pGPIOReg->GPECON = (pGPIOReg->GPECON & ~(0xFFF<<0)) | (0x111<<0);	// Output
 	pGPIOReg->GPEPUD = (pGPIOReg->GPEPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-up/down disable
 	// GPE[2] TOUCH_SLP
@@ -1027,9 +1038,13 @@ BOOL OEMPlatformInit(void)
 	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
 
-	// GPM[2:0] EBOOK2_REV
+	// GPM[2:0] BOARD_REV
 	pGPIOReg->GPMCON = (pGPIOReg->GPMCON & ~(0xFFF<<0)) | (0x000<<0);	// Input
+#if (EBOOK2_VER == 3)
+	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x2A<<0);		// Pull-up enable
+#elif (EBOOK2_VER == 2)
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-down disable
+#endif
 	pArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
 }
 #endif	EBOOK2_VER
@@ -1170,9 +1185,6 @@ BOOL OEMPlatformInit(void)
 	switch(KeySelect)
 	{
 	case 0x20: // Boot menu.
-#ifdef	DISPLAY_BROADSHEET
-		//EPDDisplayImage(IMAGE_BOOTMENU);
-#endif	DISPLAY_BROADSHEET
 		g_pBootCfg->ConfigFlags &= ~BOOT_OPTION_CLEAN;		// Always clear CleanBoot Flags before Menu
 		g_bDownloadImage = MainMenu(g_pBootCfg);
 		break;
