@@ -11,8 +11,6 @@
 #include "display_epd_instructionbytecode.h"
 // const unsigned char Rle_Image_BootUp[];
 #include "display_epd_rle_image_bootup.h"
-// const unsigned char Rle_Image_BootMenu[];
-//#include "display_epd_rle_image_bootmenu.h"
 
 
 #define S1D13521_BASE_PA	0x30000000
@@ -126,12 +124,6 @@ void EPDDisplayImage(EIMAGE_TYPE eImageType)
 		RleData.cbSize = sizeof(Rle_Image_BootUp) / sizeof(Rle_Image_BootUp[0]);
 		RleData.pBlobData = (PBYTE)Rle_Image_BootUp;
 		S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
-		break;
-	case IMAGE_BOOTMENU:
-		//delay(500);
-		//RleData.cbSize = sizeof(Rle_Image_BootMenu) / sizeof(Rle_Image_BootMenu[0]);
-		//RleData.pBlobData = (PBYTE)Rle_Image_BootMenu;
-		//S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_GU, NULL, 0, NULL);
 		break;
 	default:
 		break;
