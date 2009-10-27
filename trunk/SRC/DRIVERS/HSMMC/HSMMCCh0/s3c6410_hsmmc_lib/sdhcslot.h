@@ -94,7 +94,7 @@ public:
     // Handle a slot interrupt. Also called when NeedsServicing() returns TRUE.
     virtual VOID HandleInterrupt();
 #else
-        // Prototype for the new Interrupt handler function can process factors on new card detect interrupt of HSMMC ch0 on SMDK6410.
+    // Prototype for the new Interrupt handler function can process factors on new card detect interrupt of HSMMC ch0 on SMDK6410.
     virtual VOID HandleInterrupt(SDSLOT_INT_TYPE intType = SDSLOT_INT_NULL);
 #endif
 
@@ -300,8 +300,8 @@ protected:
 #endif
 
 #ifdef _SMDK6410_CH0_EXTCD_
-        // Prototype for a new function can detect whether card is presented of HSMMC ch0 on SMRP6400.
-        virtual BOOL IsCardPresent();
+    // Prototype for a new function can detect whether card is presented of HSMMC ch0 on SMRP6400.
+    virtual BOOL IsCardPresent();
 #endif
 
     CReg                   *m_pregDevice;           // pointer to device registry key

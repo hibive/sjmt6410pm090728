@@ -29,7 +29,6 @@
 #include "SDHCRegs.h"
 #include "SDHCSlot.h"
 
-
 // Configuration information for a slot.
 typedef struct SDHC_SLOT_INFO {
     volatile UCHAR *pucRegisters;

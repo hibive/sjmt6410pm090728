@@ -94,13 +94,13 @@
 #define MMC_ACMD_ARG_SET_BUS_4BIT       0x03b70100  // (3<<24)|(183<<16)|(1<<8)
 #define MMC_ACMD_ARG_SET_BUS_1BIT       0x03b70000  // (3<<24)|(183<<16)|(0<<8)
 #define SD_ACMD_ARG_GET_TRANS_SPEED     ((0x1<<31)|(0xFFFF<<8)|(1<<0))
-#endif#endif
+#endif
 
 // SDIO commands
 #define SD_IO_RW_DIRECT                 SD_CMD_IO_RW_DIRECT
 #define SD_IO_RW_EXTENDED               SD_CMD_IO_RW_EXTENDED
 
-// CMD53 Bits
+    // CMD53 Bits
 #define SD_CMD53_RW_MASK                0x80000000
 #define SD_CMD53_READ_OP                0
 #define SD_CMD53_WRITE_OP               SD_CMD53_RW_MASK

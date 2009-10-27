@@ -70,11 +70,16 @@ DWORD   CSDHCSlotBaseDMA::ReAllocateDMABufferList(DWORD dwRequired)
     if (m_pDmaBufferList && m_dwNumOfList < dwRequired) {
         delete [] m_pDmaBufferList;
         m_dwNumOfList = 0;
+        m_pDmaBufferList = NULL;
     }
     if (m_pDmaBufferList == NULL && dwRequired!= 0) {
         m_pDmaBufferList = new CE_DMA_BUFFER_BLOCK[dwRequired];
         if (m_pDmaBufferList) {
             m_dwNumOfList = dwRequired;
+        }
+        else
+        {   // Allocation fail
+            m_dwNumOfList = 0;
         }
     }
     return m_dwNumOfList;
@@ -263,7 +268,7 @@ BOOL CSDHCSlotBaseSDMA::GetDMABuffer(SD_BUS_REQUEST& Request,BOOL fToDevice)
           }
 
         }
-        delete pdwPhysAddress;
+        delete [] pdwPhysAddress;
       }
       if (fReturn && m_dwNumOfAvailabe) { // Check for Cache aligh begin and end.
         if (!fToDevice) {

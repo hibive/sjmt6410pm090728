@@ -166,7 +166,8 @@ CSDHCBase::Init(
     }
 
     // set the host controller name
-    SDHCDSetHCName(m_pHCDContext, TEXT("HostControllerName"));
+    //SDHCDSetHCName(m_pHCDContext, TEXT("HSMMC"));
+    SDHCDSetHCName(m_pHCDContext, HostControllerName);
 
     // set init handler
     SDHCDSetControllerInitHandler(m_pHCDContext, CSDHCBase::SDHCInitialize);
@@ -740,22 +741,20 @@ CSDHCBase::HandleInterrupt(
 
     // Use slot zero to get the shared global interrupt register
     PCSDHCSlotBase pSlotZero = GetSlot(0);
-    DWORD dwIntStatus = pSlotZero->ReadControllerInterrupts();
+    DWORD dwIntStatus = 0;
+    dwIntStatus = pSlotZero->ReadControllerInterrupts();
 
     do {
-         for (DWORD dwSlot = 0; dwSlot < m_cSlots; ++dwSlot) {
-            PCSDHCSlotBase pSlot = GetSlot(dwSlot);
-
-            // It is not needed to use slot number because we use NORMAL_INT_STATUS instead of SLOT_INT_STATUS
-            if ( (dwIntStatus) || pSlot->NeedsServicing() ) {
-                pSlot->HandleInterrupt();
-            }
+        if ( (dwIntStatus) || pSlotZero->NeedsServicing() ) {
+            pSlotZero->HandleInterrupt();
         }
 
         dwIntStatus = pSlotZero->ReadControllerInterrupts();
+
         // In order to prevent infinite CARD INT occuring, below code is needed because of the architecture of HSMMC on s3c6410.
          if(dwIntStatus && pSlotZero->IsOnlySDIOInterrupt()) break;
     } while (dwIntStatus);
+
     Unlock();
 }
 
