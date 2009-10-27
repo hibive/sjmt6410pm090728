@@ -80,12 +80,12 @@ void OEMInit()
 {
     BOOL *bCleanBootFlag;
 
-    OALMSG(OAL_FUNC, (L"[OAL] ++OEMInit()\r\n"));
+    OALMSG(1 && OAL_FUNC, (L"[OAL] ++OEMInit()\r\n"));
 
-    OALMSG(OAL_FUNC, (TEXT("[OAL] S3C6410_APLL_CLK   : %d\n\r"), System_GetAPLLCLK()));
-    OALMSG(OAL_FUNC, (TEXT("[OAL] ARMCLK : %d\n\r"), System_GetARMCLK()));
-    OALMSG(OAL_FUNC, (TEXT("[OAL] HCLK   : %d\n\r"), System_GetHCLK()));
-    OALMSG(OAL_FUNC, (TEXT("[OAL] PCLK   : %d\n\r"), System_GetPCLK()));
+    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] S3C6410_APLL_CLK   : %d\n\r"), System_GetAPLLCLK()));
+    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] ARMCLK : %d\n\r"), System_GetARMCLK()));
+    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] HCLK   : %d\n\r"), System_GetHCLK()));
+    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] PCLK   : %d\n\r"), System_GetPCLK()));
 
     g_oalIoCtlClockSpeed = System_GetARMCLK();
 
@@ -176,7 +176,7 @@ void OEMInit()
     //
     KITLIoctl(IOCTL_KITL_STARTUP, NULL, 0, NULL, 0, NULL);
 
-    OALMSG(OAL_FUNC, (L"[OAL] --OEMInit()\r\n"));
+    OALMSG(1 && OAL_FUNC, (L"[OAL] --OEMInit()\r\n"));
 }
 
 //------------------------------------------------------------------------------

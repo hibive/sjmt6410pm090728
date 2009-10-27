@@ -192,7 +192,11 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
 
         g_pGPIOReg->GPAPUD &= ~(0xf<<12);	// Pull Up/Down Disable
         g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
+#if (EBOOK2_VER == 3)
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x2<<6);		// Off : R#[7], B[6]
+#elif (EBOOK2_VER == 2)
         g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x0<<6);		// Off : High Active
+#endif
 #else	EBOOK2_VER
         g_pGPIOReg->GPNPUD &= ~(0xff<<24);    // Pull Up/Down Disable
         g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0xff<<24)) | (0x55<<24);    // GPN[15:12] set to output
@@ -202,7 +206,10 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
     {
         // Pattern can contain Mask Value and Value;
 #ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#elif (EBOOK2_VER == 2)
         g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~((HIWORD(Pattern)&0x1)<<7)) | ((LOWORD(Pattern)&0x1)<<7);
+#endif
 #else	EBOOK2_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~((HIWORD(Pattern)&0xf)<<12)) | ((LOWORD(Pattern)&0xf)<<(12));
 #endif	EBOOK2_VER
