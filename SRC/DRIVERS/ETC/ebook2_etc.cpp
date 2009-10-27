@@ -17,10 +17,12 @@ static HANDLE m_MutexEtc = NULL;
 
 static HANDLE g_hFileI2C = INVALID_HANDLE_VALUE;
 
+#if	(EBOOK2_VER == 2)
 static DWORD g_dwSysIntrKeyHold = SYSINTR_UNDEFINED;
 static HANDLE g_hEventKeyHold = NULL;
 static HANDLE g_hThreadKeyHold = NULL;
 static BOOL g_bExitThreadKeyHold = FALSE;
+#endif	(EBOOK2_VER == 2)
 
 
 DWORD ETC_Init(DWORD dwContext);
@@ -147,7 +149,7 @@ static void i2c_WriteRegister(UCHAR Reg, UCHAR Val)
 }
 
 
-
+#if	(EBOOK2_VER == 2)
 static DWORD WINAPI KeyHoldThread(LPVOID lpParameter)
 {
 	BOOL bKeyHold, bRet;
@@ -234,7 +236,7 @@ static void keyhold_Deinitialize(void)
 	g_dwSysIntrKeyHold = SYSINTR_UNDEFINED;
 	g_hEventKeyHold = NULL;
 }
-
+#endif	(EBOOK2_VER == 2)
 
 
 
@@ -279,11 +281,13 @@ DWORD ETC_Init(DWORD dwContext)
 		goto goto_err;
 	}
 
+#if	(EBOOK2_VER == 2)
 	if (FALSE == keyhold_Initialize())
 	{
 		MYERR((_T("[ETC] FALSE == keyhold_Initialize()\r\n")));
 		goto goto_err;
 	}
+#endif	(EBOOK2_VER == 2)
 
     return 0x12345678;
 goto_err:
@@ -294,7 +298,9 @@ goto_err:
 
 BOOL ETC_Deinit(DWORD InitHandle)
 {
+#if	(EBOOK2_VER == 2)
 	keyhold_Deinitialize();
+#endif	(EBOOK2_VER == 2)
 
 	i2c_Deinitialize();
 
@@ -379,15 +385,16 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<0));
 		break;
 
-	case IOCTL_SET_POWER_GPS:
+	case IOCTL_SET_POWER_WCDMA:
 		if ((BOOL)nInBufSize)
 			g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<1)) | (0x1<<1);
 		else
 			g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<1)) | (0x0<<1);
-	case IOCTL_GET_POWER_GPS:
+	case IOCTL_GET_POWER_WCDMA:
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
 		break;
 
+#if	(EBOOK2_VER == 2)
 	case IOCTL_SET_KEY_HOLD:
 		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("EBOOK2_TSP"));	// Ebook2_touch.h
 		g_pBspArgs->bKeyHold = (BOOL)nInBufSize;
@@ -399,6 +406,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 	case IOCTL_GET_KEY_HOLD:
 		bRet = g_pBspArgs->bKeyHold;//(g_pGPIOReg->GPNDAT & (0x1<<6));
 		break;
+#endif	(EBOOK2_VER == 2)
 	}
 	ReleaseMutex(m_MutexEtc);
 

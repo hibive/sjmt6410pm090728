@@ -115,7 +115,7 @@ UINT8 ScanCodeToVKeyTable[] =
     VK_RIGHT,            // scan code 63,
 };
 #elif (MATRIX_LAYOUT == LAYOUT1)
-#ifdef	EBOOK2_VER
+#if (EBOOK2_VER == 2)
 #define ScanCodeTableFirst  0x00
 #define ScanCodeTableLast   0x0F
 
@@ -141,7 +141,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	0,					// scan code 14
 	0,					// scan code 15
 };
-#else	EBOOK2_VER
+#else	(EBOOK2_VER == 2)
 #define ScanCodeTableFirst  0x00
 #define ScanCodeTableLast   0x09
 
@@ -159,7 +159,7 @@ UINT8 ScanCodeToVKeyTable[] =
     VK_LEFT,            // scan code 8
     VK_MENU,            // scan code 9
 };
-#endif	EBOOK2_VER
+#endif	(EBOOK2_VER == 2)
 #elif (MATRIX_LAYOUT == LAYOUT2)
 #define    ScanCodeTableFirst    0x00
 #define    ScanCodeTableLast    0x3F
