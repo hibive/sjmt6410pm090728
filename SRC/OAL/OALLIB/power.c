@@ -267,8 +267,13 @@ static void BSPConfigGPIOforPowerOff(void)
 	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<8)) | (0xA<<8);
 	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<8)) | (0xA<<8);
 
+#if (EBOOK2_VER == 3)
+	// GPA[7:6] : LED_R#, LED_B - Output0(0), Pull-up/down disabled(0)
+	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x4<<12);
+#elif (EBOOK2_VER == 2)
 	// GPA[7:6] : LED_R, LED_B - Output0(0), Pull-up/down disabled(0)
 	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x0<<12);
+#endif
 	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<12)) | (0x0<<12);
 
 	// GPB[6:5] : I2C - 1.2[mA] - Input(2), Pull-up/down disabled(0)
@@ -279,7 +284,7 @@ static void BSPConfigGPIOforPowerOff(void)
 	pGPIOReg->GPCCONSLP = (pGPIOReg->GPCCONSLP & ~(0xFF<<0)) | (0x40<<0);	// output 0 or 1
 	pGPIOReg->GPCPUDSLP = (pGPIOReg->GPCPUDSLP & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
 
-	// GPE[2] TOUCH_SLP, GPE[1] GPS_PD#, GPE[0] WLAN_PD#
+	// GPE[2] TOUCH_SLP, GPE[1] WCDMA_PD#, GPE[0] WLAN_PD#
 	pGPIOReg->GPECONSLP = (pGPIOReg->GPECONSLP & ~(0x3F<<0)) | (0x10<<0);	// output 0 or 1
 	pGPIOReg->GPEPUDSLP = (pGPIOReg->GPEPUDSLP & ~(0x3F<<0)) | (0x00<<0);	// pull-up/down disable
 }
