@@ -11,7 +11,7 @@
 
 
 @REM EBOOK2_VER 2 or 3
-set EBOOK2_VER=2
+set EBOOK2_VER=3
 @REM EPD(1) or LCD()
 set EBOOK2_DISP_EPD=1
 
@@ -179,3 +179,12 @@ if not "%EBOOK2_DISP_EPD%"=="1" (
 	set SYSGEN_DDRAW=1
 	set SYSGEN_DSHOW_WMV=1
 )
+
+if "%EBOOK2_VER%"=="2" (
+	set SYSGEN_LARGEKB=1
+)
+
+if "%EBOOK2_VER%"=="3" (
+	set SYSGEN_K_IME97=1
+)
+

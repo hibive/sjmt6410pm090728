@@ -353,7 +353,11 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 	switch (dwIoControlCode)
 	{
 	case IOCTL_SET_POWER_WLAN:
+#if	(EBOOK2_VER == 3)
+		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("SDMMCCH2CardDetect_Event"));
+#elif	(EBOOK2_VER == 2)
 		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("SDMMCCH0CardDetect_Event"));
+#endif	EBOOK2_VER
 		if (hEvent)
 		{
 			UCHAR i2c_Val = i2c_ReadRegister(0x00);
@@ -363,7 +367,11 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			{
 				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x1<<0);
 
+#if	(EBOOK2_VER == 3)
+				g_pBspArgs->bSDMMCCH2CardDetect = TRUE;
+#elif	(EBOOK2_VER == 2)
 				g_pBspArgs->bSDMMCCH0CardDetect = TRUE;
+#endif	EBOOK2_VER
 				SetEvent(hEvent);
 
 				i2c_Val |= (1<<2);
@@ -374,7 +382,11 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				i2c_Val &= ~(1<<2);
 				i2c_WriteRegister(0x00, i2c_Val);
 
+#if	(EBOOK2_VER == 3)
+				g_pBspArgs->bSDMMCCH2CardDetect = FALSE;
+#elif	(EBOOK2_VER == 2)
 				g_pBspArgs->bSDMMCCH0CardDetect = FALSE;
+#endif	EBOOK2_VER
 				SetEvent(hEvent);
 
 				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x0<<0);
@@ -394,19 +406,19 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
 		break;
 
-#if	(EBOOK2_VER == 2)
 	case IOCTL_SET_KEY_HOLD:
-		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("EBOOK2_TSP"));	// Ebook2_touch.h
 		g_pBspArgs->bKeyHold = (BOOL)nInBufSize;
+#if	(EBOOK2_VER == 2)
+		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("EBOOK2_TSP"));	// Ebook2_touch.h
 		if (hEvent)
 		{
 			SetEvent(hEvent);
 			CloseHandle(hEvent);
 		}
+#endif	(EBOOK2_VER == 2)
 	case IOCTL_GET_KEY_HOLD:
 		bRet = g_pBspArgs->bKeyHold;//(g_pGPIOReg->GPNDAT & (0x1<<6));
 		break;
-#endif	(EBOOK2_VER == 2)
 	}
 	ReleaseMutex(m_MutexEtc);
 

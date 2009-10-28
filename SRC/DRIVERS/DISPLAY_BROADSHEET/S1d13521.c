@@ -27,7 +27,11 @@
 #define S1D13521_ORI_WIDTH		S1D13521_FB_WIDTH
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_HEIGHT
 #else
+#if	(EBOOK2_VER == 3)
+#define S1D13521_ORIENTATION	1	// 0(0), 90(1), 180(2), 270(3)
+#elif	(EBOOK2_VER == 2)
 #define S1D13521_ORIENTATION	3	// 0(0), 90(1), 180(2), 270(3)
+#endif	EBOOK2_VER
 #define S1D13521_ORI_WIDTH		S1D13521_FB_HEIGHT
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_WIDTH
 #endif
@@ -88,7 +92,10 @@ static void initChip(void)
 	RegWrite(0x0016, 0x0000);
 	// bit0 : 0(not stable), 1(stable)
 	while (!(RegRead(0x000A)&(1<<0)))
+	{
+		MYERR((_T("1")));
 		delay(1);
+	}
 
 	// addr : Power Save Mode Register(0x0006)
 	// data : Run(0), Off_Sleep_Standby(1)
@@ -106,7 +113,10 @@ static void initChip(void)
 
 	RegWrite(0x0102, 0x0001);
 	while (!(RegRead(0x0102)&(1<<8)))
+	{
+		MYERR((_T("2")));
 		delay(1);
+	}
 	CmdArgs.bCmd = 0x08;
 	CmdArgs.pArgv[0] = 0x50F0;	// 0x0100 : SDRAM Configuration
 	CmdArgs.pArgv[1] = 0x0203;	// 0x0106 : SDRAM Refresh Clock Configuration

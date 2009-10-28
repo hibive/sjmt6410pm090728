@@ -39,10 +39,10 @@ typedef class CSDHControllerCh2 : public CSDHCBase {
         virtual VOID PowerUp();
 
         virtual LPSDHC_DESTRUCTION_PROC GetDestructionProc() {
-            return &DestroyHSMMCHCCh0Object;
+            return &DestroyHSMMCHCCh2Object;
         }
 
-        static VOID DestroyHSMMCHCCh0Object(PCSDHCBase pSDHC);
+        static VOID DestroyHSMMCHCCh2Object(PCSDHCBase pSDHC);
 
 #ifdef _SMDK6410_CH2_EXTCD_
         // Below functions and variables are newly implemented for card detect of HSMMC ch0 on SMDK6410.

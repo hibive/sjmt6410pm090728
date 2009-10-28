@@ -71,9 +71,7 @@ Notes:
 volatile S3C6410_GPIO_REG *pGPIOReg = NULL;
 volatile S3C6410_KEYPAD_REG *pKeyPadReg = NULL;
 volatile S3C6410_SYSCON_REG *pSysConReg = NULL;
-#if	(EBOOK2_VER == 2)
 volatile BSP_ARGS *g_gBspArgs = NULL;
-#endif	(EBOOK2_VER == 2)
 
 DWORD ChangeState[SIZE_COLS];
 DWORD KeyState[SIZE_COLS];
@@ -373,7 +371,6 @@ BOOL KeybdDriverInitializeAddresses(void)
     }
     DEBUGMSG(ZONE_INIT, (TEXT("[KBD] pKeyPadReg mapped at %x\r\n"), pKeyPadReg));
 
-#if (EBOOK2_VER == 2)
 	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
 	g_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
 	if (NULL == g_gBspArgs)
@@ -381,7 +378,6 @@ BOOL KeybdDriverInitializeAddresses(void)
 		DEBUGMSG(ZONE_ERROR,(TEXT("[KBD] g_gBspArgs : MmMapIoSpace failed!\r\n")));
 		goto error_return;
 	}
-#endif	(EBOOK2_VER == 2)
 
     DEBUGMSG(ZONE_INIT,(TEXT("--KeybdDriverInitializeAddresses\r\n")));
 
@@ -407,13 +403,11 @@ error_return:
         pKeyPadReg = NULL;
     }
 
-#if (EBOOK2_VER == 2)
 	if (g_gBspArgs)
 	{
 		MmUnmapIoSpace((PVOID)g_gBspArgs, sizeof(BSP_ARGS));
 		g_gBspArgs = NULL;
 	}
-#endif	(EBOOK2_VER == 2)
 
     DEBUGMSG(ZONE_INIT,(TEXT("--KeybdDriverInitializeAddresses[FAILED!!!]\r\n")));
     return FALSE;
@@ -744,11 +738,15 @@ BOOL KeyMatrix::IsrThreadProc()
             {
                 for (UINT iEvent = 0; iEvent < cEvents; ++iEvent)
                 {
-#if	(EBOOK2_VER == 2)
+#ifdef	EBOOK2_VER
 					if (FALSE == g_gBspArgs->bKeyHold)
-#endif	(EBOOK2_VER == 2)
+					{
+#endif	EBOOK2_VER
 					v_pfnKeybdEvent(v_uiPddId, rguiScanCode[iEvent], rgfKeyUp[iEvent]);
                     RETAILMSG(FALSE,(TEXT("PddID : %x, ScanCode : %x, KeyUp : %d\r\n"),v_uiPddId, rguiScanCode[iEvent], rgfKeyUp[iEvent]));
+#ifdef	EBOOK2_VER
+					}
+#endif	EBOOK2_VER
                 }
             }
         }

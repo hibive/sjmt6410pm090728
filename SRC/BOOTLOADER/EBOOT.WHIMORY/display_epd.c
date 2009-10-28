@@ -139,7 +139,7 @@ void EPDDisplayImage(EIMAGE_TYPE eImageType)
 static BYTE g_bOldPercent = 0xFF;
 static RECT g_rect = {100+20, 320+138, 100+20, 320+138+11};
 static IMAGEDATAS g_ids = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rect};
-void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal)
+void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 {
 	BYTE bPercent;
 
@@ -375,15 +375,23 @@ int EPDSerialFlashWrite(void)
 
 #else
 
-#include <windows.h>
+#include "display_epd.h"
+
 
 void EPDInitialize(void)
 {
 }
-void EPDDisplayImage(EIMAGETYPE eImageType)
+void EPDDisplayImage(EIMAGE_TYPE eImageType)
 {
 }
-void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal)
+void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
+{
+}
+
+void EPDWriteEngFont8x16(const char *fmt, ...)
+{
+}
+void EPDFlushEngFont8x16(void)
 {
 }
 
