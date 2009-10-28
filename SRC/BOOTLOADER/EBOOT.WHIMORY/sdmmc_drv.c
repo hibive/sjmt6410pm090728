@@ -19,6 +19,10 @@ extern "C" {
 #include <HSMMCDrv.h>
 
 #define	FOR_EBOOT	// jhlee
+#if	(EBOOK2_VER == 3)
+#define	USE_CHANNEL0
+#endif
+
 
 #ifdef FOR_EBOOT
 #include <IROM_SDMMC_loader_cfg.h>
