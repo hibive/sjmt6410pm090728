@@ -191,7 +191,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	'I',				// scan code 19
 	'P',				// scan code 20
 	'O',				// scan code 21
-	VK_DELETE,			// scan code 22
+	VK_BACK,			// scan code 22
 	VK_LMENU,			// scan code 23
 
 	'L',				// scan code 24
