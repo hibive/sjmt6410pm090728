@@ -48,71 +48,98 @@ BOOL ChooseImageFromSDMMC(void)
 	}, *pSelFile;
 	BOOL bRet = FALSE;
 
+	EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
+	EdbgOutputDebugString("1) BLOCK0.NB0\r\n");
+	EdbgOutputDebugString("2) EBOOT.BIN\r\n");
+	EdbgOutputDebugString("3) NK.BIN\r\n");
+	EdbgOutputDebugString("4) CHAIN.LST\r\n");
+	EdbgOutputDebugString("5) Power Off ...\r\n");
+	EdbgOutputDebugString("\r\nEnter your selection: ");
+#ifdef	DISPLAY_BROADSHEET
 	EPDWriteEngFont8x16("\r\nChoose Download Image:\r\n\r\n");
-	EPDWriteEngFont8x16("0) BLOCK0.NB0\r\n");
-	EPDWriteEngFont8x16("1) EBOOT.BIN\r\n");
-	EPDWriteEngFont8x16("2) NK.BIN\r\n");
-	EPDWriteEngFont8x16("3) CHAIN.LST\r\n");
-	EPDWriteEngFont8x16("4) Power Off ...\r\n");
+	EPDWriteEngFont8x16("1) BLOCK0.NB0\r\n");
+	EPDWriteEngFont8x16("2) EBOOT.BIN\r\n");
+	EPDWriteEngFont8x16("3) NK.BIN\r\n");
+	EPDWriteEngFont8x16("4) CHAIN.LST\r\n");
+	EPDWriteEngFont8x16("5) Power Off ...\r\n");
 	EPDWriteEngFont8x16("\r\nEnter your selection: ");
 	EPDFlushEngFont8x16();
-	while (!(((KeySelect >= '0') && (KeySelect <= '4'))))
+#endif	DISPLAY_BROADSHEET
+
+	while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
 	{
 		KeySelect = OEMReadDebugByte();
 		if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
 		{
-			switch (GetKeypad())
+			EKEY_DATA KeyData = GetKeypad();
+			switch (KeyData)
 			{
+#if	(EBOOK2_VER == 3)
+			case KEY_1:
+				KeySelect = '1';	break;
+			case KEY_2:
+				KeySelect = '2';	break;
+			case KEY_3:
+				KeySelect = '3';	break;
+			case KEY_4:
+				KeySelect = '4';	break;
+			case KEY_5:
+				KeySelect = '5';	break;
+#elif	(EBOOK2_VER == 3)
 			case KEY_F13:
-				KeySelect = '0';
-				break;
+				KeySelect = '1';	break;
 			case KEY_F14:
-				KeySelect = '1';
-				break;
+				KeySelect = '2';	break;
 			case KEY_F15:
-				KeySelect = '2';
-				break;
+				KeySelect = '3';	break;
 			case KEY_F16:
-				KeySelect = '3';
-				break;
+				KeySelect = '4';	break;
 			case KEY_F17:
-				KeySelect = '4';
-				break;
+				KeySelect = '5';	break;
+#endif	EBOOK2_VER
 			default:
 				KeySelect = OEM_DEBUG_READ_NODATA;
 				break;
 			}
 		}
 	}
+
+	EdbgOutputDebugString("%c\r\n", KeySelect);
+#ifdef	DISPLAY_BROADSHEET
 	EPDWriteEngFont8x16("%c\r\n", KeySelect);
 	EPDFlushEngFont8x16();
+#endif	DISPLAY_BROADSHEET
 
 	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 
 	switch (KeySelect)
 	{
-	case '0':	// BLOCK0.NB0
+	case '1':	// BLOCK0.NB0
 		pSelFile = file_name[0];
 		bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
 		break;
-	case '1':	// EBOOT.BIN
+	case '2':	// EBOOT.BIN
 		pSelFile = file_name[1];
 		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
-	case '2':	// NK.BIN
+	case '3':	// NK.BIN
 		pSelFile = file_name[2];
 		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
-	case '3':	// CHAIN.LST
+	case '4':	// CHAIN.LST
 		pSelFile = file_name[3];
 		bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
 		break;
-	case '4':
+	case '5':
 		return FALSE;
 	}
+
+	EdbgOutputDebugString("%c\r\n", KeySelect);
+#ifdef	DISPLAY_BROADSHEET
 	EPDWriteEngFont8x16("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure" );
 	EPDFlushEngFont8x16();
+#endif	DISPLAY_BROADSHEET
 
 	return bRet;
 }
