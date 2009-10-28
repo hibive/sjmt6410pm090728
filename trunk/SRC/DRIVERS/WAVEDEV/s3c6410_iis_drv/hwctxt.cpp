@@ -756,7 +756,8 @@ HardwareContext::SetOutputMute (BOOL bMute)
 
     m_bOutputMute = bMute;
 
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#elif	(EBOOK2_VER == 2)
 {
 	USHORT usData1, usData2, usData3, usData4;
 	usData1 = ReadCodecRegister(0x34);
@@ -1668,7 +1669,8 @@ HardwareContext::ReadCodecRegister(UCHAR Reg)
 BOOL
 HardwareContext::CodecPowerControl()
 {
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#elif	(EBOOK2_VER == 2)
 	if( m_bInputDMARunning & m_bOutputDMARunning )
 	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
@@ -1730,7 +1732,8 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
 
     if(channel & DMA_CH_OUT)
     {
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#elif	(EBOOK2_VER == 2)
 		USHORT usData1, usData2, usData3, usData4;
 		usData1 = ReadCodecRegister(0x34);
 		usData2 = ReadCodecRegister(0x35);
@@ -1763,7 +1766,8 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
     }
     if(channel & DMA_CH_IN) 
     {
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#elif	(EBOOK2_VER == 2)
 		USHORT usData;
 		usData = ReadCodecRegister(0x2D);
 		if (bMute)

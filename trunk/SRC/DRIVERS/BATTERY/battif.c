@@ -210,10 +210,10 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 	// GPN[3:0] : CHARGING#(3), CHG_DONW#(2), USBPWR_OK#(1), DCPWR_OK#(0)
 	g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0xFF<<0)) | (0x00<<0);	// input mode
 	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
-	// LED_R, LED_B - GPA[7:6] - Output(1), Pull-up/down disabled(0)
-	g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<24)) | (0x11<<24);
-	g_pGPIOReg->GPAPUD &= ~(0xf<<12);
-	g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0<<6);
+	// LED_B - GPA[6] - Output(1), Pull-up/down disabled(0)
+	g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xf<<24)) | (0x1<<24);
+	g_pGPIOReg->GPAPUD &= ~(0x3<<12);
+	g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | (0<<6);
 
 	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_ADC;
 	g_pADCReg = (volatile S3C6410_ADC_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_ADC_REG), FALSE);

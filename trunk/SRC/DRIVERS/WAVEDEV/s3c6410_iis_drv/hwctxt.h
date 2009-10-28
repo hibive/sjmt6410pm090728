@@ -82,7 +82,9 @@ typedef enum
 #define DMA_STRTB            0x00000040
 #define DMA_BIU                0x00000080    // Determines which buffer is in use: (A=0, B=1)
 
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+#define WM8580_MAX_REGISTER_COUNT					56
+#elif	(EBOOK2_VER == 2)
 #define WM8580_MAX_REGISTER_COUNT					58
 #else	EBOOK2_VER
 #define WM8580_MAX_REGISTER_COUNT                    54
