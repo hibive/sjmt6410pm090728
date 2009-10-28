@@ -166,6 +166,79 @@ UINT8 ScanCodeToVKeyTable[] =
 
 UINT8 ScanCodeToVKeyTable[] =
 {
+#if (EBOOK2_VER == 3)
+	VK_T0,				// scan code 0
+	VK_T9,				// scan code 1
+	VK_T8,				// scan code 2
+	VK_T7,				// scan code 3
+	VK_T6,				// scan code 4
+	VK_T5,				// scan code 5
+	VK_T4,				// scan code 6
+	VK_CONTROL,			// scan code 7
+
+	VK_T3,				// scan code 8
+	VK_T2,				// scan code 9
+	VK_T1,				// scan code 10
+	'Q',				// scan code 11
+	'W',				// scan code 12
+	'E',				// scan code 13
+	'R',				// scan code 14
+	VK_SHIFT,			// scan code 15
+
+	'T',				// scan code 16
+	'Y',				// scan code 17
+	'U',				// scan code 18
+	'I',				// scan code 19
+	'P',				// scan code 20
+	'O',				// scan code 21
+	VK_DELETE,			// scan code 22
+	VK_LMENU,			// scan code 23
+
+	'L',				// scan code 24
+	'K',				// scan code 25
+	'J',				// scan code 26
+	'H',				// scan code 27
+	'G',				// scan code 28
+	'F',				// scan code 29
+	'D',				// scan code 30
+	0,					// scan code 31
+
+	'A',				// scan code 32
+	'S',				// scan code 33
+	'Z',				// scan code 34
+	'X',				// scan code 35
+	'C',				// scan code 36
+	'V',				// scan code 37
+	'B',				// scan code 38
+	0,					// scan code 39
+
+	'N',				// scan code 40
+	'M',				// scan code 41
+	'.',				// scan code 42
+	'/',				// scan code 43
+	VK_RETURN,			// scan code 44
+	VK_SYMBOL,			// scan code 45
+	VK_F20,				// scan code 46
+	0,					// scan code 47
+
+	VK_HANGUL,			// scan code 48
+	VK_PRIOR,			// scan code 49
+	VK_NEXT,			// scan code 50
+	VK_F13,//VK_BACK,			// scan code 51
+	VK_F18,//VK_MENU,			// scan code 52
+	VK_F15,//VK_HOME,			// scan code 53
+	VK_SPACE,			// scan code 54
+	0,					// scan code 55
+
+	VK_VOLUME_DOWN,		// scan code 56
+	VK_VOLUME_UP,		// scan code 57
+	VK_RIGHT,			// scan code 58
+	VK_UP,				// scan code 59
+	VK_RETURN,			// scan code 60
+	VK_DOWN,			// scan code 61
+	VK_LEFT,			// scan code 62
+	0,					// scan code 63
+#else	(EBOOK2_VER == 3)
     0,                    // scan code 0,
     0,                     // scan code 1,
     VK_T1,                 // scan code 2,
@@ -237,6 +310,7 @@ UINT8 ScanCodeToVKeyTable[] =
     'B',                // scan code 61,
     VK_TAB,                // scan code 62,
     VK_MENU,            // scan code 63,
+#endif (EBOOK2_VER == 3)
 };
 #endif
 

@@ -1170,7 +1170,8 @@ ENDIF BSP_DISPLAY_BROADSHEET
 
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-	"Startup"="\\PocketMory1\\DemoEBook2\\DemoEBook2.exe"
+;	"Startup"="\\PocketMory1\\DemoEBook2\\DemoEBook2.exe"
+	"Startup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
 ENDIF BSP_IROMBOOT

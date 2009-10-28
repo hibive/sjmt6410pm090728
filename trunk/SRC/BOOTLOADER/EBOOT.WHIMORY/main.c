@@ -547,7 +547,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #ifdef	EBOOK2_VER
 			if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 			{
-				switch (GetKeypad())
+				EKEY_DATA KeyData = GetKeypad();
+				switch (KeyData)
 				{
 				case KEY_F13:	// LAUNCH existing Boot Media image
 					KeySelect = 'L';
@@ -565,6 +566,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 					KeySelect = 'X';
 					break;
 				default:
+					//if (KEY_NONE != KeyData)
+					//	EdbgOutputDebugString("\tKeyData = %B, %d\r\n", KeyData, KeyData);
 					KeySelect = OEM_DEBUG_READ_NODATA;
 					break;
 				}

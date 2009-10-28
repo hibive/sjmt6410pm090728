@@ -14,9 +14,7 @@
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
-#if	(EBOOK2_VER == 2)
 static volatile BSP_ARGS *g_gBspArgs = NULL;
-#endif	(EBOOK2_VER == 2)
 static HANDLE m_MutexTouch = NULL;
 
 static DWORD g_dwSysIntrPenDet = SYSINTR_UNDEFINED;
@@ -28,7 +26,11 @@ static HANDLE g_hComPort = INVALID_HANDLE_VALUE;
 static HANDLE g_hDriverThread = NULL;
 static BOOL g_bDriverRunning = TRUE;
 
+#if	(EBOOK2_VER == 3)
+static BYTE g_bOrientation = 2;	// Display(0->1, 1->0)
+#elif	(EBOOK2_VER == 2)
 static BYTE g_bOrientation = 0;	// Display(0->1, 1->0)
+#endif	EBOOK2_VER
 
 
 DWORD TSP_Init(DWORD dwContext);
@@ -55,7 +57,7 @@ static BOOL parsePacket(UINT8 *pPacket)
 	ptCurTabletPos.x = ((LONG)((pPacket[1]<<9)|(pPacket[2]<<2)|((pPacket[6]&0x60)>>5)));
 	ptCurTabletPos.y = ((LONG)((pPacket[3]<<9)|(pPacket[4]<<2)|((pPacket[6]&0x18)>>3)));
 	curPressure = ((LONG)(pPacket[5]|((pPacket[6]&0x07)<<7)));
-	MYMSG((_T("[TSP] x, y, p(%d, %d, %d)\r\n"), ptCurTabletPos.x, ptCurTabletPos.y, curPressure));
+	MYMSG((_T("[TSP] x, y, p, o(%d, %d, %d, %d)\r\n"), ptCurTabletPos.x, ptCurTabletPos.y, curPressure, g_bOrientation));
 
 	double ratioX, ratioY;
 	ratioX = (double)ptCurTabletPos.x / 6145.0;
@@ -73,8 +75,8 @@ static BOOL parsePacket(UINT8 *pPacket)
 		ptCurScreenPos.y = 65535 - ptCurScreenPos.y;
 		break;
 	case 2:	// 180
-		ptCurScreenPos.x = (LONG)(65535.0 * ratioX);
-		ptCurScreenPos.y = (LONG)(65535.0 * ratioY);
+		ptCurScreenPos.x = 65535 - (LONG)(65535.0 * ratioX);
+		ptCurScreenPos.y = 65535 - (LONG)(65535.0 * ratioY);
 		break;
 	case 3:	// 270
 		ptCurScreenPos.x = (LONG)(65535.0 * ratioY);
@@ -275,11 +277,9 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 		g_pGPIOReg->EINT0PEND = (0x1<<4);	// Clear pending EINT4
 		InterruptDone(g_dwSysIntrPenDet);
 
-#if	(EBOOK2_VER == 2)
 		if (g_gBspArgs->bKeyHold)
 			bPenDet = FALSE;
 		else
-#endif	(EBOOK2_VER == 2)
 			bPenDet = (g_pGPIOReg->GPNDAT & (0x1<<4));
 		bRet = TSP_IOControl(0, IOCTL_TSP_SET_ENABLE, NULL, bPenDet, NULL, 0, NULL);
 		MYMSG((_T("[TSP] IOCTL_TSP_SET_ENABLE(%d) = %d\n\r"), bPenDet, bRet));
@@ -305,7 +305,6 @@ DWORD TSP_Init(DWORD dwContext)
 		goto goto_err;
 	}
 
-#if	(EBOOK2_VER == 2)
 	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
 	g_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
 	if (NULL == g_gBspArgs)
@@ -313,7 +312,6 @@ DWORD TSP_Init(DWORD dwContext)
 		MYERR((_T("[TSP] NULL == g_gBspArgs\r\n")));
 		goto goto_err;
 	}
-#endif	(EBOOK2_VER == 2)
 
 	m_MutexTouch = CreateMutex(NULL, FALSE, NULL);
 	if (NULL == m_MutexTouch)
@@ -383,13 +381,11 @@ BOOL TSP_Deinit(DWORD InitHandle)
 		m_MutexTouch = NULL;
 	}
 
-#if	(EBOOK2_VER == 2)
 	if (g_gBspArgs)
 	{
 		MmUnmapIoSpace((PVOID)g_gBspArgs, sizeof(BSP_ARGS));
 		g_gBspArgs = NULL;
 	}
-#endif	(EBOOK2_VER == 2)
 
 	if (g_pGPIOReg)
 	{

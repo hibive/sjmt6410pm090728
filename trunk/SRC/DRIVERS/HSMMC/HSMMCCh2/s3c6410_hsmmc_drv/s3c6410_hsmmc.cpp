@@ -106,7 +106,8 @@ BOOL CSDHControllerCh2::InitGPIO() {
     RETAILMSG(TRUE, (TEXT("[HSMMC2] Setting registers for the GPIO.\n")));
 	pIOPreg->GPCCON  = (pIOPreg->GPCCON & ~(0xFF<<16)) | (0x33<<16);  // CLK2[GPC5], CMD2[GPC4] for the MMC 2
     pIOPreg->GPCPUD &= ~(0xF<<8); // Pull-up/down disabled
-    pIOPreg->GPHCON  = (pIOPreg->GPHCON & ~(0xFFFF<<24)) | (0x3333<<24);  // 4'b0010 for the MMC 2
+    pIOPreg->GPHCON0  = (pIOPreg->GPHCON0 & ~(0xFF<<24)) | (0x33<<24);  // 4'b0010 for the MMC 2
+    pIOPreg->GPHCON1  = (pIOPreg->GPHCON1 & ~(0xFF<<0)) | (0x33<<0);  // 4'b0010 for the MMC 2
     pIOPreg->GPHPUD &= ~(0xFF<<12); // Pull-up/down disabled
 
 #ifdef _SMDK6410_CH2_WP_
@@ -235,11 +236,11 @@ SD_API_STATUS CSDHControllerCh2::Start() {
     }
 
     // allocate the card detect event
-#if (EBOOK2_VER == 2)
-	m_hevCardDetectEvent = CreateEvent(NULL, FALSE, FALSE, _T("SDMMCCh2CardDetect_Event"));
-#else	(EBOOK2_VER == 2)
+#ifdef	EBOOK2_VER
+	m_hevCardDetectEvent = CreateEvent(NULL, FALSE, FALSE, _T("SDMMCCH2CardDetect_Event"));
+#else	EBOOK2_VER
     m_hevCardDetectEvent = CreateEvent(NULL, FALSE, FALSE,NULL);
-#endif	(EBOOK2_VER == 2)
+#endif	EBOOK2_VER
 
     if (NULL == m_hevCardDetectEvent) {
         goto EXIT;

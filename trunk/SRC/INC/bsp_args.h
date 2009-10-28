@@ -41,8 +41,8 @@ typedef struct
 	BOOL	bSDMMCCH2CardDetect;
 #elif (EBOOK2_VER == 2)
 	BOOL	bSDMMCCH0CardDetect;
-	BOOL	bKeyHold;
 #endif
+	BOOL	bKeyHold;
 	BYTE	bPMICRegister_00;
 	BYTE	bPMICRegister_01;
 #else	EBOOK2_VER

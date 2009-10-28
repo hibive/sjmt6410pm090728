@@ -12,6 +12,7 @@ typedef enum
 
 void EPDInitialize(void);
 void EPDDisplayImage(EIMAGE_TYPE eImageType);
+void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal);
 
 void EPDWriteEngFont8x16(const char *fmt, ...);
 void EPDFlushEngFont8x16(void);
