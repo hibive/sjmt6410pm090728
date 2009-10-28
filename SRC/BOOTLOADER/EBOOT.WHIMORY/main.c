@@ -1026,15 +1026,15 @@ BOOL OEMPlatformInit(void)
     EdbgOutputDebugString("Microsoft Windows CE Bootloader for the Samsung SMDK6410 Version %d.%d Built %s\r\n\r\n",
 	EBOOT_VERSION_MAJOR, EBOOT_VERSION_MINOR, __DATE__);
 
-	// Initialize the display.
-	InitializeDisplay();
-
 	// Initialize the BSP args structure.
 	OALArgsInit(pBSPArgs);
 
 	g_bCleanBootFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_CLEANBOOT) ;
 	g_KITLConfig = (OAL_KITL_ARGS *)OALArgsQuery(OAL_ARGS_QUERY_KITL);
 	g_DevID = (UCHAR *)OALArgsQuery( OAL_ARGS_QUERY_DEVID);
+
+	// Initialize the display.
+	InitializeDisplay();
 
 #ifdef	EBOOK2_VER
 {
@@ -1049,6 +1049,32 @@ BOOL OEMPlatformInit(void)
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-down disable
 #endif
 	pArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
+
+	EPDWriteEngFont8x16("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+
+	EPDWriteEngFont8x16("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
+	EPDWriteEngFont8x16("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EPDWriteEngFont8x16("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+
+	EPDWriteEngFont8x16("\t[Disp] Revision(%W), Product(%W)\r\n",
+		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
+
+	/*EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
+	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
+
+	EPDWriteEngFont8x16("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
+	EPDWriteEngFont8x16("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
+	EPDWriteEngFont8x16("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
+	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
+
+	EPDFlushEngFont8x16();
 }
 #endif	EBOOK2_VER
 
@@ -2001,34 +2027,6 @@ static void InitializeDisplay(void)
 {
 #ifdef	DISPLAY_BROADSHEET
 	EPDInitialize();
-
-	EPDWriteEngFont8x16("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
-{
-	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-
-	EPDWriteEngFont8x16("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
-	EPDWriteEngFont8x16("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
-	EPDWriteEngFont8x16("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
-
-	EPDWriteEngFont8x16("\t[Disp] Revision(%W), Product(%W)\r\n",
-		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
-
-	/*EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
-	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
-
-	EPDWriteEngFont8x16("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
-	EPDWriteEngFont8x16("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
-	EPDWriteEngFont8x16("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
-}
-	EPDFlushEngFont8x16();
 #else	DISPLAY_BROADSHEET
     tDevInfo RGBDevInfo;
 

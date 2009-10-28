@@ -95,7 +95,71 @@ typedef enum
 // WM8580 Codec-chip Initialization Value 
 unsigned int WM8580_Codec_Init_Table[][2] =
 {
-#ifdef	EBOOK2_VER
+#if	(EBOOK2_VER == 3)
+//#define	USE_HEADPHONE
+#define	USE_SPEAKER
+#ifdef	USE_HEADPHONE
+	{ 0x1c, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
+	{ 0x1d, 0x040 },	// Enable DISOP
+	// Delay (400mS) to remove any residual charge on HP output
+	{ 0x1a, 0x061 },	// Enable LOUT1 and ROUT1 SPKL , SPKR disable
+	{ 0x1d, 0x000 },	// Enable DISOP
+	{ 0x19, 0x0c0 },	// Enable VMID SEL = 2x50K Ohm Dividere
+	// Delay (50mSeconds) to allow HP amps to settle
+	{ 0x1c, 0x001 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
+	{ 0x1a, 0x1d1 },	// Enable LOUT1 and ROUT1
+	{ 0x17, 0x1d1 },	// Slow Clock Enable
+	{ 0x2f, 0x00c },	// Enable left and right output mixers
+	{ 0x22, 0x150 },	// Enable Left DAC to left mixer (LINPUT3 to Output Mixer)
+	{ 0x25, 0x150 },	// Enable Right DAC to right mixer
+	//General purpose input /output
+	{ 0x09, 0x040 },	// GPIO pin setting
+	{ 0x30, 0x002 },	// ADCLRC /GPIO set
+	//HP jack dectect cap-less mode
+	{ 0x18, 0x060 },	// HPDETECT High =Headphone, switch enable
+	{ 0x1b, 0x00d },	// HPDETECT HIGH = Speaker /ALC Sample Rate 8K
+	{ 0x0a, 0x0fe },	// LDACVOL
+	{ 0x0b, 0x0fe },	// LDACVOL
+	{ 0x04, 0x000 },	// DACDIV, CLKSEL
+	{ 0x07, 0x000 },	// 
+	{ 0x02, 0x17f },	// LOUT1VOL (HP) = -20dB
+	{ 0x03, 0x17f },	// ROUT1VOL (HP) = -20dB, Enable OUT1VU, load volume settings to both left and right channels
+	{ 0x28, 0x17f },	// LOUT2VOL (HP) = -20dB
+	{ 0x29, 0x17f },	// ROUT2VOL (HP) = -20dB, Enable OUT2VU, load volume settings to both left and right channels
+	{ 0x33, 0x0cc },	// Left and Right Speakers Enabled
+	{ 0x07, 0x002 },	// 
+	{ 0x31, 0x0f7 },	// Left and Right Speakers Enabled
+	{ 0x05, 0x004 },	// DAC Digital Soft Mute = Unmute (Delay from R25 = 080 to unmute >250mS)
+#endif	USE_HEADPHONE
+#ifdef	USE_SPEAKER
+	{ 0x1c, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
+	{ 0x1d, 0x040 },	// Enable DISOP
+	// Delay (400mS) to remove any residual charge on HP output
+	{ 0x1a, 0x07f },	// Enable LOUT1 and ROUT1
+	{ 0x1d, 0x000 },	// Enable DISOP
+	{ 0x19, 0x0c0 },	// Enable VMID SEL = 2x50K Ohm Dividere
+	// Delay (50mSeconds) to allow HP amps to settle
+	{ 0x1c, 0x001 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
+	{ 0x1a, 0x1f8 },	// Enable LOUT1 and ROUT1
+	{ 0x17, 0x1d1 },	// 
+	{ 0x2f, 0x00c },	// Enable left and right output mixers
+	{ 0x22, 0x150 },	// Enable Left DAC to left mixer (LINPUT3 to Output Mixer)
+	{ 0x25, 0x150 },	// Enable Right DAC to right mixer
+	{ 0x30, 0x00a },	// JD2 used for Jack Detect Input
+	{ 0x18, 0x040 },	// HPDETECT HIGH = Speaker
+	{ 0x1b, 0x008 },	// HPDETECT HIGH = Speaker
+	{ 0x04, 0x000 },	// DACDIV, CLKSEL
+	{ 0x07, 0x000 },	// 
+	{ 0x02, 0x179 },	// LOUT1VOL (HP) = -20dB
+	{ 0x03, 0x179 },	// ROUT1VOL (HP) = -20dB, Enable OUT1VU, load volume settings to both left and right channels
+	{ 0x28, 0x179 },	// LOUT2VOL (HP) = -20dB
+	{ 0x29, 0x179 },	// ROUT2VOL (HP) = -20dB, Enable OUT2VU, load volume settings to both left and right channels
+	{ 0x33, 0x0cc },	// Left and Right Speakers Enabled
+	{ 0x07, 0x002 },	// 
+	{ 0x31, 0x0f7 },	// Left and Right Speakers Enabled
+	{ 0x05, 0x004 },	// DAC Digital Soft Mute = Unmute (Delay from R25 = 080 to unmute >250mS)
+#endif	USE_SPEAKER
+#elif	(EBOOK2_VER == 2)
 	{ 0x01, 0x01D },	// Power Management 1
 	{ 0x02, 0x195 },	// Power Management 2
 	{ 0x03, 0x06F },	// Power Management 3
