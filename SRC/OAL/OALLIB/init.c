@@ -26,11 +26,19 @@ UINT32 g_oalIoCtlClockSpeed;
 //
 SYSTEMTIME g_oalRtcResetTime =
 {
+#if	(EBOOK2_VER == 3)
+	2009,	// wYear
+	11,		// wMonth
+	1,		// wDayofWeek
+	2,		// wDay
+	12,		// wHour
+#else	(EBOOK2_VER == 3)
     2007,     // wYear
     2,        // wMonth
     3,        // wDayofWeek
     14,        // wDay
     12,        // wHour
+#endif	(EBOOK2_VER == 3)
     0,        // wMinute
     0,        // wSecond
     0        // wMilliseconds
