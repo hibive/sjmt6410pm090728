@@ -205,8 +205,7 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
     if(Index == -1)   // Control Descrete LEDs(Masked)
     {
         // Pattern can contain Mask Value and Value;
-#if	(EBOOK2_VER == 3)
-#elif (EBOOK2_VER == 2)
+#ifdef	EBOOK2_VER
         g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~((HIWORD(Pattern)&0x1)<<7)) | ((LOWORD(Pattern)&0x1)<<7);
 #else	EBOOK2_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~((HIWORD(Pattern)&0xf)<<12)) | ((LOWORD(Pattern)&0xf)<<(12));
@@ -214,8 +213,7 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
     }
     else            
     {
-#if	(EBOOK2_VER == 3)
-#elif (EBOOK2_VER == 2)
+#ifdef	EBOOK2_VER
         g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<7)) | ((Pattern&0x1)<<7);
 #else	EBOOK2_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~(0xf<<12)) | ((Pattern&0xf)<<12);    

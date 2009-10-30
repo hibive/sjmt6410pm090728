@@ -512,14 +512,22 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
 
 #ifdef	DISPLAY_BROADSHEET
-		EPDWriteEngFont8x16("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
-		EPDWriteEngFont8x16("L-0) LAUNCH existing Boot Media image\r\n");
-		EPDWriteEngFont8x16("S-1) DOWNLOAD image now(SDMMCCard)\r\n");
-		EPDWriteEngFont8x16("U-2) DOWNLOAD image now(USB)\r\n");
-		EPDWriteEngFont8x16("C-3) Format FTL (Erase FTL Area + FTL Format)\r\n");
-		EPDWriteEngFont8x16("X-4) Epson Instruction byte code update\r\n");
-		EPDWriteEngFont8x16("\r\nEnter your selection: ");
-		EPDFlushEngFont8x16();
+		EPDOutputString("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
+#if	(EBOOK2_VER == 3)
+		EPDOutputString("C) Format FTL (Erase FTL Area + FTL Format)\r\n");
+		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
+		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
+		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
+		EPDOutputString("X) Epson Instruction byte code update\r\n");
+#elif	(EBOOK2_VER == 2)
+		EPDOutputString("L-0) LAUNCH existing Boot Media image\r\n");
+		EPDOutputString("S-1) DOWNLOAD image now(SDMMCCard)\r\n");
+		EPDOutputString("U-2) DOWNLOAD image now(USB)\r\n");
+		EPDOutputString("C-3) Format FTL (Erase FTL Area + FTL Format)\r\n");
+		EPDOutputString("X-4) Epson Instruction byte code update\r\n");
+#endif	EBOOK2_VER
+		EPDOutputString("\r\nEnter your selection: ");
+		EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
         while (! ( ( (KeySelect >= '0') && (KeySelect <= '8') ) ||
@@ -550,21 +558,29 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				EKEY_DATA KeyData = GetKeypad();
 				switch (KeyData)
 				{
+#if	(EBOOK2_VER == 3)
+				case KEY_C:
+					KeySelect = 'C';	break;
+				case KEY_L:
+					KeySelect = 'L';	break;
+				case KEY_S:
+					KeySelect = 'S';	break;
+				case KEY_U:
+					KeySelect = 'U';	break;
+				case KEY_X:
+					KeySelect = 'X';	break;
+#elif	(EBOOK2_VER == 2)
 				case KEY_F13:	// LAUNCH existing Boot Media image
-					KeySelect = 'L';
-					break;
+					KeySelect = 'L';	break;
 				case KEY_F14:	// DOWNLOAD image now(SDMMCCard)
-					KeySelect = 'S';
-					break;
+					KeySelect = 'S';	break;
 				case KEY_F15:	// DOWNLOAD image now(USB)
-					KeySelect = 'U';
-					break;
+					KeySelect = 'U';	break;
 				case KEY_F16:	// Format FTL (Erase FTL Area + FTL Format)
-					KeySelect = 'C';
-					break;
+					KeySelect = 'C';	break;
 				case KEY_F17:	// Epson Instruction byte code update
-					KeySelect = 'X';
-					break;
+					KeySelect = 'X';	break;
+#endif	EBOOK2_VER
 				default:
 					//if (KEY_NONE != KeyData)
 					//	EdbgOutputDebugString("\tKeyData = %B, %d\r\n", KeyData, KeyData);
@@ -576,10 +592,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         }
 
         EdbgOutputDebugString ( "%c\r\n", KeySelect);
-
 #ifdef	DISPLAY_BROADSHEET
-		EPDWriteEngFont8x16("%c\r\n", KeySelect);
-		EPDFlushEngFont8x16();
+		EPDOutputString("%c\r\n", KeySelect);
+		EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
         switch(KeySelect)
@@ -1050,31 +1065,33 @@ BOOL OEMPlatformInit(void)
 #endif
 	pArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
 
-	EPDWriteEngFont8x16("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+#ifdef	DISPLAY_BROADSHEET
+	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
 
-	EPDWriteEngFont8x16("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
-	EPDWriteEngFont8x16("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
-	EPDWriteEngFont8x16("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+	EPDOutputString("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
+	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
 
-	EPDWriteEngFont8x16("\t[Disp] Revision(%W), Product(%W)\r\n",
+	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n",
 		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
 
-	/*EPDWriteEngFont8x16("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
-	EPDWriteEngFont8x16("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
+	/*EPDOutputString("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
+	EPDOutputString("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
 
-	EPDWriteEngFont8x16("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
-	EPDWriteEngFont8x16("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
-	EPDWriteEngFont8x16("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
-	EPDWriteEngFont8x16("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
+	EPDOutputString("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
+	EPDOutputString("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
+	EPDOutputString("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
+	EPDOutputString("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
+	EPDOutputString("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
+	EPDOutputString("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
 
-	EPDFlushEngFont8x16();
+	EPDOutputFlush();
+#endif	DISPLAY_BROADSHEET
 }
 #endif	EBOOK2_VER
 
@@ -1159,9 +1176,17 @@ BOOL OEMPlatformInit(void)
 	{
 		KeySelect = OEMReadDebugByte();
 #ifdef	EBOOK2_VER
-		if (GetKeypad() & (KEY_HOLD | KEY_F16))
+		if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 		{
-			KeySelect = 0x20;
+			EKEY_DATA KeyData = GetKeypad();
+#if	(EBOOK2_VER == 3)
+			if (KeyData == (KEY_HOLD | KEY_HOME))
+#elif	(EBOOK2_VER == 2)
+			if (KeyData == (KEY_HOLD | KEY_F16))
+#endif	EBOOK2_VER
+			{
+				KeySelect = 0x20;
+			}
 		}
 #endif	EBOOK2_VER
 
@@ -2170,8 +2195,8 @@ static void SpinForever(void)
 {
 	EdbgOutputDebugString("SpinForever...\r\n");
 #ifdef	DISPLAY_BROADSHEET
-	EPDWriteEngFont8x16("SpinForever...\r\n");
-	EPDFlushEngFont8x16();
+	EPDOutputString("SpinForever...\r\n");
+	EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
 #ifdef	EBOOK2_VER

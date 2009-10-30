@@ -225,7 +225,7 @@ static void initDisplay(BOOL bClean)
 	{
 		MYMSG((_T("[S1D13521] UPD_FULL\r\n")));
 		CmdArgs.bCmd = 0x33;
-		CmdArgs.pArgv[0] = (WAVEFORM_INIT<<8);
+		CmdArgs.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (WAVEFORM_INIT<<8);
 		CmdArgs.nArgc = 1;
 		Command(CmdArgs);
 	}
@@ -692,7 +692,7 @@ static BOOL UpdateWrite(PRECT pRect)
 		MYMSG((_T("[S1D13521] UPD_FULL or UPD_PART\r\n")));
 		// 0x33(UPD_FULL), 0x35(UPD_PART)
 		CmdArgs.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x33 : 0x35;
-		CmdArgs.pArgv[0] = (g_bBorder ? (1<<14) : (0<<14)) | (g_WaveformMode<<8);
+		CmdArgs.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (g_WaveformMode<<8);
 		CmdArgs.nArgc = 1;
 		Command(CmdArgs);
 	}
@@ -704,7 +704,7 @@ static BOOL UpdateWrite(PRECT pRect)
 		MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
 		// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
 		CmdArgs.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x34 : 0x36;
-		CmdArgs.pArgv[0] = (g_WaveformMode<<8);
+		CmdArgs.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (g_WaveformMode<<8);
 		CmdArgs.pArgv[1] = Area.x;
 		CmdArgs.pArgv[2] = Area.y;
 		CmdArgs.pArgv[3] = Area.w;

@@ -56,14 +56,14 @@ BOOL ChooseImageFromSDMMC(void)
 	EdbgOutputDebugString("5) Power Off ...\r\n");
 	EdbgOutputDebugString("\r\nEnter your selection: ");
 #ifdef	DISPLAY_BROADSHEET
-	EPDWriteEngFont8x16("\r\nChoose Download Image:\r\n\r\n");
-	EPDWriteEngFont8x16("1) BLOCK0.NB0\r\n");
-	EPDWriteEngFont8x16("2) EBOOT.BIN\r\n");
-	EPDWriteEngFont8x16("3) NK.BIN\r\n");
-	EPDWriteEngFont8x16("4) CHAIN.LST\r\n");
-	EPDWriteEngFont8x16("5) Power Off ...\r\n");
-	EPDWriteEngFont8x16("\r\nEnter your selection: ");
-	EPDFlushEngFont8x16();
+	EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
+	EPDOutputString("1) BLOCK0.NB0\r\n");
+	EPDOutputString("2) EBOOT.BIN\r\n");
+	EPDOutputString("3) NK.BIN\r\n");
+	EPDOutputString("4) CHAIN.LST\r\n");
+	EPDOutputString("5) Power Off ...\r\n");
+	EPDOutputString("\r\nEnter your selection: ");
+	EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
 	while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
@@ -106,8 +106,8 @@ BOOL ChooseImageFromSDMMC(void)
 
 	EdbgOutputDebugString("%c\r\n", KeySelect);
 #ifdef	DISPLAY_BROADSHEET
-	EPDWriteEngFont8x16("%c\r\n", KeySelect);
-	EPDFlushEngFont8x16();
+	EPDOutputString("%c\r\n", KeySelect);
+	EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
 	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
@@ -135,10 +135,10 @@ BOOL ChooseImageFromSDMMC(void)
 		return FALSE;
 	}
 
-	EdbgOutputDebugString("%c\r\n", KeySelect);
+	EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
 #ifdef	DISPLAY_BROADSHEET
-	EPDWriteEngFont8x16("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure" );
-	EPDFlushEngFont8x16();
+	EPDOutputString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
+	EPDOutputFlush();
 #endif	DISPLAY_BROADSHEET
 
 	return bRet;

@@ -174,7 +174,7 @@ static char g_szTextBuf[MAX_TEXT_LINE][MAX_TEXT_WIDTH] = {0,};
 static BYTE g_bTextXPos = 0, g_bTextLine = 0;
 static RECT g_rectText = {0, 0, LCD_WIDTH, LCD_HEIGHT};
 static IMAGEDATAS g_idsText = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rectText};
-void EPDWriteEngFont8x16(const char *fmt, ...)
+void EPDOutputString(const char *fmt, ...)
 {
 	char szLine[256], *buf;
 	char c, *p, tmp[11];	//int형의 최대크기의 길이는 10자리수 이므로
@@ -313,7 +313,10 @@ void EPDWriteEngFont8x16(const char *fmt, ...)
 		}
 	}
 }
-void EPDFlushEngFont8x16(void)
+void EPDOutputChar(const unsigned char ch)
+{
+}
+void EPDOutputFlush(void)
 {
 	int y, x, h, w;
 	unsigned char code, *ptr, font_data;
@@ -388,10 +391,10 @@ void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 {
 }
 
-void EPDWriteEngFont8x16(const char *fmt, ...)
+void EPDOutputString(const char *fmt, ...)
 {
 }
-void EPDFlushEngFont8x16(void)
+void EPDOutputFlush(void)
 {
 }
 
