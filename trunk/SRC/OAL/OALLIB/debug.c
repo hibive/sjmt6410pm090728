@@ -80,6 +80,19 @@ VOID OEMInitDebugSerial()
     if (g_pGPIOReg == NULL)
     {
         g_pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+#ifdef	EBOOK2_VER
+		g_pGPIOReg->GPAPUD &= ~(0xf<<4);	// Pull Up/Down Disable
+		g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<8)) | (0x11<<8); 	// GPA[3:2] set to output
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<2)) | (0x0<<2);		// Off : High Active
+
+		g_pGPIOReg->GPAPUD &= ~(0xf<<12);	// Pull Up/Down Disable
+		g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
+#if (EBOOK2_VER == 3)
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x2<<6);		// Off : R#[7], B[6]
+#elif (EBOOK2_VER == 2)
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x0<<6);		// Off : High Active
+#endif
+#endif	EBOOK2_VER
     }
 
     if (g_pSysConReg == NULL)
@@ -184,29 +197,12 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
     {
         // It is first time. Initialize SFR and GPIO set to output
         g_pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-
-#ifdef	EBOOK2_VER
-        g_pGPIOReg->GPAPUD &= ~(0xf<<4);	// Pull Up/Down Disable
-        g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<8)) | (0x11<<8);		// GPA[3:2] set to output
-        g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<2)) | (0x0<<2);		// Off : High Active
-
-        g_pGPIOReg->GPAPUD &= ~(0xf<<12);	// Pull Up/Down Disable
-        g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
-#if (EBOOK2_VER == 3)
-		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x2<<6);		// Off : R#[7], B[6]
-#elif (EBOOK2_VER == 2)
-        g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (0x0<<6);		// Off : High Active
-#endif
-#else	EBOOK2_VER
-        g_pGPIOReg->GPNPUD &= ~(0xff<<24);    // Pull Up/Down Disable
-        g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0xff<<24)) | (0x55<<24);    // GPN[15:12] set to output
-#endif	EBOOK2_VER
     }
     if(Index == -1)   // Control Descrete LEDs(Masked)
     {
         // Pattern can contain Mask Value and Value;
 #ifdef	EBOOK2_VER
-        g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~((HIWORD(Pattern)&0x1)<<7)) | ((LOWORD(Pattern)&0x1)<<7);
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~((HIWORD(Pattern)&0x1)<<6)) | ((LOWORD(Pattern)&0x1)<<6);
 #else	EBOOK2_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~((HIWORD(Pattern)&0xf)<<12)) | ((LOWORD(Pattern)&0xf)<<(12));
 #endif	EBOOK2_VER
@@ -214,7 +210,7 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
     else            
     {
 #ifdef	EBOOK2_VER
-        g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<7)) | ((Pattern&0x1)<<7);
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | ((Pattern&0x1)<<6);
 #else	EBOOK2_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~(0xf<<12)) | ((Pattern&0xf)<<12);    
 #endif	EBOOK2_VER

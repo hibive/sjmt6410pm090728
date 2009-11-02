@@ -1064,34 +1064,6 @@ BOOL OEMPlatformInit(void)
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-down disable
 #endif
 	pArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
-
-#ifdef	DISPLAY_BROADSHEET
-	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
-
-	EPDOutputString("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
-	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
-	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n",	S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
-
-	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n",
-		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
-
-	/*EPDOutputString("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
-	EPDOutputString("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
-
-	EPDOutputString("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
-	EPDOutputString("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
-	EPDOutputString("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
-	EPDOutputString("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
-	EPDOutputString("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
-	EPDOutputString("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
-	EPDOutputString("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
-	EPDOutputString("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);*/
-
-	EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
 }
 #endif	EBOOK2_VER
 
@@ -1133,7 +1105,7 @@ BOOL OEMPlatformInit(void)
 	}
 #ifdef	EBOOK2_VER
 {
-	BSP_ARGS *pArgs = (BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START;
+	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
 	CvtMAC2UUID(g_pBootCfg, pArgs);
 	EdbgOutputDebugString("pArgs->uuid : %s\r\n", pArgs->uuid);
 	EdbgOutputDebugString("pArgs->deviceId : %s\r\n", pArgs->deviceId);
@@ -1233,6 +1205,39 @@ BOOL OEMPlatformInit(void)
 	}
 
 	OALMSG(OAL_INFO, (TEXT("\r\n")));
+
+#ifdef	DISPLAY_BROADSHEET
+if (0x20 == KeySelect)
+{
+	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+
+	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+
+	EPDOutputString("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
+	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n", S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+
+	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n",
+		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
+
+	EPDOutputString("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
+	EPDOutputString("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
+
+	EPDOutputString("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
+	EPDOutputString("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
+	EPDOutputString("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
+	EPDOutputString("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
+	EPDOutputString("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
+	EPDOutputString("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);
+
+	EPDOutputFlush();
+}
+#endif	DISPLAY_BROADSHEET
 
 	// Boot or enter bootloader menu.
 	//

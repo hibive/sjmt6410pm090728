@@ -128,6 +128,7 @@ static BOOL displayShutDown(HDC hDC, LPCTSTR lpszFileName)
 {
 	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, FALSE, NULL, 0, NULL);
 	ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_FULL, NULL, 0, NULL);
+	ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
 	return displayBitmap(hDC, lpszFileName);
 }
 

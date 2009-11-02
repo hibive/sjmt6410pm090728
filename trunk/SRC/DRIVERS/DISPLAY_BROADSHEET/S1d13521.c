@@ -53,7 +53,7 @@ DWORD	g_dwDebugLevel = 0;
 
 static BOOL			g_bDirtyRect = FALSE;
 static DSPUPDSTATE	g_DspUpdState = DSPUPD_FULL;//DSPUPD_PART;//DSPUPD_FULL;
-static BOOL			g_bBorder = FALSE;
+static BOOL			g_bBorder = TRUE;
 static WAVEFORMMODE	g_WaveformMode = WAVEFORM_GU;
 static POWERSTATE	g_PowerState = POWER_SLEEP;
 static BYTE			g_sfmBuffer[FLASH_PAGE_SIZE];
@@ -904,6 +904,7 @@ void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
 	initChip();
 	initDisplay(TRUE);
 #else	_EBOOT_
+	g_bBorder = FALSE;
 	Sleep(1000);
 #endif	_EBOOT_
 }
