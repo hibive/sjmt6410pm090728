@@ -90,7 +90,7 @@ INT WINAPI PowerButtonThread(void)
         // Hold in loop
         // Loop out when the power button is released
 #ifdef	EBOOK2_VER
-#define	TIMEOUT_POWEROFF	300
+#define	TIMEOUT_POWEROFF	250
 #define	TIMEOUT_SLEEP		18
 		for (nBtnCount=0; nBtnCount<TIMEOUT_POWEROFF; nBtnCount++)
 		{

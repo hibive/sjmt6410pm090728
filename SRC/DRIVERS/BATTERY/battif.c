@@ -173,17 +173,22 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		g_PowerStatus.BatteryCurrent        = nAvgLevel;
 		g_PowerStatus.BatteryAverageCurrent = fBatteryState;
 
-		if (fCharging)	// LED_B[6] : ON
+		if (fCharging)
 		{
-			g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | (0x1<<6);
+			// LED_R#[7] : 1Sec ON, 1Sec OFF
+			g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~((nLEDCount%2)<<7);
 		}
-		else			// LED_B[6]
+		else
 		{
-			i = fChgDone ? 2 : 4;
-			if (nLEDCount % i)
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | (0x0<<6);
-			else
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | (0x1<<6);
+			if (fChgDone)	// LED_R#[7] : ON
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+			else	// LED_R#[7] : 1Sec ON, 2Sec OFF
+			{
+				if (nLEDCount % 3)
+					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+				else
+					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+			}
 		}
 		nLEDCount++;
 
@@ -210,10 +215,10 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 	// GPN[3:0] : CHARGING#(3), CHG_DONW#(2), USBPWR_OK#(1), DCPWR_OK#(0)
 	g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0xFF<<0)) | (0x00<<0);	// input mode
 	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
-	// LED_B - GPA[6] - Output(1), Pull-up/down disabled(0)
-	g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xf<<24)) | (0x1<<24);
-	g_pGPIOReg->GPAPUD &= ~(0x3<<12);
-	g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | (0<<6);
+	// LED_R# - GPA[7] - Output(1), Pull-up/down disabled(0)
+	g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xf<<28)) | (0x1<<28);
+	g_pGPIOReg->GPAPUD &= ~(0x3<<14);
+	g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<7)) | (1<<7);
 
 	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_ADC;
 	g_pADCReg = (volatile S3C6410_ADC_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_ADC_REG), FALSE);
