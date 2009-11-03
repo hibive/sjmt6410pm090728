@@ -83,13 +83,14 @@ static BOOL drawShutDown(HDC hDC, LPCTSTR lpszFileName)
 	BOOL bRet = FALSE;
 
 	ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_FULL, NULL, 0, NULL);
+	ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
 	bRet = drawImage(hDC, lpszFileName);
 	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, FALSE, NULL, 0, NULL);
 
 	return bRet;
 }
 
-static BOOL displayBitmap(HDC hDC, LPCTSTR lpszFileName)
+static BOOL dispImage(HDC hDC, LPCTSTR lpszFileName)
 {
 	HANDLE hFile = CreateFile(lpszFileName,
 		GENERIC_READ, FILE_SHARE_READ,
@@ -97,39 +98,39 @@ static BOOL displayBitmap(HDC hDC, LPCTSTR lpszFileName)
 	if (INVALID_HANDLE_VALUE == hFile)
 		return FALSE;
 
-	IMAGEFILES ifs;
-	ifs.nCount = (int)GetFileSize(hFile, NULL);
-	ifs.x = ifs.y = 0;
-	ifs.pBuffer = new BYTE [ifs.nCount];
-	if (NULL == ifs.pBuffer)
+	DISPIMAGE dispImg;
+	dispImg.nCount = (int)GetFileSize(hFile, NULL);
+	dispImg.x = dispImg.y = 0;
+	dispImg.pBuffer = new BYTE [dispImg.nCount];
+	if (NULL == dispImg.pBuffer)
 	{
 		CloseHandle(hFile);
 		return FALSE;
 	}
 
 	DWORD dwNumberOfBytesRead;
-	ReadFile(hFile, ifs.pBuffer, ifs.nCount, &dwNumberOfBytesRead, NULL);
-	if (ifs.nCount != dwNumberOfBytesRead)
+	ReadFile(hFile, dispImg.pBuffer, dispImg.nCount, &dwNumberOfBytesRead, NULL);
+	if (dispImg.nCount != dwNumberOfBytesRead)
 	{
 		CloseHandle(hFile);
-		delete [] ifs.pBuffer;
+		delete [] dispImg.pBuffer;
 		return FALSE;
 	}
 
-	int nRet = ExtEscape(hDC, DRVESC_DISPLAY_BITMAP, sizeof(IMAGEFILES), (LPCSTR)&ifs, 0, NULL);
-	RETAILMSG(1, (_T("+ DRVESC_DISPLAY_BITMAP %d\r\n"), nRet));
+	int nRet = ExtEscape(hDC, DRVESC_DISP_IMAGE, sizeof(DISPIMAGE), (LPCSTR)&dispImg, 0, NULL);
+	RETAILMSG(1, (_T("+ DRVESC_DISP_IMAGE %d\r\n"), nRet));
 
-	delete [] ifs.pBuffer;
+	delete [] dispImg.pBuffer;
 	CloseHandle(hFile);
 
 	return TRUE;
 }
-static BOOL displayShutDown(HDC hDC, LPCTSTR lpszFileName)
+static BOOL dispShutDown(HDC hDC, LPCTSTR lpszFileName)
 {
 	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, FALSE, NULL, 0, NULL);
 	ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_FULL, NULL, 0, NULL);
 	ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
-	return displayBitmap(hDC, lpszFileName);
+	return dispImage(hDC, lpszFileName);
 }
 
 
@@ -163,7 +164,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_SHUTDOWN_REG_STRING));
 			_tcscpy_s(szShutdown, _countof(szShutdown), lpszDefShutdown);
 		}
-		bRet = displayShutDown(hDC, szShutdown);
+		bRet = dispShutDown(hDC, szShutdown);
 		RETAILMSG(1, (_T("EBook2Command => SHUTDOWN(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
@@ -175,7 +176,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_LOWBATTERY_REG_STRING));
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), lpszDefLowbattery);
 		}
-		bRet = displayShutDown(hDC, szLowbattery);
+		bRet = dispShutDown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("EBook2Command => LOWBATTERY(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))

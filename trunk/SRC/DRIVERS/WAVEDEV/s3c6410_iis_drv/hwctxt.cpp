@@ -757,6 +757,10 @@ HardwareContext::SetOutputMute (BOOL bMute)
     m_bOutputMute = bMute;
 
 #if	(EBOOK2_VER == 3)
+	if (bMute)
+		WriteCodecRegister(5, 0x008);
+	else
+		WriteCodecRegister(5, 0x000);
 #elif	(EBOOK2_VER == 2)
 {
 	USHORT usData1, usData2, usData3, usData4;
@@ -1670,6 +1674,75 @@ BOOL
 HardwareContext::CodecPowerControl()
 {
 #if	(EBOOK2_VER == 3)
+	if( m_bInputDMARunning & m_bOutputDMARunning )
+	{
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
+	}
+	else if( m_bInputDMARunning )
+	{
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
+	}
+	else if( m_bOutputDMARunning )
+	{
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
+#if	1
+		WriteCodecRegister(28, 0x0F5);
+		WriteCodecRegister(26, 0x078/*0x060*/);
+		WriteCodecRegister(28, 0x094);
+		WriteCodecRegister(25, 0x080);
+		Sleep(100);
+		WriteCodecRegister(25, 0x0C0);
+		WriteCodecRegister(28, 0x010);
+		WriteCodecRegister(26, 0x1F8/*0x1E0*/);
+		WriteCodecRegister(47, 0x00C);
+
+		WriteCodecRegister(34, 0x100/*0x150*/);
+		WriteCodecRegister(37, 0x100/*0x150*/);
+		WriteCodecRegister( 2, 0x065);
+		WriteCodecRegister( 3, 0x165);
+		WriteCodecRegister(40, 0x065);
+		WriteCodecRegister(41, 0x165);
+			WriteCodecRegister(49, 0x0F7);
+		//WriteCodecRegister( 5, 0x000);
+#else
+		WriteCodecRegister(28, 0x094);
+		WriteCodecRegister(29, 0x040);
+		Sleep(400);
+		WriteCodecRegister(26, 0x078);
+		WriteCodecRegister(29, 0x000);
+		WriteCodecRegister(25, 0x080);
+		Sleep(100);
+		WriteCodecRegister(25, 0x0C0);
+		WriteCodecRegister(28, 0x000);
+
+		WriteCodecRegister(26, 0x1F8);
+		WriteCodecRegister(49, 0x0F7);
+		WriteCodecRegister( 5, 0x000);
+#endif
+	}
+	else
+	{
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC Off\n\r")));
+#if	1
+		//WriteCodecRegister( 5, 0x008);
+			WriteCodecRegister(26, 0x078);
+			WriteCodecRegister(49, 0x037);
+		WriteCodecRegister(28, 0x097/*0x094*/);
+		WriteCodecRegister(25, 0x000);
+		Sleep(400);
+		WriteCodecRegister(26, 0x000);
+		//WriteCodecRegister(15, 0x000);
+#else
+		WriteCodecRegister( 5, 0x008);
+		WriteCodecRegister(26, 0x078);
+		WriteCodecRegister(49, 0x037);
+		WriteCodecRegister(28, 0x097);
+		WriteCodecRegister(25, 0x000);
+		//Sleep(600);
+		WriteCodecRegister(26, 0x000);
+		//WriteCodecRegister(15, 0x000);
+#endif
+	}
 #elif	(EBOOK2_VER == 2)
 	if( m_bInputDMARunning & m_bOutputDMARunning )
 	{
@@ -1733,6 +1806,10 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
     if(channel & DMA_CH_OUT)
     {
 #if	(EBOOK2_VER == 3)
+		if (bMute)
+			WriteCodecRegister(5, 0x008);
+		else
+			WriteCodecRegister(5, 0x000);
 #elif	(EBOOK2_VER == 2)
 		USHORT usData1, usData2, usData3, usData4;
 		usData1 = ReadCodecRegister(0x34);
@@ -1906,6 +1983,11 @@ void HardwareContext::I2S_Init8580Driver()
     // Default setting value
     for(i=0; i<(sizeof(WM8580_Codec_Init_Table)/sizeof(unsigned int)/2); i++)
     {
+#ifdef	EBOOK2_VER
+    	if (0xFF == WM8580_Codec_Init_Table[i][0])
+			Sleep(WM8580_Codec_Init_Table[i][1]);
+		else
+#endif	EBOOK2_VER
         WriteCodecRegister(WM8580_Codec_Init_Table[i][0], WM8580_Codec_Init_Table[i][1]);
     }
 }

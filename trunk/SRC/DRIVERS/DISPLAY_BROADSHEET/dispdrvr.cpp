@@ -187,15 +187,15 @@ ULONG DispDrvrDrvEscape(SURFOBJ *pso, ULONG iEsc,
 static void workDirtyRect(RECT rect)
 {
 	BOOL bDirtyRect;
-	IMAGEDATAS ids;
+	IMAGERECT imgRect;
 
 	EnterCriticalSection(&g_CS);
 	bDirtyRect = S1d13521DrvEscape(DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
 	if (bDirtyRect)
 	{
-		ids.pBuffer = NULL;	// GPE BUFFER
-		ids.pRect = &rect;	// DIRTY RECT
-		S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGEDATAS), (PVOID)&ids, 0, NULL);
+		imgRect.pBuffer = NULL;	// GPE BUFFER
+		imgRect.pRect = &rect;	// DIRTY RECT
+		S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&imgRect, 0, NULL);
 	}
 	if (DRVESC_SET_DIRTYRECT == g_dwDebugLevel || DRVESC_GET_DIRTYRECT == g_dwDebugLevel)
 	{

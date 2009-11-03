@@ -41,17 +41,24 @@ typedef struct {
 	BYTE	bCmd;
 	int		nArgc;
 	WORD	pArgv[5];
-} CMDARGS, *PCMDARGS;
+} CMDARG, *PCMDARG;
 typedef struct {
 	PBYTE	pBuffer;	// NULL == GPE BUFFER
 	PRECT	pRect;		// NULL == GPE FULL
-} IMAGEDATAS, *PIMAGEDATAS;
+} IMAGERECT, *PIMAGERECT;
 typedef struct {
 	PBYTE		pBuffer;
 	int			nCount;
 	ALIGNIMAGE	Align;
 	int			x, y;
-} IMAGEFILES, *PIMAGEFILES;
+} DISPIMAGE, *PDISPIMAGE;
+typedef struct {
+	BOOL			bWriteImage;
+	PRECT			pRect;
+	DSPUPDSTATE		duState;
+	BOOL			bBorder;
+	WAVEFORMMODE	wfMode;
+} DISPUPDATE, *PDISPUPDATE;
 //////////////////////////////////////////////////////////////////////////////////
 // Microsoft reserves the range 0 to 0x10000 for its escape codes.
 enum {
@@ -74,7 +81,7 @@ enum {
 	DRVESC_SYSTEM_SLEEP,		// BOOL			[ret]
 	DRVESC_SYSTEM_WAKEUP,		// BOOL			[ret]
 	DRVESC_WAIT_HRDY,			// BOOL			[ret]
-	DRVESC_COMMAND,				// CMDARGS		[set]
+	DRVESC_COMMAND,				// CMDARG		[set]
 	DRVESC_READ_DATA,			// WORD			[ret]
 	DRVESC_WRITE_BURST,			// BLOB			[set]
 	DRVESC_WRITE_REG,			// DWORD		[in]	// wReg(hi), wData(lo)
@@ -83,11 +90,12 @@ enum {
 	DRVESC_READ_SFM,			// BLOB			[get]
 	DRVESC_GET_TEMPERATURE,		// WORD			[ret]
 
-	DRVESC_WRITE_IMAGE,			// IMAGEDATAS	[set]
+	DRVESC_WRITE_IMAGE,			// IMAGERECT	[set]
 	DRVESC_WRITE_UPDATE,		// RECT			[set]
-	DRVESC_IMAGE_UPDATE,		// IMAGEDATAS	[set]
+	DRVESC_IMAGE_UPDATE,		// IMAGERECT	[set]
 
-	DRVESC_DISPLAY_BITMAP,		// IMAGEFILES	[set]
+	DRVESC_DISP_IMAGE,			// DISPIMAGE	[set]
+	DRVESC_DISP_UPDATE,			// DISPUPDATE	[set]
 
 	DRVESC_MAX
 };
