@@ -114,7 +114,7 @@ void EPDInitialize(void)
 void EPDDisplayImage(EIMAGE_TYPE eImageType)
 {
 	BLOB RleData;
-	IMAGEFILES ifs;
+	DISPIMAGE dispImg;
 
 	S1d13521DrvEscape(DRVESC_SET_DSPUPDSTATE, DSPUPD_PART, NULL, 0, NULL);
 	switch (eImageType)
@@ -129,16 +129,16 @@ void EPDDisplayImage(EIMAGE_TYPE eImageType)
 		break;
 	}
 
-	ifs.nCount = rleDecode(RleData, (PBYTE)EBOOT_FRAMEBUFFER_UA_START);
-	ifs.pBuffer = (PBYTE)EBOOT_FRAMEBUFFER_UA_START;
-	ifs.Align = ALIGN_CENTER | ALIGN_VCENTER;
-	ifs.x = ifs.y = 0;
-	S1d13521DrvEscape(DRVESC_DISPLAY_BITMAP, sizeof(IMAGEFILES), (PVOID)&ifs, 0, NULL);
+	dispImg.nCount = rleDecode(RleData, (PBYTE)EBOOT_FRAMEBUFFER_UA_START);
+	dispImg.pBuffer = (PBYTE)EBOOT_FRAMEBUFFER_UA_START;
+	dispImg.Align = ALIGN_CENTER | ALIGN_VCENTER;
+	dispImg.x = dispImg.y = 0;
+	S1d13521DrvEscape(DRVESC_DISP_IMAGE, sizeof(DISPIMAGE), (PVOID)&dispImg, 0, NULL);
 }
 
 static BYTE g_bOldPercent = 0xFF;
 static RECT g_rect = {100+20, 320+138, 100+20, 320+138+11};
-static IMAGEDATAS g_ids = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rect};
+static IMAGERECT g_imgRect = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rect};
 void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 {
 	BYTE bPercent;
@@ -152,13 +152,13 @@ void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 		if (0 == bPercent)
 		{
 			S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
-			memset(g_ids.pBuffer, 0x00, LCD_FB_SIZE);	// black clear
+			memset(g_imgRect.pBuffer, 0x00, LCD_FB_SIZE);	// black clear
 		}
 		else if (0 == (bPercent%10))
 		{
-			g_ids.pRect->right = g_ids.pRect->left + 34;
-			S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGEDATAS), (PVOID)&g_ids, 0, NULL);
-			g_ids.pRect->left = g_ids.pRect->right;
+			g_imgRect.pRect->right = g_imgRect.pRect->left + 34;
+			S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&g_imgRect, 0, NULL);
+			g_imgRect.pRect->left = g_imgRect.pRect->right;
 		}
 		OEMWriteDebugLED(0, (bPercent%4));
 
@@ -173,7 +173,7 @@ void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 static char g_szTextBuf[MAX_TEXT_LINE][MAX_TEXT_WIDTH] = {0,};
 static BYTE g_bTextXPos = 0, g_bTextLine = 0;
 static RECT g_rectText = {0, 0, LCD_WIDTH, LCD_HEIGHT};
-static IMAGEDATAS g_idsText = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rectText};
+static IMAGERECT g_imgRectText = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rectText};
 void EPDOutputString(const char *fmt, ...)
 {
 	char szLine[256], *buf;
@@ -323,7 +323,7 @@ void EPDOutputFlush(void)
 
 	if (WAVEFORM_DU != S1d13521DrvEscape(DRVESC_GET_WAVEFORMMODE, 0, NULL, 0, NULL))
 		S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
-	memset(g_idsText.pBuffer, 0xFF, LCD_FB_SIZE);	// white clear
+	memset(g_imgRectText.pBuffer, 0xFF, LCD_FB_SIZE);	// white clear
 
 	for (y=0; y<MAX_TEXT_LINE; y++)
 	{
@@ -335,7 +335,7 @@ void EPDOutputFlush(void)
 			if (0x7F < code)
 				continue;
 
-			ptr = g_idsText.pBuffer + ((y*FONT_HEIGHT*LCD_WIDTH + x*FONT_WIDTH)>>1);
+			ptr = g_imgRectText.pBuffer + ((y*FONT_HEIGHT*LCD_WIDTH + x*FONT_WIDTH)>>1);
 			for (h=0; h<FONT_HEIGHT; h++)
 			{
 				font_data = (unsigned char)(Eng_Font_8x16[(code*FONT_HEIGHT) + h] >> 8);
@@ -362,7 +362,7 @@ void EPDOutputFlush(void)
 			}
 		}
 	}
-	S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGEDATAS), (PVOID)&g_idsText, 0, NULL);
+	S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&g_imgRectText, 0, NULL);
 }
 
 int EPDSerialFlashWrite(void)
@@ -384,7 +384,7 @@ int EPDSerialFlashWrite(void)
 void EPDInitialize(void)
 {
 }
-void EPDDisplayImage(EIMAGE_TYPE eImageType)
+void EPDDISPIMAGE(EIMAGE_TYPE eImageType)
 {
 }
 void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)

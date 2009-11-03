@@ -96,69 +96,84 @@ typedef enum
 unsigned int WM8580_Codec_Init_Table[][2] =
 {
 #if	(EBOOK2_VER == 3)
-//#define	USE_HEADPHONE
-#define	USE_SPEAKER
-#ifdef	USE_HEADPHONE
-	{ 0x1c, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
-	{ 0x1d, 0x040 },	// Enable DISOP
+#if	0
+	// Pouwer Up
+
+	// HP SPK setting
+	//{ 15, 0x000 },
+	{ 25, 0x0C0 },
+	{ 26, 0x198 },
+	{ 47, 0x00C },
+	{ 49, 0x0F7 },
+	{ 34, 0x100 },
+	{ 37, 0x100 },
+	{ 40, 0x179 },
+	{ 41, 0x179 },
+	{  5, 0x000 },
+	{ 41, 0x170 },
+	{ 40, 0x170 },
+	{ 40, 0x165 },
+	{ 41, 0x165 },
+	{ 26, 0x1F8 },
+	{ 34, 0x150 },
+	{ 37, 0x150 },
+	{  2, 0x165 },
+	{  3, 0x165 },
+	{ 40, 0x170 },
+	{ 40, 0x175 },
+	{ 41, 0x175 },
+
+	// DAC to ClassD 3.3V Slave
+	//{ 15, 0x000 },
+	{ 25, 0x0C0 },
+	{ 26, 0x198 },
+	{ 47, 0x00C },
+	{ 49, 0x0F7 },
+	{ 34, 0x100 },
+	{ 37, 0x100 },
+	{ 40, 0x179 },
+	{ 41, 0x179 },
+	{  5, 0x000 },
+#else
+	// Disable path to MIXERs
+	{ 32, 0x000 },	// Disable LMN1, LMP2
+	{ 33, 0x000 },	// Disable path to RBMIX
+	{ 43, 0x000 },	// Disable LIN to LBMIX
+	{ 44, 0x000 },	// Disable RIN to RBMIX
+	{ 45, 0x050 },	// Disable LB2LO
+	{ 46, 0x050 },	// Disable RB2RO
+	// Power up sequence
+	{ 28, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
+	{ 29, 0x040 },	// Enable DISOP
 	// Delay (400mS) to remove any residual charge on HP output
-	{ 0x1a, 0x061 },	// Enable LOUT1 and ROUT1 SPKL , SPKR disable
-	{ 0x1d, 0x000 },	// Enable DISOP
-	{ 0x19, 0x0c0 },	// Enable VMID SEL = 2x50K Ohm Dividere
-	// Delay (50mSeconds) to allow HP amps to settle
-	{ 0x1c, 0x001 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
-	{ 0x1a, 0x1d1 },	// Enable LOUT1 and ROUT1
-	{ 0x17, 0x1d1 },	// Slow Clock Enable
-	{ 0x2f, 0x00c },	// Enable left and right output mixers
-	{ 0x22, 0x150 },	// Enable Left DAC to left mixer (LINPUT3 to Output Mixer)
-	{ 0x25, 0x150 },	// Enable Right DAC to right mixer
-	//General purpose input /output
-	{ 0x09, 0x040 },	// GPIO pin setting
-	{ 0x30, 0x002 },	// ADCLRC /GPIO set
-	//HP jack dectect cap-less mode
-	{ 0x18, 0x060 },	// HPDETECT High =Headphone, switch enable
-	{ 0x1b, 0x00d },	// HPDETECT HIGH = Speaker /ALC Sample Rate 8K
-	{ 0x0a, 0x0fe },	// LDACVOL
-	{ 0x0b, 0x0fe },	// LDACVOL
-	{ 0x04, 0x000 },	// DACDIV, CLKSEL
-	{ 0x07, 0x000 },	// 
-	{ 0x02, 0x17f },	// LOUT1VOL (HP) = -20dB
-	{ 0x03, 0x17f },	// ROUT1VOL (HP) = -20dB, Enable OUT1VU, load volume settings to both left and right channels
-	{ 0x28, 0x17f },	// LOUT2VOL (HP) = -20dB
-	{ 0x29, 0x17f },	// ROUT2VOL (HP) = -20dB, Enable OUT2VU, load volume settings to both left and right channels
-	{ 0x33, 0x0cc },	// Left and Right Speakers Enabled
-	{ 0x07, 0x002 },	// 
-	{ 0x31, 0x0f7 },	// Left and Right Speakers Enabled
-	{ 0x05, 0x004 },	// DAC Digital Soft Mute = Unmute (Delay from R25 = 080 to unmute >250mS)
-#endif	USE_HEADPHONE
-#ifdef	USE_SPEAKER
-	{ 0x1c, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
-	{ 0x1d, 0x040 },	// Enable DISOP
-	// Delay (400mS) to remove any residual charge on HP output
-	{ 0x1a, 0x07f },	// Enable LOUT1 and ROUT1
-	{ 0x1d, 0x000 },	// Enable DISOP
-	{ 0x19, 0x0c0 },	// Enable VMID SEL = 2x50K Ohm Dividere
-	// Delay (50mSeconds) to allow HP amps to settle
-	{ 0x1c, 0x001 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
-	{ 0x1a, 0x1f8 },	// Enable LOUT1 and ROUT1
-	{ 0x17, 0x1d1 },	// 
-	{ 0x2f, 0x00c },	// Enable left and right output mixers
-	{ 0x22, 0x150 },	// Enable Left DAC to left mixer (LINPUT3 to Output Mixer)
-	{ 0x25, 0x150 },	// Enable Right DAC to right mixer
-	{ 0x30, 0x00a },	// JD2 used for Jack Detect Input
-	{ 0x18, 0x040 },	// HPDETECT HIGH = Speaker
-	{ 0x1b, 0x008 },	// HPDETECT HIGH = Speaker
-	{ 0x04, 0x000 },	// DACDIV, CLKSEL
-	{ 0x07, 0x000 },	// 
-	{ 0x02, 0x179 },	// LOUT1VOL (HP) = -20dB
-	{ 0x03, 0x179 },	// ROUT1VOL (HP) = -20dB, Enable OUT1VU, load volume settings to both left and right channels
-	{ 0x28, 0x179 },	// LOUT2VOL (HP) = -20dB
-	{ 0x29, 0x179 },	// ROUT2VOL (HP) = -20dB, Enable OUT2VU, load volume settings to both left and right channels
-	{ 0x33, 0x0cc },	// Left and Right Speakers Enabled
-	{ 0x07, 0x002 },	// 
-	{ 0x31, 0x0f7 },	// Left and Right Speakers Enabled
-	{ 0x05, 0x004 },	// DAC Digital Soft Mute = Unmute (Delay from R25 = 080 to unmute >250mS)
-#endif	USE_SPEAKER
+	{ 0xFF, 400 },
+	{ 26, 0x078 },	// Enable L/ROUT1, SPKL/R
+	{ 29, 0x000 },	// Disable DISOP
+	{ 25, 0x080 },	// Enable VMID=50K
+	// Delay (100mS)
+	{ 0xFF, 100 },
+	{ 25, 0x0C0 },	// Enable Vref
+	{ 28, 0x000 },	// Disable POBCTRL, SOFT_ST, BUFDCOPEN, Disable HPSTBY
+
+	{ 26, 0x1F8 },	// Enable DACL, DACR, SPKL/R, HPLR
+	{ 23, 0x1C1 },	// Enable DMONOMIX, Thermal shutdown enabled (R23=0x1C0 : Disable DMONOMIX)
+	{ 47, 0x00C },	// Enable left/right output mixer
+	{ 34, 0x100 },	// Left DAC to left output mixer enabled (LD2LO), 0dB
+	{ 37, 0x100 },	// Right DAC to right output mixer enabled (RD2RO), 0dB
+	{ 40, 0x179 },	// LSPK Vol = 0dB, volume update enabled
+	{ 41, 0x179 },	// RSPK Vol = 0dB, volume update enabled
+	{  2, 0x179 },	// LHP Vol = 0dB, volume update enabled
+	{  3, 0x179 },	// RHP Vol = 0dB, volume update enabled
+	{ 51, 0x08D },	// DCGAIN=1.27x and ACGAIN=1.8 with SPKVDD=4.2V
+	//{ 51, 0x09D },	// DCGAIN = 1.52x (+3.6dB) and ACGAIN = 1.8x with SPKVDD=5V
+	//{ 51, 0x084 },	// DCGAIN=1.0x and ACGAIN=1.67 with SPKVDD=3.6V)
+	{  7, 0x002 },	// I2S, 16bit, Slave mode ( For Master mode : R7=0x042)
+	{ 49, 0x0F7 },	// L/R Speakers Enabled
+	{  5, 0x000 },	// Unmute DAC digital soft mute
+
+	{ 24, 0x060 },	// HPSWEN Enable, HPSWPOL High
+	{  6, 0x00E },	// DACSMM, DACMR, DACSLOPE
+#endif
 #elif	(EBOOK2_VER == 2)
 	{ 0x01, 0x01D },	// Power Management 1
 	{ 0x02, 0x195 },	// Power Management 2
