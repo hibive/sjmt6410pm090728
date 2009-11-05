@@ -96,84 +96,25 @@ typedef enum
 unsigned int WM8580_Codec_Init_Table[][2] =
 {
 #if	(EBOOK2_VER == 3)
-#if	0
-	// Pouwer Up
-
-	// HP SPK setting
-	//{ 15, 0x000 },
-	{ 25, 0x0C0 },
-	{ 26, 0x198 },
-	{ 47, 0x00C },
-	{ 49, 0x0F7 },
-	{ 34, 0x100 },
-	{ 37, 0x100 },
-	{ 40, 0x179 },
-	{ 41, 0x179 },
-	{  5, 0x000 },
-	{ 41, 0x170 },
-	{ 40, 0x170 },
-	{ 40, 0x165 },
-	{ 41, 0x165 },
-	{ 26, 0x1F8 },
-	{ 34, 0x150 },
-	{ 37, 0x150 },
-	{  2, 0x165 },
-	{  3, 0x165 },
-	{ 40, 0x170 },
-	{ 40, 0x175 },
-	{ 41, 0x175 },
-
-	// DAC to ClassD 3.3V Slave
-	//{ 15, 0x000 },
-	{ 25, 0x0C0 },
-	{ 26, 0x198 },
-	{ 47, 0x00C },
-	{ 49, 0x0F7 },
-	{ 34, 0x100 },
-	{ 37, 0x100 },
-	{ 40, 0x179 },
-	{ 41, 0x179 },
-	{  5, 0x000 },
-#else
-	// Disable path to MIXERs
-	{ 32, 0x000 },	// Disable LMN1, LMP2
-	{ 33, 0x000 },	// Disable path to RBMIX
-	{ 43, 0x000 },	// Disable LIN to LBMIX
-	{ 44, 0x000 },	// Disable RIN to RBMIX
-	{ 45, 0x050 },	// Disable LB2LO
-	{ 46, 0x050 },	// Disable RB2RO
-	// Power up sequence
-	{ 28, 0x094 },	// Enable POBCTRL, SOFT_ST and BUFDCOPEN
-	{ 29, 0x040 },	// Enable DISOP
-	// Delay (400mS) to remove any residual charge on HP output
-	{ 0xFF, 400 },
-	{ 26, 0x078 },	// Enable L/ROUT1, SPKL/R
-	{ 29, 0x000 },	// Disable DISOP
-	{ 25, 0x080 },	// Enable VMID=50K
-	// Delay (100mS)
-	{ 0xFF, 100 },
-	{ 25, 0x0C0 },	// Enable Vref
-	{ 28, 0x000 },	// Disable POBCTRL, SOFT_ST, BUFDCOPEN, Disable HPSTBY
-
-	{ 26, 0x1F8 },	// Enable DACL, DACR, SPKL/R, HPLR
+	{  9, 0x040 },	// GPIO Pin
 	{ 23, 0x1C1 },	// Enable DMONOMIX, Thermal shutdown enabled (R23=0x1C0 : Disable DMONOMIX)
-	{ 47, 0x00C },	// Enable left/right output mixer
-	{ 34, 0x100 },	// Left DAC to left output mixer enabled (LD2LO), 0dB
-	{ 37, 0x100 },	// Right DAC to right output mixer enabled (RD2RO), 0dB
-	{ 40, 0x179 },	// LSPK Vol = 0dB, volume update enabled
-	{ 41, 0x179 },	// RSPK Vol = 0dB, volume update enabled
-	{  2, 0x179 },	// LHP Vol = 0dB, volume update enabled
-	{  3, 0x179 },	// RHP Vol = 0dB, volume update enabled
 	{ 51, 0x08D },	// DCGAIN=1.27x and ACGAIN=1.8 with SPKVDD=4.2V
 	//{ 51, 0x09D },	// DCGAIN = 1.52x (+3.6dB) and ACGAIN = 1.8x with SPKVDD=5V
 	//{ 51, 0x084 },	// DCGAIN=1.0x and ACGAIN=1.67 with SPKVDD=3.6V)
 	{  7, 0x002 },	// I2S, 16bit, Slave mode ( For Master mode : R7=0x042)
-	{ 49, 0x0F7 },	// L/R Speakers Enabled
-	{  5, 0x000 },	// Unmute DAC digital soft mute
-
 	{ 24, 0x060 },	// HPSWEN Enable, HPSWPOL High
 	{  6, 0x00E },	// DACSMM, DACMR, DACSLOPE
-#endif
+
+	{ 34, 0x100 },	// Left DAC to left output mixer enabled (LD2LO), 0dB
+	{ 37, 0x100 },	// Right DAC to right output mixer enabled (RD2RO), 0dB
+	{  2, 0x170 },	// LHP Vol = 0dB, volume update enabled
+	{  3, 0x170 },	// RHP Vol = 0dB, volume update enabled
+	{ 40, 0x179 },	// LSPK Vol = 0dB, volume update enabled
+	{ 41, 0x179 },	// RSPK Vol = 0dB, volume update enabled
+
+	{ 32, 0x128 },	// LINPUT1 to PGA(LMN1), Connect left input PGA to left input boost(LMIC2B)
+	{  0, 0x13F },	// Unmute left input PGA(LINMUTE), Left Input PGA Vol 0dB, Volume Update
+	{ 21, 0x1C3 },	// Left ADC Vol 0dB, Volume Update
 #elif	(EBOOK2_VER == 2)
 	{ 0x01, 0x01D },	// Power Management 1
 	{ 0x02, 0x195 },	// Power Management 2

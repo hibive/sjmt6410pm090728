@@ -67,6 +67,9 @@ DBGPARAM dpCurSettings =                                \
 INT WINAPI PowerButtonThread(void)
 {
     DWORD nBtnCount = 0;
+#ifdef	EBOOK2_VER
+	DWORD dwTickStart, dwTickCount;
+#endif	EBOOK2_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR:INF] ++%s()\r\n"), _T(__FUNCTION__)));
 
@@ -90,95 +93,48 @@ INT WINAPI PowerButtonThread(void)
         // Hold in loop
         // Loop out when the power button is released
 #ifdef	EBOOK2_VER
-#define	TIMEOUT_POWEROFF	250
-#define	TIMEOUT_SLEEP		18
-		for (nBtnCount=0; nBtnCount<TIMEOUT_POWEROFF; nBtnCount++)
-		{
-			if (FALSE == Button_pwrbtn_is_pushed())
-				break;
-			Sleep(10);
-		}
-#else	EBOOK2_VER
+		dwTickStart = GetTickCount();
+#endif	EBOOK2_VER
         while(Button_pwrbtn_is_pushed())
         {
             // Wait for Button Released...
             Sleep(10);
-        }
+#ifdef	EBOOK2_VER
+#define	TIMEOUT_POWEROFF	2000	//[mSec]
+			dwTickCount = GetTickCount() - dwTickStart;
+			if (TIMEOUT_POWEROFF <= dwTickCount)	// GPC[3] - PWRHOLD(3)
+			{
+				LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
+				PROCESS_INFORMATION pi;
+				ZeroMemory(&pi,sizeof(pi));
+				if (CreateProcess(lpszPathName,
+								  _T("SHUTDOWN"),	// pszCmdLine
+								  NULL,	// psaProcess
+								  NULL,	// psaThread
+								  FALSE,// fInheritHandle
+								  0,	// fdwCreate
+								  NULL,	// pvEnvironment
+								  NULL,	// pszCurDir
+								  NULL,	// psiStartInfo
+								  &pi))	// pProcInfo
+				{
+					WaitForSingleObject(pi.hThread, 3000);
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+
+				SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
+				KernelIoControl(IOCTL_HAL_EBOOK2_SHUTDOWN, NULL, 0, NULL, 0, NULL);
+			}
 #endif	EBOOK2_VER
+        }
 #endif
 
         nBtnCount++;
         RETAILMSG(PWR_ZONE_EVENT_HOOK, (_T("[PWR] Power Button Event [%d]\r\n"), nBtnCount));
 
-#ifdef	EBOOK2_VER
-		if (TIMEOUT_POWEROFF <= nBtnCount)	// GPC[3] - PWRHOLD(3)
-		{
-			LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
-			PROCESS_INFORMATION pi;
-
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("SHUTDOWN"),	// pszCmdLine
-							  NULL,	// psaProcess
-							  NULL,	// psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL,	// pvEnvironment
-							  NULL,	// pszCurDir
-							  NULL,	// psiStartInfo
-							  &pi))	// pProcInfo
-			{
-				WaitForSingleObject(pi.hThread, 3000);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-			KernelIoControl(IOCTL_HAL_EBOOK2_SHUTDOWN, NULL, 0, NULL, 0, NULL);
-		}
-		else if (TIMEOUT_SLEEP < nBtnCount)
-		{
-			LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
-			PROCESS_INFORMATION pi;
-
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("SLEEP"),	// pszCmdLine
-							  NULL,	// psaProcess
-							  NULL,	// psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL,	// pvEnvironment
-							  NULL,	// pszCurDir
-							  NULL,	// psiStartInfo
-							  &pi))	// pProcInfo
-			{
-				WaitForSingleObject(pi.hThread, 3000);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-
-			SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
-
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("WAKEUP"),	// pszCmdLine
-							  NULL,	// psaProcess
-							  NULL,	// psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL,	// pvEnvironment
-							  NULL,	// pszCurDir
-							  NULL,	// psiStartInfo
-							  &pi))	// pProcInfo
-			{
-				WaitForSingleObject(pi.hThread, 3000);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-		}
-#else	EBOOK2_VER
         // In the Windows Mobile, "PowerPolicyNotify(PPN_POWERBUTTONPRESSED, 0);" can be used
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
-#endif	EBOOK2_VER
 
         Button_pwrbtn_enable_interrupt();            // UnMask EINT
 #if (SLEEP_AGING_TEST)
