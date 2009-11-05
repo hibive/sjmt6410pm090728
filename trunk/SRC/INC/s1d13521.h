@@ -78,8 +78,8 @@ enum {
 	DRVESC_SET_POWERSTATE,		// POWERSTATE	[in,ret]
 	DRVESC_GET_POWERSTATE,		// POWERSTATE	[ret]
 
-	DRVESC_SYSTEM_SLEEP,		// BOOL			[ret]
-	DRVESC_SYSTEM_WAKEUP,		// BOOL			[ret]
+	DRVESC_SYSTEM_SLEEP,		// ...Removed...[ret]
+	DRVESC_SYSTEM_WAKEUP,		// ...Removed...[ret]
 	DRVESC_WAIT_HRDY,			// BOOL			[ret]
 	DRVESC_COMMAND,				// CMDARG		[set]
 	DRVESC_READ_DATA,			// WORD			[ret]

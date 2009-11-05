@@ -179,16 +179,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		bRet = dispShutDown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("EBook2Command => LOWBATTERY(%d)\r\n"), bRet));
 	}
-	else if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
-	{
-		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, FALSE, NULL, 0, NULL);
-		RETAILMSG(1, (_T("EBook2Command => SLEEP\r\n")));
-	}
-	else if (0 == _tcsnicmp(_T("WAKEUP"), argv[1], _tcslen(_T("WAKEUP"))))
-	{
-		ExtEscape(hDC, DRVESC_SYSTEM_WAKEUP, TRUE, NULL, 0, NULL);
-		RETAILMSG(1, (_T("EBook2Command => WAKEUP\r\n")));
-	}
+
 	else if (0 == _tcsnicmp(_T("DIRTYRECT"), argv[1], _tcslen(_T("DIRTYRECT"))))
 	{
 		BOOL bSet = -1;
@@ -230,7 +221,6 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		RETAILMSG(1, (_T("EBook2Command => WAVEFORMMODE(%d)\r\n"), wfm));
 	}
 
-
 	// ...
 	ReleaseDC(HWND_DESKTOP, hDC);
 
@@ -240,8 +230,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 
 // _T("\\Windows\\EBook2Command.exe SHUTDOWN");
 // _T("\\Windows\\EBook2Command.exe LOWBATTERY");
-// _T("\\Windows\\EBook2Command.exe SLEEP");
-// _T("\\Windows\\EBook2Command.exe WAKEUP");
+
 // _T("\\Windows\\EBook2Command.exe DIRTYRECT [0(off) or 1(on)]");
 // _T("\\Windows\\EBook2Command.exe DSPUPDSTATE [0(full) or 1(part)]");
 // _T("\\Windows\\EBook2Command.exe BORDER [0(off) or 1(on)]");

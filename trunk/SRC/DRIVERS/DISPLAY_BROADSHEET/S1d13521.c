@@ -984,8 +984,21 @@ void S1d13521SetDibBuffer(void *pv)
 
 void S1d13521PowerHandler(BOOL bOff)
 {
-	if (bOff && POWER_SLEEP != g_SleepPowerState)
-		OUTREG16(&g_pS1D13521Reg->CMD, 0x05);	// SLP
+	if (bOff)
+	{
+		g_bSleepDirtyRect = g_bDirtyRect;
+		g_bDirtyRect = FALSE;
+
+		g_SleepPowerState = g_PowerState;
+		if (POWER_SLEEP != g_SleepPowerState)
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x05);	// SLP
+		g_PowerState = POWER_SLEEP;
+	}
+	else
+	{
+		g_bDirtyRect = g_bSleepDirtyRect;
+		g_PowerState = g_SleepPowerState;
+	}
 }
 
 ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID pvOut)
@@ -1030,19 +1043,8 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return g_PowerState;
 
 	case DRVESC_SYSTEM_SLEEP:
-		{
-			g_bSleepDirtyRect = g_bDirtyRect;
-			g_SleepPowerState = g_PowerState;
-
-			g_bDirtyRect = FALSE;
-			g_PowerState = POWER_SLEEP;
-		}
 		return 0;
 	case DRVESC_SYSTEM_WAKEUP:
-		{
-			g_bDirtyRect = g_bSleepDirtyRect;
-			g_PowerState = g_SleepPowerState;
-		}
 		return 0;
 
 	case DRVESC_WAIT_HRDY:
