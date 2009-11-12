@@ -1,0 +1,14 @@
+
+LIBRARY	Acceleration
+
+EXPORTS ACC_Init
+	ACC_Deinit
+	ACC_Open
+	ACC_Close
+	ACC_IOControl
+	ACC_PowerDown
+	ACC_PowerUp
+	ACC_Read
+	ACC_Write
+	ACC_Seek
+
