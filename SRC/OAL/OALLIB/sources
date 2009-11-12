@@ -61,6 +61,7 @@ SOURCELIBS=$(SOURCELIBS) \
 
 SOURCES =    \
     debug.c    \
+    i2c_polling.c	\
     init.c        \
     intr.c    \
     ioctl.c    \

@@ -48,5 +48,4 @@ TARGETLIBS= \
 SOURCES = \
     usbfn.cpp \
     s3c6410otgdevice.cpp \
-    s3c6410otgpower.cpp \
-
+ 

@@ -286,13 +286,21 @@ ENDIF BSP_NOBATTERY !
 ; @CESYSGEN ENDIF CE_MODULES_BATTDRVR
 ;---------------------------------------------------------------------------------------
 
-IF BSP_POCKETMORY
-	ONDisk.dll	    			$(_FLATRELEASEDIR)\ONDisk.dll			    $(XIPKERNEL)	SHK
-ENDIF BSP_POCKETMORY
-
+;------------ Wifi Driver ---------------------------------------------------
 IF BSP_NOWIFI !
 	SDIO8686.dll			$(_FLATRELEASEDIR)\SDIO8686.dll				NK	SHK
 ENDIF BSP_NOWIFI !
+;----------------------------------------------------------------------------
+
+;------------ Acceleration Driver -------------------------------------------
+IF BSP_ACCELERATION
+	s3c6410_acceleration.dll	$(_FLATRELEASEDIR)\s3c6410_acceleration.dll		NK	SHK
+ENDIF BSP_ACCELERATION
+;----------------------------------------------------------------------------
+
+IF BSP_POCKETMORY
+	ONDisk.dll	    			$(_FLATRELEASEDIR)\ONDisk.dll			    $(XIPKERNEL)	SHK
+ENDIF BSP_POCKETMORY
 ; -------------------------------------------------------------------------------------     
 
 ; @CESYSGEN ENDIF CE_MODULES_DEVICE

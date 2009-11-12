@@ -21,11 +21,8 @@
 
 #define USB_DD_VERSION 100
 
+#ifndef	EBOOK2_VER
 static volatile BSP_ARGS *v_gBspArgs;
-
-#ifdef	EBOOK2_VER
-extern void IIC_Initialize(volatile BSP_ARGS *pBspArgs);
-extern void IIC_OtgPower(BOOL bOn);
 #endif	EBOOK2_VER
 
 // Caution: Turning on more debug zones can cause STALLs due
@@ -1430,6 +1427,7 @@ DWORD MapRegisterSet(
     g_pUDCBase = pVMem + BASE_REGISTER_OFFSET;
     DEBUGMSG(UFN_ZONE_INIT, (_T("%s MmMapIoSpace, pVMem:%x\r\n"), pszFname, pVMem));
 
+#ifndef	EBOOK2_VER
     ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;  
     v_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
     if (v_gBspArgs == NULL)
@@ -1438,6 +1436,7 @@ DWORD MapRegisterSet(
         RETAILMSG(UFN_ZONE_ERROR, (_T("%s MmMapIoSpace: FAILED\r\n"), pszFname));
         goto CleanUp;
     }
+#endif	EBOOK2_VER
 
 CleanUp:
 
@@ -1454,12 +1453,14 @@ CleanUp:
             MmUnmapIoSpace((PVOID)pVMem, OTG_LINK_REG_SIZE);
             pVMem = NULL;
         }
-        
-        if (v_gBspArgs)
+
+#ifndef	EBOOK2_VER
+		if (v_gBspArgs)
             {
             MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
                v_gBspArgs = NULL;
             }
+#endif	EBOOK2_VER
     }
 
     FUNCTION_LEAVE_MSG();
@@ -1497,11 +1498,13 @@ UnmapRegisterSet(
         g_pUDCBase = NULL;
     }    
 
+#ifndef	EBOOK2_VER
     if (v_gBspArgs)
     {
         MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
         v_gBspArgs = NULL;
     }
+#endif	EBOOK2_VER
 }
 
 
@@ -1809,10 +1812,6 @@ SetOtgDevicePower (
 {
     if (cpsNew == D0)
     {
-#ifdef	EBOOK2_VER
-		IIC_OtgPower(TRUE);
-#endif	EBOOK2_VER
-
         RETAILMSG(UFN_ZONE_POWER,(_T("[UFNPDD] USB_POWER : D0\r\n")));
         InterruptDone(pContext->dwSysIntr);
 
@@ -1835,10 +1834,6 @@ SetOtgDevicePower (
         RETAILMSG(UFN_ZONE_POWER,(_T("[UFNPDD] USB_POWER : D4\r\n")));
         SetSoftDisconnect();        
         
-#ifdef	EBOOK2_VER
-		IIC_OtgPower(FALSE);
-#endif	EBOOK2_VER
-
         pContext->pSYSCONregs->HCLK_GATE &= ~OTG_HCLK_EN;    //OTG HClk disable
     }
     return TRUE;
@@ -2067,10 +2062,6 @@ UfnPdd_Start(
         pContext->fRunning = TRUE;
         dwRet = ERROR_SUCCESS;
     }while(FALSE);
-
-#ifdef	EBOOK2_VER
-	IIC_Initialize(v_gBspArgs);
-#endif	EBOOK2_VER
 
     if (pContext->fRunning == FALSE)
     {
