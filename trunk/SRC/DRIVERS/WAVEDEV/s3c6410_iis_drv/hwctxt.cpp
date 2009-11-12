@@ -130,7 +130,7 @@ HardwareContext::Initialize(DWORD Index)
 {
     BOOL bRet;
     DWORD dwErr, bytes;
-    UINT32 uiIICDelay;
+    UINT32 uiIICClock, uiIICDelay;
 
     if (m_bInitialized)
     {
@@ -192,9 +192,17 @@ HardwareContext::Initialize(DWORD Index)
         WAV_ERR((_T("[WAV:ERR] Initialize() : I2C0: Device Open Failed = 0x%08x\n\r"), dwErr));
         goto CleanUp;
     }
-    
+
+	uiIICClock = 500000;	// Max 526 KHz
+	bRet = DeviceIoControl(m_hI2C, IOCTL_IIC_SET_CLOCK,
+		&uiIICClock, sizeof(UINT32), NULL, 0, (LPDWORD)&bytes, NULL);
+	if (bRet == FALSE)
+	{
+		WAV_ERR((_T("[WAV:ERR] Initialize() : I2C0: Device Set Clock Failed.\n\r")));
+		goto CleanUp;
+	} 
+
     uiIICDelay = Clk_0;
-    
     bRet = DeviceIoControl(m_hI2C,
                       IOCTL_IIC_SET_DELAY, 
                       &uiIICDelay, sizeof(UINT32), 

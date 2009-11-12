@@ -31,6 +31,11 @@ extern INT32 NAND_Init(VOID);
 static void BSPConfigGPIOforPowerOff(void);
 static void S3C6410_WakeUpSource_Configure(void);
 static void S3C6410_WakeUpSource_Detect(void);
+#ifdef	EBOOK2_VER
+#define	PMIC_ADDR	0xCC
+extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
+extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
+#endif	EBOOK2_VER
 
 VOID BSPPowerOff()
 {
@@ -45,6 +50,24 @@ VOID BSPPowerOff()
     pADCReg = (S3C6410_ADC_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_ADC, FALSE);
     pRTCReg = (S3C6410_RTC_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_RTC, FALSE);
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
+	
+#ifdef	EBOOK2_VER
+	{
+		unsigned char buf[2];
+		IICReadByte(PMIC_ADDR, 0x00, buf);
+		if ((buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+		{
+			buf[0] &= ~(1<<3);	// off
+			IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+		}
+		IICReadByte(PMIC_ADDR, 0x01, buf);
+		if ((buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+		{
+			buf[0] &= ~(1<<5);	// off
+			IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+		}
+	}
+#endif	EBOOK2_VER
 
     //-----------------------------
     // Wait till NAND Erase/Write operation is finished
@@ -78,6 +101,24 @@ VOID BSPPowerOff()
 VOID BSPPowerOn()
 {
     OALMSG(OAL_FUNC, (TEXT("++BSPPowerOn()\n")));
+
+#ifdef	EBOOK2_VER
+{
+	unsigned char buf[2];
+	IICReadByte(PMIC_ADDR, 0x00, buf);
+	if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+	{
+		buf[0] |= (1<<3);	// on
+		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+	}
+	IICReadByte(PMIC_ADDR, 0x01, buf);
+	if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+	{
+		buf[0] |= (1<<5);	// on
+		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+	}
+}
+#endif	EBOOK2_VER
 
 // The OEM can add BSP specific procedure here when system power up
     //----------------------------

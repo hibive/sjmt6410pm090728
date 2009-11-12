@@ -43,8 +43,6 @@ typedef struct
 	BOOL	bSDMMCCH0CardDetect;
 #endif
 	BOOL	bKeyHold;
-	BYTE	bPMICRegister_00;
-	BYTE	bPMICRegister_01;
 #else	EBOOK2_VER
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.
     DWORD                 g_SDCardState;            //For USB MSF , check SD Card insert & remove.

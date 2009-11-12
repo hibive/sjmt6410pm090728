@@ -1,15 +1,9 @@
 
-#include <windows.h>
-#include <iic.h>
 #include <bsp.h>
 
 
-#define MYMSG(x)	RETAILMSG(0, x)
-#define MYERR(x)	RETAILMSG(1, x)
-
-
-#define	IIC_PMIC_ADDR	0xCC
 #define IIC_POWER_ON	(1<<17)	// PCLK_GATE bit 17
+
 #define	IIC_WRDATA		(1)
 #define	IIC_POLLACK		(2)
 #define	IIC_RDDATA		(3)
@@ -18,7 +12,13 @@
 
 
 static volatile S3C6410_IIC_REG *g_pIICReg = NULL;
-static volatile BSP_ARGS *g_pBspArgs = NULL;
+static volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
+static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
+
+static UINT32 g_GPBPUD = 0;
+static UINT32 g_GPBCON = 0;
+static UINT32 g_PCLK_GATE = 0;
+
 static UINT8 g_iicData[IIC_BUFSIZE];
 static int g_iicDataCount = 0;
 static int g_iicStatus = 0;
@@ -94,24 +94,50 @@ static void iicPolling(void)
 	}
 }
 
-void IIC_Initialize(volatile BSP_ARGS *pBspArgs)
+
+static void iicAlloc(void)
 {
-	PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
+	if (NULL == g_pIICReg)
+	    g_pIICReg = (S3C6410_IIC_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_IICBUS, FALSE);
 
-	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_IICBUS;
-	g_pIICReg = (S3C6410_IIC_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_IIC_REG), FALSE);
+	if (NULL == g_pSysConReg)
+		g_pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
 
-	g_pBspArgs = pBspArgs;
+	if (NULL == g_pGPIOReg)
+	    g_pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 }
-void IIC_WriteRegister(UCHAR Reg, UCHAR Val)
+static void iicSavePort(void)
 {
+	g_GPBPUD = g_pGPIOReg->GPBPUD;
+	g_GPBCON = g_pGPIOReg->GPBCON;
+	g_PCLK_GATE = g_pSysConReg->PCLK_GATE;
+
+	g_pGPIOReg->GPBPUD = (g_pGPIOReg->GPBPUD & ~(0xF<<10)) | (0x0<<10);	// Pull-up/down disable
+	g_pGPIOReg->GPBCON = (g_pGPIOReg->GPBCON & ~(0xFF<<20)) | (0x22<<20);	// GPB6:IICSDA , GPB5:IICSCL
+	g_pSysConReg->PCLK_GATE |= IIC_POWER_ON;
+	//Enable ACK, Prescaler IICCLK=PCLK/16, Enable interrupt, Transmit clock value Tx clock=IICCLK/16
+	g_pIICReg->IICCON  = (1<<7) | (0<<6) | (1<<5) | (0xf);
+	g_pIICReg->IICSTAT = 0x10;	//IIC bus data output enable(Rx/Tx)
+}
+static void iicRestorePort(void)
+{
+	g_pGPIOReg->GPBPUD = g_GPBPUD;
+	g_pGPIOReg->GPBCON = g_GPBCON;
+	g_pSysConReg->PCLK_GATE = g_PCLK_GATE;
+}
+
+void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data)
+{
+	iicAlloc();
+	iicSavePort();
+
     g_iicMode		= IIC_WRDATA;
     g_iicPt			= 0;
-    g_iicData[0]	= Reg;
-    g_iicData[1]	= Val;
+    g_iicData[0]	= (unsigned char)addr;
+    g_iicData[1]	= data;
     g_iicDataCount	= 2;
 
-	g_pIICReg->IICDS	= IIC_PMIC_ADDR;
+	g_pIICReg->IICDS	= slvAddr;	//0xa0
 	//Master Tx mode, Start(Write), IIC-bus data output enable
 	//Bus arbitration sucessful, Address as slave status flag Cleared,
 	//Address zero status flag cleared, Last received bit is 0
@@ -123,7 +149,7 @@ void IIC_WriteRegister(UCHAR Reg, UCHAR Val)
 	g_iicMode = IIC_POLLACK;
 	while (1)
 	{
-		g_pIICReg->IICDS	= IIC_PMIC_ADDR;
+		g_pIICReg->IICDS	= slvAddr;
 		g_iicStatus			= 0x100;	//To check if g_iicStatus is changed
 		g_pIICReg->IICSTAT	= 0xf0;		//Master Tx, Start, Output Enable, Sucessful, Cleared, Cleared, 0
 		g_pIICReg->IICCON	= 0xaf;		//Resumes IIC operation.
@@ -138,68 +164,37 @@ void IIC_WriteRegister(UCHAR Reg, UCHAR Val)
 	iicDelay(10);	//Wait until stop condtion is in effect.
 	//Write is completed.
 
-	if (0x00 == Reg)
-		g_pBspArgs->bPMICRegister_00 = Val;
-	else if (0x01 == Reg)
-		g_pBspArgs->bPMICRegister_01 = Val;
+	iicRestorePort();
 }
-UCHAR IIC_ReadRegister(UCHAR Reg)
+        
+void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data)
 {
-	UCHAR bRet = 0;
+	iicAlloc();
+	iicSavePort();
 
-	if (0x00 == Reg)
-		bRet = g_pBspArgs->bPMICRegister_00;
-	else if (0x01 == Reg)
-		bRet = g_pBspArgs->bPMICRegister_01;
-	else
-	{
-		g_iicMode		= IIC_SETRDADDR;
-		g_iicPt			= 0;
-		g_iicData[0]	= Reg;
-		g_iicDataCount	= 1;
+	g_iicMode		= IIC_SETRDADDR;
+	g_iicPt			= 0;
+	g_iicData[0]	= (unsigned char)addr;
+	g_iicDataCount	= 1;
 
-		g_pIICReg->IICDS	= IIC_PMIC_ADDR;
-		g_pIICReg->IICSTAT	= 0xf0;	//MasTx,Start
-		//Clearing the pending bit isn't needed because the pending bit has been cleared.
-		while (g_iicDataCount != -1)
-			iicPolling();
+	g_pIICReg->IICDS	= slvAddr;
+	g_pIICReg->IICSTAT	= 0xf0;	//MasTx,Start
+	//Clearing the pending bit isn't needed because the pending bit has been cleared.
+	while (g_iicDataCount != -1)
+		iicPolling();
+	
+	g_iicMode		= IIC_RDDATA;
+	g_iicPt			= 0;
+	g_iicDataCount	= 1;
 
-		g_iicMode		= IIC_RDDATA;
-		g_iicPt			= 0;
-		g_iicDataCount	= 1;
+	g_pIICReg->IICDS	= slvAddr;
+	g_pIICReg->IICSTAT	= 0xb0;	//Master Rx,Start
+	g_pIICReg->IICCON	= 0xaf;	//Resumes IIC operation.
+	while (g_iicDataCount != -1)
+		iicPolling();
 
-		g_pIICReg->IICDS	= IIC_PMIC_ADDR;
-		g_pIICReg->IICSTAT	= 0xb0;	//Master Rx,Start
-		g_pIICReg->IICCON	= 0xaf;	//Resumes IIC operation.
-		while (g_iicDataCount != -1)
-			iicPolling();
+	*data = g_iicData[1];
 
-		bRet = g_iicData[1];
-	}
-
-	return bRet;
+	iicRestorePort();
 }
 
-void IIC_OtgPower(BOOL bOn)
-{
-	UCHAR Val;
-
-	if (NULL == g_pIICReg)	// 왜냐면 iic 드라이버가 먼저 초기화를 해야 한다.
-		return;
-
-	if (bOn)
-	{
-		g_pIICReg->IICCON  = (1<<7) | (0<<6) | (1<<5) | (0xf);
-		g_pIICReg->IICSTAT = 0x10;	//IIC bus data output enable(Rx/Tx)
-	}
-
-	// ELDO3 - VDD_OTGI
-	Val = IIC_ReadRegister(0x00);
-	Val = (Val & ~(1<<3)) | (bOn ? (1<<3) : (0<<3));
-	IIC_WriteRegister(0x00, Val);
-
-	// ELDO8 - VDD_OTG
-	Val = IIC_ReadRegister(0x01);
-	Val = (Val & ~(1<<5)) | (bOn ? (1<<5) : (0<<5));
-	IIC_WriteRegister(0x01, Val);
-}

@@ -50,6 +50,11 @@ static void InitializeBlockPower(void);
 static void InitializeCLKSource(void);
 static void InitializeRTC(void);
 extern void InitializeOTGCLK(void);
+#ifdef	EBOOK2_VER
+#define	PMIC_ADDR	0xCC
+extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
+extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
+#endif	EBOOK2_VER
 
 //------------------------------------------------------------------------------
 //
@@ -88,12 +93,12 @@ void OEMInit()
 {
     BOOL *bCleanBootFlag;
 
-    OALMSG(1 && OAL_FUNC, (L"[OAL] ++OEMInit()\r\n"));
+    OALMSG(OAL_FUNC, (L"[OAL] ++OEMInit()\r\n"));
 
-    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] S3C6410_APLL_CLK   : %d\n\r"), System_GetAPLLCLK()));
-    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] ARMCLK : %d\n\r"), System_GetARMCLK()));
-    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] HCLK   : %d\n\r"), System_GetHCLK()));
-    OALMSG(1 && OAL_FUNC, (TEXT("[OAL] PCLK   : %d\n\r"), System_GetPCLK()));
+    OALMSG(OAL_FUNC, (TEXT("[OAL] S3C6410_APLL_CLK   : %d\n\r"), System_GetAPLLCLK()));
+    OALMSG(OAL_FUNC, (TEXT("[OAL] ARMCLK : %d\n\r"), System_GetARMCLK()));
+    OALMSG(OAL_FUNC, (TEXT("[OAL] HCLK   : %d\n\r"), System_GetHCLK()));
+    OALMSG(OAL_FUNC, (TEXT("[OAL] PCLK   : %d\n\r"), System_GetPCLK()));
 
     g_oalIoCtlClockSpeed = System_GetARMCLK();
 
@@ -129,6 +134,26 @@ void OEMInit()
     // Initialize Block Power
     //
     InitializeBlockPower();
+
+#ifdef	EBOOK2_VER
+{
+	unsigned char buf[2];
+	IICReadByte(PMIC_ADDR, 0x00, buf);
+	if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+	{
+		buf[0] |= (1<<3);	// on
+		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+		OALMSG(1, (L"VDD_OTGI(1.2V) ON\r\n"));
+	}
+	IICReadByte(PMIC_ADDR, 0x01, buf);
+	if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+	{
+		buf[0] |= (1<<5);	// on
+		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+		OALMSG(1, (L"VDD_OTG(3.3V) ON\r\n"));
+	}
+}
+#endif	EBOOK2_VER
 
     // Initialize OTG PHY Clock
     //

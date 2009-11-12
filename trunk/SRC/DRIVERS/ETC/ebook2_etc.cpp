@@ -52,7 +52,7 @@ static BOOL i2c_Initialize(void)
 		return FALSE;
 	}
 
-	IICClock = 10000;
+	IICClock = 100000;	// 100 kHz
 	bRet = DeviceIoControl(g_hFileI2C, IOCTL_IIC_SET_CLOCK,
 		&IICClock, sizeof(UINT32), NULL, 0, (LPDWORD)&bytes, NULL);
 	if (FALSE == bRet)
@@ -88,18 +88,10 @@ static UCHAR i2c_ReadRegister(UCHAR Reg)
 		return 0;
 	}
 
-#if	1
-	if (0x00 == Reg)
-		return g_pBspArgs->bPMICRegister_00;
-	else if (0x01 == Reg)
-		return g_pBspArgs->bPMICRegister_01;
-
-	return 0;
-#else
 	IIC_IO_DESC IIC_AddressData, IIC_Data;
 	UCHAR buff[2] = {0,};
 	DWORD bytes;
-	BOOL bRet=0;
+	BOOL bRet;
 
 	IIC_AddressData.SlaveAddress = PMIC_ADDR;
 	IIC_AddressData.Data = &Reg;
@@ -114,10 +106,9 @@ static UCHAR i2c_ReadRegister(UCHAR Reg)
 			&IIC_Data, sizeof(IIC_IO_DESC),
 			&bytes, NULL);
 	if (FALSE == bRet)
-		MYERR((_T("[ETC] %d - IIC_ReadRegister(%d=%d)\r\n"), bRet, Reg, buff[0]));
+		MYERR((_T("[ETC] ERROR - IIC_ReadRegister(%d, %d)\r\n"), Reg, buff[0]));
 
 	return buff[0];
-#endif
 }
 static void i2c_WriteRegister(UCHAR Reg, UCHAR Val)
 {
@@ -129,7 +120,7 @@ static void i2c_WriteRegister(UCHAR Reg, UCHAR Val)
 
 	IIC_IO_DESC IIC_Data;
 	UCHAR buff[2];
-	BOOL bRet=0;
+	BOOL bRet;
 
 	IIC_Data.SlaveAddress = PMIC_ADDR;
 	IIC_Data.Data = buff;
@@ -140,12 +131,7 @@ static void i2c_WriteRegister(UCHAR Reg, UCHAR Val)
 	bRet = DeviceIoControl(g_hFileI2C, IOCTL_IIC_WRITE,
 			&IIC_Data, sizeof(IIC_IO_DESC), NULL, 0, NULL, NULL);
 	if (FALSE == bRet)
-		MYERR((_T("[ETC] %d - IIC_WriteRegister(%d, %d)\r\n"), bRet, Reg, Val));
-
-	if (0x00 == Reg)
-		g_pBspArgs->bPMICRegister_00 = Val;
-	else if (0x01 == Reg)
-		g_pBspArgs->bPMICRegister_01 = Val;
+		MYERR((_T("[ETC] ERROR - IIC_WriteRegister(%d, %d)\r\n"), Reg, Val));
 }
 
 

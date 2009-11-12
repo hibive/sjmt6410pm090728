@@ -10,6 +10,7 @@ install media.
 !endif
 
 DIRS =    \
+	Acceleration	\
     DMA         \
     Display     \
     Display_Broadsheet	\

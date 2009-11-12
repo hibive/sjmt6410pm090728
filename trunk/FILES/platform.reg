@@ -1124,9 +1124,22 @@ IF BSP_NOETC !
 ENDIF BSP_NOETC !
 ;---------------------------------------------------------------------------
 
+;------------ Wifi Driver ---------------------------------------------------
 IF BSP_NOWIFI !
 #include "$(_TARGETPLATROOT)\FILES\SDIO8686.reg"
 ENDIF BSP_NOWIFI !
+;----------------------------------------------------------------------------
+
+;------------ Acceleration Driver -------------------------------------------
+IF BSP_ACCELERATION
+[HKEY_LOCAL_MACHINE\Drivers\Builtin\Acceleration]
+	"Dll"="s3c6410_acceleration.dll"
+	"Prefix"="ACC"
+	"Index"=dword:1
+	"Order"=dword:8C
+ENDIF BSP_ACCELERATION
+;----------------------------------------------------------------------------
+
 
 ; @CESYSGEN ENDIF CE_MODULES_DEVICE
 ;-------------------------------------------------------------------------

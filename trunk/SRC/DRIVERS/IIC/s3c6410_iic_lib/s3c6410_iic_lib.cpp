@@ -717,6 +717,24 @@ IIC_IST(
             break;
 
         case Master_receive:
+#ifdef	EBOOK2_VER
+			if (g_uIIC_PT <= g_uIIC_DATALEN)
+			{
+				bDone = FALSE;
+				if (g_uIIC_PT)
+					g_pcIIC_BUFFER[g_uIIC_PT-1] = g_pIICReg->IICDS;
+				else
+					g_pcIIC_BUFFER[g_uIIC_PT] = g_pIICReg->IICDS;	// dummy
+				DEBUGMSG(ZONE_IST,(TEXT("[IIC RX THREAD]g_pIICReg->IICDS is 0x%02X\n"),g_pIICReg->IICDS));
+			}
+			else
+			{
+				bDone = TRUE;
+				g_pIICReg->IICSTAT = MRX_STOP;	// Stop Master Rx condition, ACK flag clear
+			}
+
+			g_uIIC_PT++;
+#else	EBOOK2_VER
             if (g_uIIC_PT>0)
             {
                 bDone = FALSE;
@@ -734,7 +752,7 @@ IIC_IST(
                 bDone = TRUE;
                 g_pIICReg->IICSTAT = MRX_STOP;
             }
-
+#endif	EBOOK2_VER
             g_pIICReg->IICCON &= ~(1<<4);
             break;
 
