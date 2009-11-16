@@ -1688,7 +1688,7 @@ HardwareContext::CodecPowerControl()
 	static BOOL static_Input = FALSE, static_Output = FALSE;
 	USHORT usData25, usData47;
 
-	if (static_Input != m_bInputDMARunning)
+	if (m_bInputDMARunning && static_Input != m_bInputDMARunning)
 	{
 		static_Input = m_bInputDMARunning;
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
@@ -1698,7 +1698,7 @@ HardwareContext::CodecPowerControl()
 		WriteCodecRegister(25, usData25 | 0x0EA);
 		WriteCodecRegister(47, usData47 | 0x020);
 	}
-	else if (static_Output != m_bOutputDMARunning)
+	else if (m_bOutputDMARunning && static_Output != m_bOutputDMARunning)
 	{
 		static_Output = m_bOutputDMARunning;
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
