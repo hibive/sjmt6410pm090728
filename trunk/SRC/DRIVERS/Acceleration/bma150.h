@@ -84,7 +84,6 @@
 //init place
 #define DoInitInDriverLoad
 #define BMA150_I2C_ADDR		0x70
-#define BMA150_IRQ			IRQ_EINT10
 
 
 /*
@@ -156,16 +155,6 @@ typedef struct {
 					al_version; /**< holds the BMA150 AL_version number */
 
 	unsigned char	mode;		/**< save current BMA150 operation mode */
-
-#if	0
-	DWORD irq;
-	DWORD SYSINTR_BMA150;
-	HANDLE SMBInterruptEvent;
-	HANDLE SMBInterruptProcessedEvent;
-	HANDLE SMBWaitInterruptEvent;
-	HANDLE SMB_hIST;
-	BOOL BMA150InterruptInitialized;
-#endif
 } bma150_t;
 
 /* 
