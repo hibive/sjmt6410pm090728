@@ -335,6 +335,7 @@ void EPDOutputFlush(void)
 			if (0x7F < code)
 				continue;
 
+#if	(LCD_BPP == 4)
 			ptr = g_imgRectText.pBuffer + ((y*FONT_HEIGHT*LCD_WIDTH + x*FONT_WIDTH)>>1);
 			for (h=0; h<FONT_HEIGHT; h++)
 			{
@@ -357,8 +358,16 @@ void EPDOutputFlush(void)
 						break;
 					}
 				}
-
 				ptr += (LCD_WIDTH>>1);
+#elif (LCD_BPP == 8)
+			ptr = g_imgRectText.pBuffer + (y*FONT_HEIGHT*LCD_WIDTH + x*FONT_WIDTH);
+			for (h=0; h<FONT_HEIGHT; h++)
+			{
+				font_data = (unsigned char)(Eng_Font_8x16[(code*FONT_HEIGHT) + h] >> 8);
+				for (w=0; w<FONT_WIDTH; w++)
+					*(ptr + 7 - w) = ((font_data>>w) & 0x1) ? 0x00 : 0xFF;
+				ptr += LCD_WIDTH;
+#endif
 			}
 		}
 	}
