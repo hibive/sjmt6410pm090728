@@ -9,10 +9,92 @@
 
 
 bma150_t bma150;
+static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
+static DWORD g_dwSysIntrAcc = SYSINTR_UNDEFINED;
+static HANDLE g_hEventAcc = NULL;
+static HANDLE g_hThreadAcc = NULL;
+static BOOL g_bExitThread = FALSE;
+
+
+INT WINAPI AccelerationThread(void)
+{
+	BYTE int_mask;
+
+	while (!g_bExitThread)
+	{
+		WaitForSingleObject(g_hEventAcc, INFINITE);
+		if (g_bExitThread)
+			break;
+
+		g_pGPIOReg->EINT0MASK |= (0x1<<10);		// Mask EINT10
+		g_pGPIOReg->EINT0PEND  = (0x1<<10);		// Clear pending EINT10
+		InterruptDone(g_dwSysIntrAcc);
+
+		// ...
+		int_mask = 0;
+		bma150_get_interrupt_mask(&int_mask);
+		RETAILMSG(1, (_T("[ACC] bma150_get_interrupt_mask(0x%X)\r\n"), int_mask));
+
+		g_pGPIOReg->EINT0MASK &= ~(0x1<<10);	// Unmask EINT10
+	}
+
+	return 0;
+}
+
 
 
 DWORD ACC_Init(LPCTSTR pContext)
 {
+	PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
+	DWORD dwIRQ;
+
+	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
+	g_pGPIOReg = (S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
+	if (g_pGPIOReg == NULL)
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : pGPIOReg MmMapIoSpace() Failed \n\r"), _T(__FUNCTION__)));
+		return 0;
+	}
+
+	dwIRQ = IRQ_EINT10;
+	g_dwSysIntrAcc = SYSINTR_UNDEFINED;
+	g_hEventAcc = NULL;
+
+	if (!KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &dwIRQ, sizeof(DWORD), &g_dwSysIntrAcc, sizeof(DWORD), NULL))
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : IOCTL_HAL_REQUEST_SYSINTR Failed \n\r"), _T(__FUNCTION__)));
+		g_dwSysIntrAcc = SYSINTR_UNDEFINED;
+		return FALSE;
+	}
+
+	g_hEventAcc = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if(NULL == g_hEventAcc)
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+
+	if (!(InterruptInitialize(g_dwSysIntrAcc, g_hEventAcc, 0, 0)))
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : InterruptInitialize() Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+
+	g_pGPIOReg->EINT0MASK |= (0x1<<10);		// Mask EINT10
+	SET_GPIO(g_pGPIOReg, GPNCON, 10, GPNCON_EXTINT);
+	SET_GPIO(g_pGPIOReg, GPNPUD, 10, GPNPUD_PULLDOWN);
+	g_pGPIOReg->EINT0CON0 = (g_pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT10)) | (EINT_SIGNAL_RISE_EDGE<<EINT0CON_EINT10);
+	g_pGPIOReg->EINT0FLTCON1 = (g_pGPIOReg->EINT0FLTCON1 & ~(0x1<<FLTSEL_10)) | (0x1<<FLTEN_10);
+	g_pGPIOReg->EINT0PEND = (0x1<<10);		// Clear pending EINT10
+	g_pGPIOReg->EINT0MASK &= ~(0x1<<10);	// Unmask EINT10
+
+	g_hThreadAcc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AccelerationThread, NULL, 0, NULL);
+	if (g_hThreadAcc == NULL)
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateThread() Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+
 #ifdef	DoInitInDriverLoad
 	if (0 != bma150_init(&bma150))
 		return 0;
@@ -26,6 +108,43 @@ BOOL ACC_Deinit(DWORD hDeviceContext)
 #ifdef	DoInitInDriverLoad
 	bma150_deinit(&bma150);
 #endif	DoInitInDriverLoad
+
+	g_bExitThread = TRUE;
+	if (g_hThreadAcc)		  // Make Sure if thread is exist
+	{
+		g_pGPIOReg->EINT0MASK |= (0x1<<10);		// Mask EINT10
+		g_pGPIOReg->EINT0PEND  = (0x1<<10);		// Clear pending EINT10
+
+		// Signal Thread to Finish
+		SetEvent(g_hEventAcc);
+		// Wait for Thread to Finish
+		WaitForSingleObject(g_hThreadAcc, INFINITE);
+		CloseHandle(g_hThreadAcc);
+		g_hThreadAcc = NULL;
+	}
+
+	if (g_pGPIOReg != NULL)
+	{
+		MmUnmapIoSpace((PVOID)g_pGPIOReg, sizeof(S3C6410_GPIO_REG));
+		g_pGPIOReg = NULL;
+	}
+
+	if (g_dwSysIntrAcc != SYSINTR_UNDEFINED)
+	{
+		InterruptDisable(g_dwSysIntrAcc);
+	}
+
+	if (g_hEventAcc != NULL)
+	{
+		CloseHandle(g_hEventAcc);
+		g_hEventAcc = NULL;
+	}
+
+	if (g_dwSysIntrAcc != SYSINTR_UNDEFINED)
+	{
+		KernelIoControl(IOCTL_HAL_RELEASE_SYSINTR, &g_dwSysIntrAcc, sizeof(DWORD), NULL, 0, NULL);
+		g_dwSysIntrAcc = SYSINTR_UNDEFINED;
+	}
 
 	return TRUE;
 }
