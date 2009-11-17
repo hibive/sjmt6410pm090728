@@ -1175,8 +1175,8 @@ ENDIF BSP_DISPLAY_BROADSHEET
 	"BattSystemIdle"=dword:0000003c	; 1min
 	"BattSuspend"=dword:0000003c	; 1min(3c), 3min(b4)
 
-[HKEY_LOCAL_MACHINE\System\GDI\Cleartype]
-	"Default"=dword:00000001
+;[HKEY_LOCAL_MACHINE\System\GDI\Cleartype]
+;	"Default"=dword:00000001
 
 [HKEY_LOCAL_MACHINE\SYSTEM\GWE]
 	"Animate"=dword:0
