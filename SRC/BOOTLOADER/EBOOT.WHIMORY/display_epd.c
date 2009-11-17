@@ -4,7 +4,7 @@
 #include "display_epd.h"
 
 #define	_EBOOT_	1
-#include "..\\Drivers\\Display_Broadsheet\\S1d13521.c"
+#include "..\\Drivers\\Display_Broadsheet\\broadsheet_lib\\S1d13521.c"
 // const unsigned char Eng_Font_8x16[128][16];
 #include "display_epd_eng_font_8x16.h"
 // const unsigned char Instruction_Byte_Code[];

@@ -6,10 +6,12 @@
 #define MYMSG(x)	RETAILMSG(0, x)
 #define MYERR(x)	RETAILMSG(1, x)
 
+//#define BATT_LOG_TEST	1
+
 #define MUTEX_TIMEOUT	5000
 #define BATT_LEVEL_CNT	5
 #define ADC_SAMPLE_NUM	8
-#define ADC_LEVEL_MAX	2860
+#define ADC_LEVEL_MAX	2800
 #define ADC_LEVEL_MIN	2300
 
 
@@ -112,14 +114,6 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		else
 			nPercent = nAvgLevel;
 		nPercent = (int)(((nPercent-ADC_LEVEL_MIN) * 100.0) / (ADC_LEVEL_MAX-ADC_LEVEL_MIN));
-		// 90% = 2809 ~ 2804
-		// 80% = 2753 ~ 2748
-		// 70% = 2697 ~ 2692
-		// 60% = 2641 ~ 2636
-		// 50% = 2585 ~ 2581
-		// 40% = 2529 ~ 2524
-		// 30% = 2473 ~ 2468	// 25% = 2445 ~ 2440
-		// 20% = 2417 ~ 2412
 
 		fBatteryState = (g_pGPIOReg->GPNDAT & 0x0F);
 		fAcOn = !((1<<0) & fBatteryState);
@@ -136,12 +130,15 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		else
 		{
 			g_PowerStatus.ACLineStatus = AC_LINE_OFFLINE;
-			if (70 <= nPercent)
+#ifdef	BATT_LOG_TEST
+			g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
+#else	BATT_LOG_TEST
+			if (50 <= nPercent)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
-			else if (25 <= nPercent)
+			else if (5 <= nPercent)
 			{
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_LOW;
-				if (30 > nPercent)
+				if (10 > nPercent)
 				{
 					LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
 					PROCESS_INFORMATION pi;
@@ -167,6 +164,7 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 			}
 			else
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_CRITICAL;
+#endif	BATT_LOG_TEST
 		}
 		g_PowerStatus.BatteryLifePercent    = nPercent;
 		g_PowerStatus.BatteryVoltage        = nLevel;
@@ -184,10 +182,14 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
 			else	// LED_R#[7] : 1Sec ON, 2Sec OFF
 			{
+#if	1
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+#else
 				if (nLEDCount % 3)
 					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
 				else
 					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+#endif
 			}
 		}
 		nLEDCount++;

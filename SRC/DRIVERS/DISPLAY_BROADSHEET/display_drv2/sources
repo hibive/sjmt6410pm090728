@@ -1,0 +1,30 @@
+
+!if "$(BSP_DISPLAY_BROADSHEET)" != "1"
+SKIPBUILD=1
+!endif
+
+SYNCHRONIZE_DRAIN=1
+
+TARGETNAME=s3c6410_disp_bs
+TARGETTYPE=DYNLINK
+RELEASETYPE=PLATFORM
+
+DEFFILE=s3c6410_disp.def
+
+CDEFINES=$(CDEFINES) -DDDI
+
+TARGETLIBS=\
+	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
+	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\ceddk.lib\
+
+SOURCELIBS=\
+	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\gpe.lib\
+	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\ddgpe.lib\
+	$(_TARGETPLATROOT)\lib\$(_CPUINDPATH)\broadsheet_lib.lib\
+
+SOURCES=\
+	s3c6410_disp.cpp\
+
+#xref VIGUID {1a4fca39-2c0a-42f7-91d6-dda607f3b957}
+#xref VSGUID {3b4b199b-739e-4cdb-ae6d-93b61ed97634}
+
