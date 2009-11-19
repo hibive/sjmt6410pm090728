@@ -21,15 +21,9 @@
 
 #if $(_IMAGELANGIDLIST)==0412
 
-IF EBOOK2_VER
-; Default to US keyboard layout
-#define input_locale 00000409
-#define input_locale_text "US"
-ELSE
 ; Korean keyboard layout
 #define input_locale 00000412
 #define input_locale_text "Korean"
-ENDIF EBOOK2_VER
 
 #else
 

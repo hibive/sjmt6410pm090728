@@ -544,37 +544,6 @@ typedef struct {
 /** \endcond */
 
 
-/** Macro to convert floating point low-g-thresholds in G to 8-bit register values.<br>
-  * Example: BMA150_LG_THRES_IN_G(0.3, 2.0) generates the register value for 0.3G threshold in 2G mode.
-  * \brief convert g-values to 8-bit value
- */
-#define BMA150_LG_THRES_IN_G(gthres, range)			((256 * gthres ) / range)
-
-/** Macro to convert floating point high-g-thresholds in G to 8-bit register values.<br>
-  * Example: BMA150_HG_THRES_IN_G(1.4, 2.0) generates the register value for 1.4G threshold in 2G mode.
-  * \brief convert g-values to 8-bit value
- */
-#define BMA150_HG_THRES_IN_G(gthres, range)			((256 * gthres ) / range)
-
-/** Macro to convert floating point low-g-hysteresis in G to 8-bit register values.<br>
-  * Example: BMA150_LG_HYST_THRES_IN_G(0.2, 2.0) generates the register value for 0.2G threshold in 2G mode.
-  * \brief convert g-values to 8-bit value
- */
-#define BMA150_LG_HYST_IN_G(ghyst, range)			((32 * ghyst) / range)
-
-/** Macro to convert floating point high-g-hysteresis in G to 8-bit register values.<br>
-  * Example: BMA150_HG_HYST_THRES_IN_G(0.2, 2.0) generates the register value for 0.2G threshold in 2G mode.
-  * \brief convert g-values to 8-bit value
- */
-#define BMA150_HG_HYST_IN_G(ghyst, range)			((32 * ghyst) / range)
-
-/** Macro to convert floating point G-thresholds to 8-bit register values<br>
-  * Example: BMA150_ANY_MOTION_THRES_IN_G(1.2, 2.0) generates the register value for 1.2G threshold in 2G mode.
-  * \brief convert g-values to 8-bit value
- */
-#define BMA150_ANY_MOTION_THRES_IN_G(gthres, range)	((128 * gthres ) / range)
-
-
 #define BMA150_CONF1_INT_MSK	((1<<ALERT__POS) | (1<<EN_ANY_MOTION__POS) | (1<<ENABLE_HG__POS) | (1<<ENABLE_LG__POS))
 #define BMA150_CONF2_INT_MSK	((1<<ENABLE_ADV_INT__POS) | (1<<NEW_DATA_INT__POS) | (1<<LATCH_INT__POS))
 

@@ -12,14 +12,13 @@ bma150_t bma150;
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 static DWORD g_dwSysIntrAcc = SYSINTR_UNDEFINED;
 static HANDLE g_hEventAcc = NULL;
+static HANDLE g_hEventAccNotify = NULL;
 static HANDLE g_hThreadAcc = NULL;
 static BOOL g_bExitThread = FALSE;
 
 
 INT WINAPI AccelerationThread(void)
 {
-	BYTE int_mask;
-
 	while (!g_bExitThread)
 	{
 		WaitForSingleObject(g_hEventAcc, INFINITE);
@@ -28,13 +27,21 @@ INT WINAPI AccelerationThread(void)
 
 		g_pGPIOReg->EINT0MASK |= (0x1<<10);		// Mask EINT10
 		g_pGPIOReg->EINT0PEND  = (0x1<<10);		// Clear pending EINT10
-		InterruptDone(g_dwSysIntrAcc);
 
 		// ...
-		int_mask = 0;
+		SetEvent(g_hEventAccNotify);
+#if	0
+{
+		BYTE int_status=0, int_mask=0;
+		bma150_get_interrupt_status(&int_status);
 		bma150_get_interrupt_mask(&int_mask);
-		RETAILMSG(1, (_T("[ACC] bma150_get_interrupt_mask(0x%X)\r\n"), int_mask));
+		RETAILMSG(1, (_T("[ACC] interrupt(0x%X, 0x%X)\r\n"), int_status, int_mask));
+		bma150_reset_interrupt();
+}
+#endif
+		// ...
 
+		InterruptDone(g_dwSysIntrAcc);
 		g_pGPIOReg->EINT0MASK &= ~(0x1<<10);	// Unmask EINT10
 	}
 
@@ -73,6 +80,12 @@ DWORD ACC_Init(LPCTSTR pContext)
 		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \n\r"), _T(__FUNCTION__)));
 		return FALSE;
 	}
+	g_hEventAccNotify = CreateEvent(NULL, TRUE, FALSE, ACC_NOTIFY_EVENT);
+	if(NULL == g_hEventAccNotify)
+	{
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
 
 	if (!(InterruptInitialize(g_dwSysIntrAcc, g_hEventAcc, 0, 0)))
 	{
@@ -99,6 +112,24 @@ DWORD ACC_Init(LPCTSTR pContext)
 	if (0 != bma150_init(&bma150))
 		return 0;
 #endif	DoInitInDriverLoad
+
+#if	0
+	bma150_set_any_motion_threshold(BMA150_ANY_MOTION_THRES_IN_G(1.2, 2.0));
+	bma150_set_any_motion_int(1);
+	bma150_set_advanced_int(1);
+	bma150_set_interrupt_mask(INT_MASK_ANY_MOTION|INT_MASK_EN_ADV_INT);
+#endif
+
+#if	0
+	bma150_set_low_g_threshold(BMA150_LG_THRES_IN_G(0.35, 2));
+	bma150_set_low_g_int(1);
+	bma150_set_interrupt_mask(INT_MASK_LG);
+#endif
+
+#if	0
+	bma150_set_new_data_int(1);
+	bma150_set_interrupt_mask(INT_MASK_NEW_DATA);
+#endif
 
 	return (DWORD)pContext;
 }
@@ -134,6 +165,11 @@ BOOL ACC_Deinit(DWORD hDeviceContext)
 		InterruptDisable(g_dwSysIntrAcc);
 	}
 
+	if (g_hEventAccNotify != NULL)
+	{
+		CloseHandle(g_hEventAccNotify);
+		g_hEventAccNotify = NULL;
+	}
 	if (g_hEventAcc != NULL)
 	{
 		CloseHandle(g_hEventAcc);

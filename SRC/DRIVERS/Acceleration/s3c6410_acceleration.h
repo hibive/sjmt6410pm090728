@@ -24,6 +24,8 @@
 #define	ACC_DRIVER_DEVICE	FILE_DEVICE_HAL
 #define	ACC_DRIVER_FUNCTION	3000
 
+#define ACC_NOTIFY_EVENT	_T("_ACC_NOTIFY_EVENT_")
+
 
 // None
 #define IOCTL_ACC_INIT\
@@ -299,16 +301,18 @@ typedef enum {
 } ANY_MOTION_DUR_TYPE;
 
 typedef enum {
-	INT_MASK_ALERT=(1<<7),
-	INT_MASK_ANY_MOTION=(1<<6),
-	INT_MASK_EN_ADV_INT=(1<<5),
-	INT_MASK_NEW_DATA=(1<<4),
-	INT_MASK_LATCH=(1<<3),
-	INT_MASK_HG=(1<<1),
+	INT_MASK_NONE=0,
 	INT_MASK_LG=(1<<0),
+	INT_MASK_HG=(1<<1),
+	INT_MASK_LATCH=(1<<3),
+	INT_MASK_NEW_DATA=(1<<4),
+	INT_MASK_EN_ADV_INT=(1<<5),
+	INT_MASK_ANY_MOTION=(1<<6),
+	INT_MASK_ALERT=(1<<7),
 } INT_MASK_TYPE;
 
 typedef enum {
+	INT_STATUS_NONE=0,
 	INT_STATUS_HG=(1<<0),
 	INT_STATUS_LG=(1<<1),
 	INT_STATUS_HG_LATCHED=(1<<2),
@@ -362,6 +366,37 @@ typedef struct {
 	BYTE	len;
 	BYTE	*data;
 } REG_T;
+
+
+/** Macro to convert floating point low-g-thresholds in G to 8-bit register values.<br>
+  * Example: BMA150_LG_THRES_IN_G(0.3, 2.0) generates the register value for 0.3G threshold in 2G mode.
+  * \brief convert g-values to 8-bit value
+ */
+#define BMA150_LG_THRES_IN_G(gthres, range)			((256 * gthres ) / range)
+
+/** Macro to convert floating point high-g-thresholds in G to 8-bit register values.<br>
+  * Example: BMA150_HG_THRES_IN_G(1.4, 2.0) generates the register value for 1.4G threshold in 2G mode.
+  * \brief convert g-values to 8-bit value
+ */
+#define BMA150_HG_THRES_IN_G(gthres, range)			((256 * gthres ) / range)
+
+/** Macro to convert floating point low-g-hysteresis in G to 8-bit register values.<br>
+  * Example: BMA150_LG_HYST_THRES_IN_G(0.2, 2.0) generates the register value for 0.2G threshold in 2G mode.
+  * \brief convert g-values to 8-bit value
+ */
+#define BMA150_LG_HYST_IN_G(ghyst, range)			((32 * ghyst) / range)
+
+/** Macro to convert floating point high-g-hysteresis in G to 8-bit register values.<br>
+  * Example: BMA150_HG_HYST_THRES_IN_G(0.2, 2.0) generates the register value for 0.2G threshold in 2G mode.
+  * \brief convert g-values to 8-bit value
+ */
+#define BMA150_HG_HYST_IN_G(ghyst, range)			((32 * ghyst) / range)
+
+/** Macro to convert floating point G-thresholds to 8-bit register values<br>
+  * Example: BMA150_ANY_MOTION_THRES_IN_G(1.2, 2.0) generates the register value for 1.2G threshold in 2G mode.
+  * \brief convert g-values to 8-bit value
+ */
+#define BMA150_ANY_MOTION_THRES_IN_G(gthres, range)	((128 * gthres ) / range)
 
 
 #endif //__S3C6410_ACCELERATION_H__
