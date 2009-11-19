@@ -1158,6 +1158,11 @@ IF BSP_DISPLAY_BROADSHEET
 	"wallpaper"="\\Windows\\ebook2_wallpaper.gif"
 ENDIF BSP_DISPLAY_BROADSHEET
 
+[HKEY_CURRENT_USER\ControlPanel\Korean IME UI\Settings]
+	"ShowState"=dword:0
+	"ShowCand"=dword:0
+	"ShowComp"=dword:0
+
 [HKEY_CURRENT_USER\ControlPanel\Volume]
 	"Key"=dword:0		; Keyclicks:  0=mute, 1=soft, 0x10002=loud
 	"Screen"=dword:0	; ScreenTaps: 0=mute, 1=soft, 0x10002=loud

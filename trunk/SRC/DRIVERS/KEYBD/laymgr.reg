@@ -46,14 +46,17 @@
 	"PS2_AT"=$(keybd_driver)
 	"Matrix"=$(keybd_driver)
 
+#if $(_IMAGELANGIDLIST)==0412
+
+#else
+
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Layouts\e0010409]
 	"keyboard layout"="00000409"
 
-IF EBOOK2_VER
 [HKEY_CURRENT_USER\keyboard layout\Preload]
 	@="00000409"
-ENDIF EBOOK2_VER
 
 [HKEY_CURRENT_USER\Keyboard Layout\Preload\$(keybd_preload_index)]
 	@="$(input_locale)"
 
+#endif // $(_IMAGELANGIDLIST)
