@@ -24,19 +24,11 @@
 
 #if $(_IMAGELANGIDLIST)==0412
 
-IF EBOOK2_VER
-; Default to US keyboard layout
-	"Keyboard Type"=dword:4
-	"Keyboard SubType"=dword:0
-	"Keyboard Function Keys"=dword:c
-	"Keyboard Layout"="00000409"
-ELSE
 ; Korean keyboard layout
 	"Keyboard Type"=dword:8
 	"Keyboard SubType"=dword:3
 	"Keyboard Function Keys"=dword:c
 	"Keyboard Layout"="00000412"
-ENDIF EBOOK2_VER
 
 #else
 
