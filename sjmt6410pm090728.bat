@@ -187,5 +187,5 @@ if "%EBOOK2_VER%"=="2" (
 
 if "%EBOOK2_VER%"=="3" (
 	set SYSGEN_K_IME97=1
+	set _IMAGELANGIDLIST=0412
 )
-
