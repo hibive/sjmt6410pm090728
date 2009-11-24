@@ -1160,7 +1160,7 @@ ENDIF BSP_DISPLAY_BROADSHEET
 
 [HKEY_CURRENT_USER\ControlPanel\Korean IME UI\Settings]
 	"ShowState"=dword:0
-	"ShowCand"=dword:0
+	"ShowCand"=dword:1
 	"ShowComp"=dword:0
 
 [HKEY_CURRENT_USER\ControlPanel\Volume]

@@ -178,8 +178,15 @@ static void S3C6410_WakeUpSource_Configure(void)
     // External Interrupt
     //-----------------
 #ifdef	EBOOK2_VER
-    // Power Button EINT[9] (GPN[9] is Retention Port)
-    pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);    // GPN[9] as EINT[9]
+	// Power Button EINT[9] (GPN[9] is Retention Port)
+	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
+{
+	BOOL bIsUSB = !(pGPIOReg->GPNDAT & (0x1<<0));
+	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
+	pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
+		| ((bIsUSB ? EINT_SIGNAL_RISE_EDGE : EINT_SIGNAL_FALL_EDGE)<<EINT0CON_EINT0);
+	pGPIOReg->EINT0FLTCON1 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
+}
 #else	EBOOK2_VER
     // Power Button EINT[11] (GPN[11] is Retention Port)
     pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<22)) | (0x2<<22);    // GPN[11] as EINT[11]
@@ -187,7 +194,8 @@ static void S3C6410_WakeUpSource_Configure(void)
 
     pSysConReg->EINT_MASK = 0x0FFFFFFF;        // Mask All EINT Wake Up Source at Sleep
 #ifdef	EBOOK2_VER
-    pSysConReg->EINT_MASK &= ~(1<<9);         // Enable EINT[9] as Wake Up Source at Sleep
+	pSysConReg->EINT_MASK &= ~(1<<9);	// Enable EINT[9] as Wake Up Source at Sleep
+	pSysConReg->EINT_MASK &= ~(1<<0);	// Enable EINT[0] as Wake Up Source at Sleep
 #else	EBOOK2_VER
     pSysConReg->EINT_MASK &= ~(1<<11);        // Enable EINT[11] as Wake Up Source at Sleep
 #endif	EBOOK2_VER
@@ -225,18 +233,25 @@ static void S3C6410_WakeUpSource_Detect(void)
     {
     case 0x1:    // External Interrupt
 #ifdef	EBOOK2_VER
-        if (pGPIOReg->EINT0PEND&(1<<9))         // Power Button : EINT[9]
+		if (pGPIOReg->EINT0PEND&(1<<9))			// Power Button : EINT[9]
+		{
+			g_oalWakeSource = SYSWAKE_POWER_BUTTON;	// OEMWAKE_EINT9;
+			pGPIOReg->EINT0PEND = (1<<9);		// Clear Pending (Power Button Driver No Need to Handle Wake Up Interrupt)
+		}
+		else if (pGPIOReg->EINT0PEND&(1<<0))	// Power Button : EINT[0]
+		{
+			g_oalWakeSource = OEMWAKE_EINT0;
+			pGPIOReg->EINT0PEND = (1<<0);		// Clear Pending (Power Button Driver No Need to Handle Wake Up Interrupt)
+
+			pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x0<<0);	// GPN[0] as Input
+		}
 #else	EBOOK2_VER
-        if (pGPIOReg->EINT0PEND&(1<<11))        // Power Button : EINT[11]
-#endif	EBOOK2_VER
+        if (pGPIOReg->EINT0PEND&(1<<11))		// Power Button : EINT[11]
         {
             g_oalWakeSource = SYSWAKE_POWER_BUTTON;    // OEMWAKE_EINT11;
-#ifdef	EBOOK2_VER
-            pGPIOReg->EINT0PEND = (1<<9);     // Clear Pending (Power Button Driver No Need to Handle Wake Up Interrupt)
-#else	EBOOK2_VER
             pGPIOReg->EINT0PEND = (1<<11);    // Clear Pending (Power Button Driver No Need to Handle Wake Up Interrupt)
-#endif	EBOOK2_VER
         }
+#endif	EBOOK2_VER
         else
         {
             // The else case here will not happen because all other external interrupts were

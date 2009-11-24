@@ -217,7 +217,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	'.',				// scan code 42
 	'/',				// scan code 43
 	VK_RETURN,			// scan code 44
-	VK_SYMBOL,			// scan code 45
+	VK_HANJA,//VK_SYMBOL,			// scan code 45
 	VK_F20,				// scan code 46
 	0,					// scan code 47
 
