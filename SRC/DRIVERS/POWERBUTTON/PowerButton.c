@@ -106,6 +106,8 @@ INT WINAPI PowerButtonThread(void)
 			{
 				LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
 				PROCESS_INFORMATION pi;
+				LONG lRet;
+
 				ZeroMemory(&pi,sizeof(pi));
 				if (CreateProcess(lpszPathName,
 								  _T("SHUTDOWN"),	// pszCmdLine
@@ -123,6 +125,10 @@ INT WINAPI PowerButtonThread(void)
 					CloseHandle(pi.hProcess);
 				}
 
+				lRet = RegFlushKey(HKEY_LOCAL_MACHINE);
+				RETAILMSG(1, (_T("[PWR] RegFlushKey(HKEY_LOCAL_MACHINE) = %d\r\n"), lRet));
+				lRet = RegFlushKey(HKEY_CURRENT_USER);
+				RETAILMSG(1, (_T("[PWR] RegFlushKey(HKEY_CURRENT_USER) = %d\r\n"), lRet));
 				SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
 				KernelIoControl(IOCTL_HAL_EBOOK2_SHUTDOWN, NULL, 0, NULL, 0, NULL);
 			}
