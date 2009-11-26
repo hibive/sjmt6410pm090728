@@ -174,7 +174,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	VK_T6,				// scan code 4
 	VK_T5,				// scan code 5
 	VK_T4,				// scan code 6
-	VK_CONTROL,			// scan code 7
+	VK_MATRIX_FN,		// scan code 7
 
 	VK_T3,				// scan code 8
 	VK_T2,				// scan code 9
@@ -192,7 +192,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	'P',				// scan code 20
 	'O',				// scan code 21
 	VK_BACK,			// scan code 22
-	VK_LMENU,			// scan code 23
+	VK_MENU,			// scan code 23
 
 	'L',				// scan code 24
 	'K',				// scan code 25
@@ -214,10 +214,10 @@ UINT8 ScanCodeToVKeyTable[] =
 
 	'N',				// scan code 40
 	'M',				// scan code 41
-	'.',				// scan code 42
-	'/',				// scan code 43
+	VK_PERIOD,	//'.'	// scan code 42
+	VK_SLASH,	//'/'	// scan code 43
 	VK_RETURN,			// scan code 44
-	VK_HANJA,//VK_SYMBOL,			// scan code 45
+	VK_SYMBOL,			// scan code 45
 	VK_F20,				// scan code 46
 	0,					// scan code 47
 
@@ -532,6 +532,10 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     {  '8', VK_F8 },
     {  '9', VK_F9 },
     {  '0', VK_F10 },
+#if (EBOOK2_VER == 3)
+	{ VK_F20,		VK_CAPITAL },	// Aa
+	{ VK_SYMBOL,	VK_HANJA },		// Sym
+#else (EBOOK2_VER == 3)
     { VK_HYPHEN, VK_NUMLOCK },
     { VK_EQUAL, VK_CANCEL },
     {  'P', VK_INSERT },
@@ -539,9 +543,10 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     { VK_RBRACKET, VK_SCROLL },
     { VK_SEMICOLON, VK_SNAPSHOT },
     { VK_APOSTROPHE, VK_SNAPSHOT },
-    {  VK_LEFT, VK_HOME },
-    {  VK_UP, VK_PRIOR},
-    {  VK_DOWN, VK_NEXT },
+#endif (EBOOK2_VER == 3)
+    {  VK_LEFT,  VK_HOME },
+    {  VK_UP,    VK_PRIOR},
+    {  VK_DOWN,  VK_NEXT },
     {  VK_RIGHT, VK_END },
 };
 
