@@ -217,8 +217,8 @@ UINT8 ScanCodeToVKeyTable[] =
 	VK_PERIOD,	//'.'	// scan code 42
 	VK_SLASH,	//'/'	// scan code 43
 	VK_RETURN,			// scan code 44
-	VK_SYMBOL,			// scan code 45
-	VK_F20,				// scan code 46
+	VK_F21,		// Sym	// scan code 45
+	VK_F20,		// Aa	// scan code 46
 	0,					// scan code 47
 
 	VK_HANGUL,			// scan code 48
@@ -533,8 +533,11 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     {  '9', VK_F9 },
     {  '0', VK_F10 },
 #if (EBOOK2_VER == 3)
+	{ VK_HANGUL,	VK_HANJA },		// ÇÑ/¿µ
 	{ VK_F20,		VK_CAPITAL },	// Aa
-	{ VK_SYMBOL,	VK_HANJA },		// Sym
+	{ VK_F21,		VK_TAB },		// Sym
+	{ VK_RETURN,	VK_LWIN },		// ENTER
+	{ VK_BACK,		VK_OFF },		// DEL
 #else (EBOOK2_VER == 3)
     { VK_HYPHEN, VK_NUMLOCK },
     { VK_EQUAL, VK_CANCEL },
