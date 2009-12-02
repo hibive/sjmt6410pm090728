@@ -6,8 +6,14 @@
 #include "s1d13521.h"
 
 
-#define SJMT_REG_KEY			_T("Software\\SeojeonMediaTech")
-#define STARTUP_REG_STRING		_T("Startup")
+#define OMNIBOOK_REG_KEY		_T("Software\\Omnibook")
+
+#define STARTUP_REG_STRING		_T("AppStartup")
+#define DEFAULT_STARTUP			_T("\\Omnibook Store\\Omnibook_MainApp.exe")
+#define UPDATE_REG_STRING		_T("AppUpdate")
+#define DEFAULT_UPDATE			_T("\\Storage Card\\Omnibook_UpdateApp.exe")
+#define SIPSYMBOL_REG_STRING	_T("AppSipSymbol")
+#define DEFAULT_SIPSYMBOL		_T("\\Windows\\Omnibook_SipSymbol.exe")
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -70,11 +76,9 @@ static BOOL IsProgram(LPCWSTR lpszImageName)
 
 static BOOL RunProgram(LPCWSTR lpszImageName)
 {
-	STARTUPINFO si = {0,};
 	PROCESS_INFORMATION pi = {0,};
 	BOOL bResult = FALSE;
 
-	si.cb = sizeof(si);
 	bResult = CreateProcessW(lpszImageName,
 		NULL,	// Command line.
 		NULL,	// Process handle not inheritable.
@@ -83,8 +87,13 @@ static BOOL RunProgram(LPCWSTR lpszImageName)
 		0,		// No creation flags.
 		NULL,	// Use parent's environment block.
 		NULL,	// Use parent's starting directory.
-		&si,	// Pointer to STARTUPINFO structure.
+		NULL,	// Pointer to STARTUPINFO structure.
 		&pi);	// Pointer to PROCESS_INFORMATION structure.
+	if (bResult)
+	{
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
 
 	return bResult;
 }
@@ -94,21 +103,52 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				   LPTSTR lpCmdLine,
 				   int nCmdShow)
 {
-	TCHAR szStartup[MAX_PATH] = {0,};
-	if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, STARTUP_REG_STRING, szStartup, MAX_PATH, FALSE))
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), STARTUP_REG_STRING));
+	TCHAR szProgram[MAX_PATH] = {0,};
 
-	if (IsProgram(szStartup))
+	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
-		RunProgram(szStartup);
-		RETAILMSG(1, (_T("RunProgram : %s\r\n"), szStartup));
+		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), STARTUP_REG_STRING));
+		_tcscpy(szProgram, DEFAULT_STARTUP);
+	}
+	if (IsProgram(szProgram))
+	{
+		RunProgram(szProgram);
+		RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
 	}
 	else
 	{
-		HDC hDC = GetDC(HWND_DESKTOP);
-		ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
-		ReleaseDC(HWND_DESKTOP, hDC);
-		RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szStartup));
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
+		{
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), UPDATE_REG_STRING));
+			_tcscpy(szProgram, DEFAULT_UPDATE);
+		}
+		if (IsProgram(szProgram))
+		{
+			RunProgram(szProgram);
+			RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
+		}
+		else
+		{
+			HDC hDC = GetDC(HWND_DESKTOP);
+			ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
+			ReleaseDC(HWND_DESKTOP, hDC);
+			RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
+		}
+	}
+
+	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
+	{
+		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), SIPSYMBOL_REG_STRING));
+		_tcscpy(szProgram, DEFAULT_SIPSYMBOL);
+	}
+	if (IsProgram(szProgram))
+	{
+		RunProgram(szProgram);
+		RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
+	}
+	else
+	{
+		RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
 	}
 
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("PowerManager/ReloadActivityTimeouts"));

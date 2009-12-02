@@ -108,6 +108,8 @@ INT WINAPI PowerButtonThread(void)
 				PROCESS_INFORMATION pi;
 				LONG lRet;
 
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_SHUTDOWN")), 0, 0);
+
 				ZeroMemory(&pi,sizeof(pi));
 				if (CreateProcess(lpszPathName,
 								  _T("SHUTDOWN"),	// pszCmdLine

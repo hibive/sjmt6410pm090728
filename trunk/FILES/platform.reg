@@ -344,7 +344,11 @@ ENDIF IMGHIVEREG
     "FriendlyName"="PocketMory FAT FileSystem1"
 ;    "Dll"="fatfsd.dll"
     "Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
+IF EBOOK2_VER
+    "Folder"="Omnibook Store"
+ELSE EBOOK2_VER
     "Folder"="PocketMory1"
+ENDIF EBOOK2_VER
     "FormatExfat"=dword:1
 ;    "EnableCacheWarm"=dword:0
     "CheckForFormat"=dword:1
@@ -1187,26 +1191,28 @@ ENDIF BSP_DISPLAY_BROADSHEET
 	"Animate"=dword:0
 
 IF BSP_IROMBOOT
-[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-;	"Startup"="\\PocketMory1\\DemoEBook2\\DemoEBook2.exe"
-	"Startup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+;	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
+	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
+;	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
+;	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
 ENDIF BSP_IROMBOOT
 
 IF BSP_IROMBOOT !
 IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
-[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-	"Startup"="\\SDMMCDisk\\DemoEBook2\\DemoEBook2.exe"
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+;	"AppStartup"="\\SDMMCDisk\\Omnibook_MainApp.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\SDMMCDisk\\Favorites"
 ENDIF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
 ENDIF BSP_IROMBOOT !
 
 IF APPS_EBOOK2_COMMAND
-[HKEY_LOCAL_MACHINE\Software\SeojeonMediaTech]
-	"Image_Shutdown"="\\Windows\\ebook2_shutdown.bmp"
-	"Image_Lowbattery"="\\Windows\\ebook2_lowbattery.bmp"
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+;	"BmpShutdown"="\\Windows\\ebook2_shutdown.bmp"
+;	"BmpLowbattery"="\\Windows\\ebook2_lowbattery.bmp"
 ENDIF APPS_EBOOK2_COMMAND
 
 ENDIF EBOOK2_VER

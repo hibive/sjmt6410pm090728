@@ -8,9 +8,9 @@
 #include "s1d13521.h"
 
 
-#define SJMT_REG_KEY				_T("Software\\SeojeonMediaTech")
-#define IMAGE_SHUTDOWN_REG_STRING	_T("Image_Shutdown")
-#define IMAGE_LOWBATTERY_REG_STRING	_T("Image_Lowbattery")
+#define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
+#define IMAGE_SHUTDOWN_REG_STRING	_T("BmpShutdown")
+#define IMAGE_LOWBATTERY_REG_STRING	_T("BmpLowbattery")
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -158,7 +158,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	if (0 == _tcsnicmp(_T("SHUTDOWN"), argv[1], _tcslen(_T("SHUTDOWN"))))
 	{
 		TCHAR szShutdown[MAX_PATH] = {0,};
-		if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, IMAGE_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
 		{
 			LPCTSTR lpszDefShutdown = _T("\\Windows\\ebook2_shutdown.bmp");
 			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_SHUTDOWN_REG_STRING));
@@ -170,7 +170,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
 	{
 		TCHAR szLowbattery[MAX_PATH] = {0,};
-		if (FALSE == RegOpenCreateStr(SJMT_REG_KEY, IMAGE_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
 		{
 			LPCTSTR lpszDefLowbattery = _T("\\Windows\\ebook2_lowbattery.bmp");
 			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_LOWBATTERY_REG_STRING));

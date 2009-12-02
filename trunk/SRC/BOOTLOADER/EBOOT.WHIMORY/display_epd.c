@@ -315,6 +315,46 @@ void EPDOutputString(const char *fmt, ...)
 }
 void EPDOutputChar(const unsigned char ch)
 {
+	int i, j;
+
+	switch (ch)
+	{
+	case 8:	//Backspace
+		if (0 < g_bTextXPos)
+		{
+			g_bTextXPos--;
+			g_szTextBuf[g_bTextLine][g_bTextXPos] = '\0';
+		}
+		break;
+	case '\t':
+		j = 4 - (g_bTextXPos % 4);
+		if (MAX_TEXT_WIDTH > (g_bTextXPos+j))
+		{
+			for (i=0; i<j; i++)
+				g_szTextBuf[g_bTextLine][g_bTextXPos++] = ' ';
+			break;
+		}
+		// else => new line...
+	case '\n':
+		g_szTextBuf[g_bTextLine++][g_bTextXPos] = '\0';
+		g_bTextXPos = 0;
+		break;
+	default:
+		g_szTextBuf[g_bTextLine][g_bTextXPos++] = ch;
+		break;
+	}
+
+	if (MAX_TEXT_WIDTH <= g_bTextXPos)
+	{
+		g_bTextXPos = 0;
+		g_bTextLine++;
+	}
+	if (MAX_TEXT_LINE <= g_bTextLine)
+	{
+		for (i=0; i<MAX_TEXT_LINE-1; i++)
+			memcpy(g_szTextBuf[i], g_szTextBuf[i+1], MAX_TEXT_WIDTH);
+		g_bTextLine = MAX_TEXT_LINE - 1;
+	}
 }
 void EPDOutputFlush(void)
 {
