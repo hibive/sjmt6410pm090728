@@ -114,6 +114,10 @@ BOOL			g_bSDMMCDownload = FALSE;
 #endif	EBOOK2_VER
 BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
+#ifdef	EBOOK2_VER
+BOOL			*g_bHiveCleanFlag;
+BOOL			*g_bFormatPartitionFlag;
+#endif	EBOOK2_VER
 
 //for KITL Configuration Of Args
 OAL_KITL_ARGS	*g_KITLConfig;
@@ -401,10 +405,46 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
     memset(szDottedD, '0', 24);
 
     EdbgOutputDebugString ( "\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
+#if	(EBOOK2_VER == 3)
+	EPDOutputString("\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
+	EPDOutputFlush();
+#endif	(EBOOK2_VER == 3)
 
     while(!((InChar == 0x0d) || (InChar == 0x0a)))
     {
         InChar = OEMReadDebugByte();
+#if	(EBOOK2_VER == 3)
+		if (((USHORT)OEM_DEBUG_READ_NODATA == InChar))
+		{
+			EKEY_DATA KeyData = GetKeypad();
+			switch (KeyData)
+			{
+			case KEY_ENTER:
+			case KEY_ENTER2:	InChar = 0xd;	break;
+			case KEY_BACKSPACE:	InChar = 0x8;	break;
+			case KEY_DOT:		InChar = '.';	break;
+			case KEY_0:			InChar = '0';	break;
+			case KEY_1:			InChar = '1';	break;
+			case KEY_2:			InChar = '2';	break;
+			case KEY_3:			InChar = '3';	break;
+			case KEY_4:			InChar = '4';	break;
+			case KEY_5:			InChar = '5';	break;
+			case KEY_6:			InChar = '6';	break;
+			case KEY_7:			InChar = '7';	break;
+			case KEY_8:			InChar = '8';	break;
+			case KEY_9:			InChar = '9';	break;
+			case KEY_A:			InChar = 'A';	break;
+			case KEY_B:			InChar = 'B';	break;
+			case KEY_C:			InChar = 'C';	break;
+			case KEY_D:			InChar = 'D';	break;
+			case KEY_E:			InChar = 'E';	break;
+			case KEY_F:			InChar = 'F';	break;
+			default:	InChar = OEM_DEBUG_READ_NODATA;
+				break;
+			}
+		}
+		else
+#endif	(EBOOK2_VER == 3)
         InChar = tolower(InChar);
         if (InChar != OEM_DEBUG_COM_ERROR && InChar != OEM_DEBUG_READ_NODATA)
         {
@@ -416,6 +456,10 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     szDottedD[cwNumChars++] = (char)InChar;
                     OEMWriteDebugByte((BYTE)InChar);
+#if	(EBOOK2_VER == 3)
+					EPDOutputChar((BYTE)InChar);
+					EPDOutputFlush();
+#endif	(EBOOK2_VER == 3)
                 }
             }
             else if (InChar == 8)       // If it's a backspace, back up.
@@ -424,12 +468,20 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     cwNumChars--;
                     OEMWriteDebugByte((BYTE)InChar);
+#if	(EBOOK2_VER == 3)
+					EPDOutputChar((BYTE)InChar);
+					EPDOutputFlush();
+#endif	(EBOOK2_VER == 3)
                 }
             }
         }
     }
 
     EdbgOutputDebugString ( "\r\n");
+#if	(EBOOK2_VER == 3)
+	EPDOutputString("\r\n");
+	EPDOutputFlush();
+#endif	(EBOOK2_VER == 3)
 
     // If it's a carriage return with an empty string, don't change anything.
     //
@@ -444,12 +496,22 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                   pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
 #ifdef	EBOOK2_VER
 		CvtMAC2UUID(pBootCfg, pBSPArgs);
+		EPDOutputString("INFO: MAC address set to: %B:%B:%B:%B:%B:%B\r\n",
+				pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
+				pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
+				pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
 #endif	EBOOK2_VER
     }
     else
     {
         EdbgOutputDebugString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
+#ifdef	EBOOK2_VER
+		EPDOutputString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
+#endif	EBOOK2_VER
     }
+#ifdef	EBOOK2_VER
+	EPDOutputFlush();
+#endif	EBOOK2_VER
 }
 
 
@@ -501,6 +563,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "L) LAUNCH existing Boot Media image\r\n");
         EdbgOutputDebugString ( "R) Read Configuration \r\n");
 #ifdef	EBOOK2_VER
+		EdbgOutputDebugString ( "H) Hive Clean on Boot-time      : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_HIVECLEAN) ? "True" : "*False");
+		EdbgOutputDebugString ( "P) Format Partition on Boot-time: [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_FORMATPARTITION) ? "True" : "*False");
 		EdbgOutputDebugString ( "S) DOWNLOAD image now(SDMMCCard)\r\n");
 #endif	EBOOK2_VER
         EdbgOutputDebugString ( "U) DOWNLOAD image now(USB)\r\n");
@@ -513,6 +577,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #ifdef	DISPLAY_BROADSHEET
 		EPDOutputString("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
 #if	(EBOOK2_VER == 3)
+		EPDOutputString("7) Program CS8900 MAC address (%B:%B:%B:%B:%B:%B)\r\n",
+							g_pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[0] >> 8,
+							g_pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[1] >> 8,
+							g_pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[2] >> 8);
+		EPDOutputString("H) Hive Clean on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_HIVECLEAN) ? "True" : "*False");
+		EPDOutputString("P) Format Partition on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_FORMATPARTITION) ? "True" : "*False");
 		EPDOutputString("C) Format FTL (Erase FTL Area + FTL Format)\r\n");
 		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
@@ -542,6 +612,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'L') || (KeySelect == 'l') ) ||
                    ( (KeySelect == 'R') || (KeySelect == 'r') ) ||
 #ifdef	EBOOK2_VER
+                   ( (KeySelect == 'H') || (KeySelect == 'h') ) ||
+                   ( (KeySelect == 'P') || (KeySelect == 'p') ) ||
                    ( (KeySelect == 'S') || (KeySelect == 's') ) ||
 #endif	EBOOK2_VER
                    ( (KeySelect == 'U') || (KeySelect == 'u') ) ||
@@ -558,6 +630,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				switch (KeyData)
 				{
 #if	(EBOOK2_VER == 3)
+				case KEY_7:
+					KeySelect = '7';	break;
+				case KEY_H:
+					KeySelect = 'H';	break;
+				case KEY_P:
+					KeySelect = 'P';	break;
 				case KEY_C:
 					KeySelect = 'C';	break;
 				case KEY_L:
@@ -581,8 +659,6 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 					KeySelect = 'X';	break;
 #endif	EBOOK2_VER
 				default:
-					//if (KEY_NONE != KeyData)
-					//	EdbgOutputDebugString("\tKeyData = %B, %d\r\n", KeyData, KeyData);
 					KeySelect = OEM_DEBUG_READ_NODATA;
 					break;
 				}
@@ -878,6 +954,16 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
             // TODO
             break;
 #ifdef	EBOOK2_VER
+		case 'H':	// Toggle
+		case 'h':
+			pBootCfg->ConfigFlags= (pBootCfg->ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
+			//bConfigChanged = TRUE;
+			break;
+		case 'P':	// Toggle
+		case 'p':
+			pBootCfg->ConfigFlags= (pBootCfg->ConfigFlags ^ BOOT_OPTION_FORMATPARTITION);
+			//bConfigChanged = TRUE;
+			break;
 		case 'S':
 		case 's':
 			if (FALSE == InitializeSDMMC())
@@ -1042,6 +1128,10 @@ BOOL OEMPlatformInit(void)
 	OALArgsInit(pBSPArgs);
 
 	g_bCleanBootFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_CLEANBOOT) ;
+#ifdef	EBOOK2_VER
+	g_bHiveCleanFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_HIVECLEAN);
+	g_bFormatPartitionFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_FORMATPART);
+#endif	EBOOK2_VER
 	g_KITLConfig = (OAL_KITL_ARGS *)OALArgsQuery(OAL_ARGS_QUERY_KITL);
 	g_DevID = (UCHAR *)OALArgsQuery( OAL_ARGS_QUERY_DEVID);
 
@@ -1271,7 +1361,24 @@ if (0x20 == KeySelect)
 	{
 		*g_bCleanBootFlag =FALSE;
 	}
-
+#ifdef	EBOOK2_VER
+	if (g_pBootCfg->ConfigFlags &  BOOT_OPTION_HIVECLEAN)
+	{
+		*g_bHiveCleanFlag = TRUE;
+	}
+	else
+	{
+		*g_bHiveCleanFlag = FALSE;
+	}
+	if (g_pBootCfg->ConfigFlags &  BOOT_OPTION_FORMATPARTITION)
+	{
+		*g_bFormatPartitionFlag = TRUE;
+	}
+	else
+	{
+		*g_bFormatPartitionFlag = FALSE;
+	}
+#endif	EBOOK2_VER
 	if(g_pBootCfg->ConfigFlags & CONFIG_FLAGS_KITL)
 	{
 		g_KITLConfig->flags=OAL_KITL_FLAGS_ENABLED | OAL_KITL_FLAGS_VMINI;
