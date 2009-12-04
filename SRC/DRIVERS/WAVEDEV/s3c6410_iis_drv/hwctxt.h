@@ -71,7 +71,11 @@ typedef enum
     INPUT_DMA_BUFFER_COUNT
 } INPUT_BUFFER_NUMBER;
 
+#if	(EBOOK2_VER == 3)
+#define	AUDIO_DMA_PAGE_SIZE		(16384)	// Size in bytes
+#else
 #define AUDIO_DMA_PAGE_SIZE        (4096)                    // Size in bytes
+#endif	(EBOOK2_VER == 3)
 #define AUDIO_DMA_BUFFER_SIZE        (AUDIO_DMA_PAGE_SIZE*(OUTPUT_DMA_BUFFER_COUNT+INPUT_DMA_BUFFER_COUNT))
 
 //----- Used to track DMA controllers status -----

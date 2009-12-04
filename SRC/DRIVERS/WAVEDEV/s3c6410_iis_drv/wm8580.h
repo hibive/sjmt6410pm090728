@@ -96,9 +96,11 @@ typedef enum
 unsigned int WM8580_Codec_Init_Table[][2] =
 {
 #if	(EBOOK2_VER == 3)
+	{ 15, 0x000 },  // Reset
+	{ 25, 0x0C0 },  // VMID=50K, Enable VREF
 	{  9, 0x040 },	// GPIO Pin
 	{ 23, 0x1C1 },	// Enable DMONOMIX, Thermal shutdown enabled (R23=0x1C0 : Disable DMONOMIX)
-	{ 51, 0x08D },	// DCGAIN=1.27x and ACGAIN=1.8 with SPKVDD=4.2V
+	{ 51, 0x089 },	// DCGAIN=1.27x and ACGAIN=1.27x with SPKVDD=3.8V
 	//{ 51, 0x09D },	// DCGAIN = 1.52x (+3.6dB) and ACGAIN = 1.8x with SPKVDD=5V
 	//{ 51, 0x084 },	// DCGAIN=1.0x and ACGAIN=1.67 with SPKVDD=3.6V)
 	{  7, 0x002 },	// I2S, 16bit, Slave mode ( For Master mode : R7=0x042)
