@@ -1193,7 +1193,9 @@ ENDIF BSP_DISPLAY_BROADSHEET
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
+IF EBOOK2_VER_DEMO
 	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
+ENDIF EBOOK2_VER_DEMO
 ;	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
 ;	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
