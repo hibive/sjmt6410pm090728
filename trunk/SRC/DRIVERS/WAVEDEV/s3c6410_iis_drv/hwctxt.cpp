@@ -322,10 +322,10 @@ HardwareContext::PowerUp()
 
     InitIISCodec();
 
-    CodecMuteControl(DMA_CH_OUT|DMA_CH_IN, TRUE);
 #ifdef	EBOOK2_VER
 	CodecPowerControl();
 #endif	EBOOK2_VER
+	CodecMuteControl(DMA_CH_OUT|DMA_CH_IN, TRUE);
 
     WAV_MSG((_T("[WAV] --PowerUp()\n\r")));
 }
@@ -1685,49 +1685,41 @@ BOOL
 HardwareContext::CodecPowerControl()
 {
 #if	(EBOOK2_VER == 3)
-	static BOOL static_Input = FALSE, static_Output = FALSE;
 	USHORT usData25, usData47;
 
-	if (m_bInputDMARunning && static_Input != m_bInputDMARunning)
+	if (m_bInputDMARunning || m_bOutputDMARunning)
 	{
-		static_Input = m_bInputDMARunning;
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
 		usData25 = ReadCodecRegister(25);
 		usData47 = ReadCodecRegister(47);
-
-		WriteCodecRegister(25, usData25 | 0x0EA);
-		WriteCodecRegister(47, usData47 | 0x020);
 	}
-	else if (m_bOutputDMARunning && static_Output != m_bOutputDMARunning)
+
+	if (m_bInputDMARunning & m_bOutputDMARunning)
 	{
-		static_Output = m_bOutputDMARunning;
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
-		usData25 = ReadCodecRegister(25);
-		usData47 = ReadCodecRegister(47);
-
-		WriteCodecRegister(28, 0x094);
-		WriteCodecRegister(29, 0x040);
-		Sleep(400);
-		WriteCodecRegister(26, 0x078);
-		WriteCodecRegister(29, 0x000);
-		WriteCodecRegister(25, usData25 | 0x080);
-		Sleep(100);
-		WriteCodecRegister(25, usData25 | 0x0C0);
-		WriteCodecRegister(28, 0x000);
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
+		WriteCodecRegister(25, (((usData25 & ~(0x7<<6)) | (0x3<<6)) | 0x2A));
 		WriteCodecRegister(26, 0x1F8);
-		WriteCodecRegister(47, usData47 | 0x00C);
-
+		WriteCodecRegister(47, (usData47 | 0x020 | 0x00C));
 		WriteCodecRegister(49, 0x0F7);
 	}
-	else if (!m_bInputDMARunning && !m_bOutputDMARunning)
+	else if (m_bInputDMARunning)
 	{
-		static_Input = FALSE, static_Output = FALSE;
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
+		WriteCodecRegister(25, (((usData25 & ~(0x7<<6)) | (0x3<<6)) | 0x2A));
+		WriteCodecRegister(47, usData47 | 0x020);
+	}
+	else if (m_bOutputDMARunning)
+	{
+		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
+		WriteCodecRegister(25, ((usData25 & ~(0x7<<6)) | (0x3<<6)));
+		WriteCodecRegister(26, 0x1F8);
+		WriteCodecRegister(47, usData47 | 0x00C);
+		WriteCodecRegister(49, 0x0F7);
+	}
+	else
+	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC Off\n\r")));
 		WriteCodecRegister(49, 0x037);
-
-		WriteCodecRegister(28, 0x095);
-		WriteCodecRegister(25, 0x000);
-		Sleep(400);
+		WriteCodecRegister(25, 0x100);
 		WriteCodecRegister(26, 0x000);
 		WriteCodecRegister(47, 0x000);
 	}
