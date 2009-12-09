@@ -92,7 +92,7 @@ static BOOL OALIoCtlHalGetHWEntropy(
 
     OALMSG(OAL_IOCTL&&OAL_FUNC, (L"+OALIoCtlHalGetHWEntropy\r\n"));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	UniqueID = NULL;
 	if (lpInBuf || nInBufSize || !lpOutBuf || (nOutBufSize < 8))
 	{
@@ -114,7 +114,7 @@ static BOOL OALIoCtlHalGetHWEntropy(
 		rc = TRUE;
 	}
 
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     UniqueID = (UINT8 *)OALArgsQuery(OAL_ARGS_QUERY_UUID);
 
     // Check buffer size
@@ -135,7 +135,7 @@ static BOOL OALIoCtlHalGetHWEntropy(
         // We are done
         rc = TRUE;
     }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // Indicate status
     OALMSG(OAL_IOCTL&&OAL_FUNC, (L"-OALIoCtlHalGetHWEntropy(rc = %d)\r\n", rc));
@@ -535,8 +535,8 @@ static BOOL OALIoCtlHalInitRegistry(
     return TRUE;
 }
 
-#ifdef	EBOOK2_VER
-static BOOL OALIoCtlHalEBook2Shutdown(
+#ifdef	OMNIBOOK_VER
+static BOOL OALIoCtlHalOmnibookShutdown(
         UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
         VOID *lpOutBuf, UINT32 nOutBufSize, UINT32* lpBytesReturned)
 {
@@ -551,7 +551,7 @@ static BOOL OALIoCtlHalEBook2Shutdown(
 
 	return TRUE;
 }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 
 //------------------------------------------------------------------------------

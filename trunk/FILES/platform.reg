@@ -108,11 +108,7 @@ IF BSP_NOTOUCH !
 ;	"CalibrationData"="504,508 233,236 231,788 785,792 790,227"
 ; 4.8" WVGA Landscape
 	; for S3C6410 SMRP 12bit, X_Y inversion
-IF EBOOK2_VER
-	"CalibrationData"="2117,2005 1158,2656 1148,1360 3062,1336 3049,2651"
-ELSE
 	"CalibrationData"="2107,2038 2826,3092 1380,3099 1392,1001 2821,1004"
-ENDIF EBOOK2_VER
 	; for S3C6410 SMRP 12bit
 ;	"CalibrationData"="2108,1981 1131,2643 1133,1343 3079,1339 3078,2616"
 	; for S3C6410 12bit
@@ -344,11 +340,11 @@ ENDIF IMGHIVEREG
     "FriendlyName"="PocketMory FAT FileSystem1"
 ;    "Dll"="fatfsd.dll"
     "Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
-IF EBOOK2_VER
+IF OMNIBOOK_VER
     "Folder"="Omnibook Store"
-ELSE EBOOK2_VER
+ELSE
     "Folder"="PocketMory1"
-ENDIF EBOOK2_VER
+ENDIF OMNIBOOK_VER
     "FormatExfat"=dword:1
 ;    "EnableCacheWarm"=dword:0
     "CheckForFormat"=dword:1
@@ -1155,11 +1151,11 @@ ENDIF SAMPLES_DSHOWFILTERS
 #include "$(_TARGETPLATROOT)\FILES\rasbook.reg"
 
 
-IF EBOOK2_VER
+IF OMNIBOOK_VER
 
 IF BSP_DISPLAY_BROADSHEET
 [HKEY_CURRENT_USER\ControlPanel\Desktop]
-	"wallpaper"="\\Windows\\ebook2_wallpaper.gif"
+	"wallpaper"="\\Windows\\Omnibook_Wallpaper.gif"
 ENDIF BSP_DISPLAY_BROADSHEET
 
 [HKEY_CURRENT_USER\ControlPanel\Korean IME UI\Settings]
@@ -1192,30 +1188,21 @@ ENDIF BSP_DISPLAY_BROADSHEET
 
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-;	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
-IF EBOOK2_VER_DEMO
+;Default	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
+IF OMNIBOOK_VER_DEMO
 	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
-ENDIF EBOOK2_VER_DEMO
-;	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
-;	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
+ENDIF OMNIBOOK_VER_DEMO
+;Default	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
+;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
 ENDIF BSP_IROMBOOT
 
-IF BSP_IROMBOOT !
-IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
+IF APPS_COMMAND
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-;	"AppStartup"="\\SDMMCDisk\\Omnibook_MainApp.exe"
-[HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
-	"Favorites"="\\SDMMCDisk\\Favorites"
-ENDIF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
-ENDIF BSP_IROMBOOT !
+;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
+;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
+ENDIF APPS_COMMAND
 
-IF APPS_EBOOK2_COMMAND
-[HKEY_LOCAL_MACHINE\Software\Omnibook]
-;	"BmpShutdown"="\\Windows\\ebook2_shutdown.bmp"
-;	"BmpLowbattery"="\\Windows\\ebook2_lowbattery.bmp"
-ENDIF APPS_EBOOK2_COMMAND
-
-ENDIF EBOOK2_VER
+ENDIF OMNIBOOK_VER
 

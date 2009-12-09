@@ -11,11 +11,11 @@ see the LICENSE.RTF on your install media or the root of your tools installation
 THE SAMPLE SOURCE CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 !endif
 
-!if "$(APPS_EBOOK2_STARTUP)" != "1"
+!if "$(APP_STARTUP)" != "1"
 SKIPBUILD=1
 !endif
 
-TARGETNAME=EBook2Startup
+TARGETNAME=App_Startup
 TARGETTYPE=PROGRAM
 RELEASETYPE=PLATFORM
 
@@ -28,5 +28,5 @@ TARGETLIBS=\
 	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib
 
 SOURCES=\
-	EBook2Startup.cpp
+	Startup.cpp\
 

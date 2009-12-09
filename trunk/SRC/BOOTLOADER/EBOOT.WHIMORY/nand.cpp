@@ -43,9 +43,9 @@ extern void _Read_512Byte_Unaligned(UINT8* pBuf);
 extern void _Write_512Byte(UINT8* pBuf);
 extern void _Write_512Byte_Unaligned(UINT8* pBuf);
 
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 extern void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal);
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 }
 
 BOOL WriteBlock(DWORD dwBlock, LPBYTE pbBlock, PSectorInfo pSectorInfoTable);
@@ -108,11 +108,11 @@ static void BootConfigInit(DWORD dwIndex)
 
     g_pBootCfg->SubnetMask = inet_addr("255.255.255.0");
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pBootCfg->ConfigFlags |=  BOOT_TYPE_DIRECT;	// 5) Startup image: LAUNCH EXISTING
 	g_pBootCfg->ConfigFlags |=  TARGET_TYPE_NAND;	// 6) Program disk image into SmartMedia card: Disabled
 	g_pBootCfg->ConfigFlags &= ~CONFIG_FLAGS_KITL;	// 8) KITL Configuration: Disabled
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     EdbgOutputDebugString("-BootConfigInit\r\n");
     return;
@@ -751,14 +751,14 @@ BOOL ReadOSImageFromBootMedia()
 			
 			if (dwPage%PAGES_PER_BLOCK == (PAGES_PER_BLOCK-1)) OALMSG(TRUE, (TEXT(".")));
 
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 			EPDShowProgress(dwPage-dwStartPage, dwNumPage);
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 		}
 
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 		EPDShowProgress(dwNumPage, dwNumPage);
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
 		OALMSG(TRUE, (TEXT("\r\nRead OS image to BootMedia Success \r\n")));
 	}

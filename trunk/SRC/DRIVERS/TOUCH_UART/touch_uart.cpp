@@ -1,6 +1,6 @@
 
 #include <bsp.h>
-#include "ebook2_touch.h"
+#include "touch_uart.h"
 
 
 #define MYMSG(x)	RETAILMSG(0, x)
@@ -14,7 +14,6 @@
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
-static volatile BSP_ARGS *g_gBspArgs = NULL;
 static HANDLE m_MutexTouch = NULL;
 
 static DWORD g_dwSysIntrPenDet = SYSINTR_UNDEFINED;
@@ -26,11 +25,7 @@ static HANDLE g_hComPort = INVALID_HANDLE_VALUE;
 static HANDLE g_hDriverThread = NULL;
 static BOOL g_bDriverRunning = TRUE;
 
-#if	(EBOOK2_VER == 3)
 static BYTE g_bOrientation = 2;	// Display(0->1, 1->0)
-#elif	(EBOOK2_VER == 2)
-static BYTE g_bOrientation = 0;	// Display(0->1, 1->0)
-#endif	EBOOK2_VER
 
 
 DWORD TSP_Init(DWORD dwContext);
@@ -269,7 +264,6 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 	while (!g_bExitThread)
 	{
 		WaitForSingleObject(g_hEventPenDet, INFINITE);
-
 		if (g_bExitThread)
 			break;
 
@@ -277,10 +271,7 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 		g_pGPIOReg->EINT0PEND = (0x1<<4);	// Clear pending EINT4
 		InterruptDone(g_dwSysIntrPenDet);
 
-		if (g_gBspArgs->bKeyHold)
-			bPenDet = FALSE;
-		else
-			bPenDet = (g_pGPIOReg->GPNDAT & (0x1<<4));
+		bPenDet = (g_pGPIOReg->GPNDAT & (0x1<<4));
 		bRet = TSP_IOControl(0, IOCTL_TSP_SET_ENABLE, NULL, bPenDet, NULL, 0, NULL);
 		MYMSG((_T("[TSP] IOCTL_TSP_SET_ENABLE(%d) = %d\n\r"), bPenDet, bRet));
 
@@ -302,14 +293,6 @@ DWORD TSP_Init(DWORD dwContext)
 	if (NULL == g_pGPIOReg)
 	{
 		MYERR((_T("[TSP] NULL == g_pGPIOReg\r\n")));
-		goto goto_err;
-	}
-
-	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
-	g_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
-	if (NULL == g_gBspArgs)
-	{
-		MYERR((_T("[TSP] NULL == g_gBspArgs\r\n")));
 		goto goto_err;
 	}
 
@@ -379,12 +362,6 @@ BOOL TSP_Deinit(DWORD InitHandle)
 	{
 		CloseHandle(m_MutexTouch);
 		m_MutexTouch = NULL;
-	}
-
-	if (g_gBspArgs)
-	{
-		MmUnmapIoSpace((PVOID)g_gBspArgs, sizeof(BSP_ARGS));
-		g_gBspArgs = NULL;
 	}
 
 	if (g_pGPIOReg)

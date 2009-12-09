@@ -115,33 +115,6 @@ UINT8 ScanCodeToVKeyTable[] =
     VK_RIGHT,            // scan code 63,
 };
 #elif (MATRIX_LAYOUT == LAYOUT1)
-#if (EBOOK2_VER == 2)
-#define ScanCodeTableFirst  0x00
-#define ScanCodeTableLast   0x0F
-
-UINT8 ScanCodeToVKeyTable[] =
-{
-	VK_RIGHT, 			// scan code 0
-	VK_F13, 			// scan code 1
-	VK_F14, 			// scan code 2
-	VK_F15, 			// scan code 3
-
-	VK_F16, 			// scan code 4
-	VK_F17, 			// scan code 5
-	VK_F18,				// scan code 6
-	VK_LEFT,			// scan code 7
-
-	VK_UP,				// scan code 8
-	VK_DOWN,			// scan code 9
-	VK_VOLUME_DOWN,		// scan code 10
-	VK_VOLUME_UP, 		// scan code 11
-
-	VK_RETURN,			// scan code 12
-	0,					// scan code 13
-	0,					// scan code 14
-	0,					// scan code 15
-};
-#else	(EBOOK2_VER == 2)
 #define ScanCodeTableFirst  0x00
 #define ScanCodeTableLast   0x09
 
@@ -159,14 +132,13 @@ UINT8 ScanCodeToVKeyTable[] =
     VK_LEFT,            // scan code 8
     VK_MENU,            // scan code 9
 };
-#endif	(EBOOK2_VER == 2)
 #elif (MATRIX_LAYOUT == LAYOUT2)
 #define    ScanCodeTableFirst    0x00
 #define    ScanCodeTableLast    0x3F
 
 UINT8 ScanCodeToVKeyTable[] =
 {
-#if (EBOOK2_VER == 3)
+#ifdef OMNIBOOK_VER
 	VK_T0,				// scan code 0
 	VK_T9,				// scan code 1
 	VK_T8,				// scan code 2
@@ -238,7 +210,7 @@ UINT8 ScanCodeToVKeyTable[] =
 	VK_DOWN,			// scan code 61
 	VK_LEFT,			// scan code 62
 	0,					// scan code 63
-#else	(EBOOK2_VER == 3)
+#else	//!OMNIBOOK_VER
     0,                    // scan code 0,
     0,                     // scan code 1,
     VK_T1,                 // scan code 2,
@@ -310,7 +282,7 @@ UINT8 ScanCodeToVKeyTable[] =
     'B',                // scan code 61,
     VK_TAB,                // scan code 62,
     VK_MENU,            // scan code 63,
-#endif (EBOOK2_VER == 3)
+#endif OMNIBOOK_VER
 };
 #endif
 
@@ -532,13 +504,13 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     {  '8', VK_F8 },
     {  '9', VK_F9 },
     {  '0', VK_F10 },
-#if (EBOOK2_VER == 3)
+#ifdef OMNIBOOK_VER
 	{ VK_HANGUL,	VK_HANJA },		// ÇÑ/¿µ
 	{ VK_F20,		VK_CAPITAL },	// Aa
 	{ VK_F21,		VK_TAB },		// Sym
 	{ VK_RETURN,	VK_LWIN },		// ENTER
-	{ VK_BACK,		VK_OFF },		// DEL
-#else (EBOOK2_VER == 3)
+	{ VK_BACK,		VK_DELETE },	// DEL
+#else //!OMNIBOOK_VER
     { VK_HYPHEN, VK_NUMLOCK },
     { VK_EQUAL, VK_CANCEL },
     {  'P', VK_INSERT },
@@ -546,7 +518,7 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     { VK_RBRACKET, VK_SCROLL },
     { VK_SEMICOLON, VK_SNAPSHOT },
     { VK_APOSTROPHE, VK_SNAPSHOT },
-#endif (EBOOK2_VER == 3)
+#endif OMNIBOOK_VER
     {  VK_LEFT,  VK_HOME },
     {  VK_UP,    VK_PRIOR},
     {  VK_DOWN,  VK_NEXT },

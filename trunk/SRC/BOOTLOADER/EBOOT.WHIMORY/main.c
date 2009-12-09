@@ -41,7 +41,7 @@
 #include <WMR_Utils.h>
 //#include <WMR_Eboot.h>
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 // +++ keypad settings +++
 #include "keypad.h"
 // --- keypad settings ---
@@ -63,7 +63,7 @@ extern BOOL InitializeSDMMC(void);
 extern BOOL ChooseImageFromSDMMC(void);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 
 // For USB Download function
@@ -109,15 +109,13 @@ DWORD			g_dwTocEntry;
 BOOL			g_bBootMediaExist = FALSE;
 BOOL			g_bDownloadImage  = TRUE;
 BOOL 			g_bWaitForConnect = TRUE;
-#ifdef	EBOOK2_VER
-BOOL			g_bSDMMCDownload = FALSE;
-#endif	EBOOK2_VER
 BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+BOOL			g_bSDMMCDownload = FALSE;
 BOOL			*g_bHiveCleanFlag;
 BOOL			*g_bFormatPartitionFlag;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 //for KITL Configuration Of Args
 OAL_KITL_ARGS	*g_KITLConfig;
@@ -134,9 +132,9 @@ DWORD			wNUM_BLOCKS;
 void main(void)
 {
     //GPIOTest_Function();
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     OTGDEV_SetSoftDisconnect();
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
     BootloaderMain();
 
     // Should never get here.
@@ -144,7 +142,7 @@ void main(void)
     SpinForever();
 }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define	DEC2HEXCHAR(x)	((9 < x) ? ((x%10)+'A') : (x+'0'))
 static void CvtMAC2UUID(PBOOT_CFG pBootCfg, BSP_ARGS *pArgs)
 {
@@ -176,7 +174,7 @@ static void CvtMAC2UUID(PBOOT_CFG pBootCfg, BSP_ARGS *pArgs)
 	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
 	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
 }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 static USHORT GetIPString(char *szDottedD)
 {
@@ -405,46 +403,19 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
     memset(szDottedD, '0', 24);
 
     EdbgOutputDebugString ( "\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
 	EPDOutputFlush();
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
 
     while(!((InChar == 0x0d) || (InChar == 0x0a)))
     {
         InChar = OEMReadDebugByte();
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 		if (((USHORT)OEM_DEBUG_READ_NODATA == InChar))
-		{
-			EKEY_DATA KeyData = GetKeypad();
-			switch (KeyData)
-			{
-			case KEY_ENTER:
-			case KEY_ENTER2:	InChar = 0xd;	break;
-			case KEY_BACKSPACE:	InChar = 0x8;	break;
-			case KEY_DOT:		InChar = '.';	break;
-			case KEY_0:			InChar = '0';	break;
-			case KEY_1:			InChar = '1';	break;
-			case KEY_2:			InChar = '2';	break;
-			case KEY_3:			InChar = '3';	break;
-			case KEY_4:			InChar = '4';	break;
-			case KEY_5:			InChar = '5';	break;
-			case KEY_6:			InChar = '6';	break;
-			case KEY_7:			InChar = '7';	break;
-			case KEY_8:			InChar = '8';	break;
-			case KEY_9:			InChar = '9';	break;
-			case KEY_A:			InChar = 'A';	break;
-			case KEY_B:			InChar = 'B';	break;
-			case KEY_C:			InChar = 'C';	break;
-			case KEY_D:			InChar = 'D';	break;
-			case KEY_E:			InChar = 'E';	break;
-			case KEY_F:			InChar = 'F';	break;
-			default:	InChar = OEM_DEBUG_READ_NODATA;
-				break;
-			}
-		}
+			InChar = (USHORT)GetKeypad2();
 		else
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
         InChar = tolower(InChar);
         if (InChar != OEM_DEBUG_COM_ERROR && InChar != OEM_DEBUG_READ_NODATA)
         {
@@ -456,10 +427,10 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     szDottedD[cwNumChars++] = (char)InChar;
                     OEMWriteDebugByte((BYTE)InChar);
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 					EPDOutputChar((BYTE)InChar);
 					EPDOutputFlush();
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
                 }
             }
             else if (InChar == 8)       // If it's a backspace, back up.
@@ -468,20 +439,19 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     cwNumChars--;
                     OEMWriteDebugByte((BYTE)InChar);
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 					EPDOutputChar((BYTE)InChar);
 					EPDOutputFlush();
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
                 }
             }
         }
     }
 
     EdbgOutputDebugString ( "\r\n");
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("\r\n");
-	EPDOutputFlush();
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
 
     // If it's a carriage return with an empty string, don't change anything.
     //
@@ -494,24 +464,24 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                   pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
                   pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
                   pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		CvtMAC2UUID(pBootCfg, pBSPArgs);
 		EPDOutputString("INFO: MAC address set to: %B:%B:%B:%B:%B:%B\r\n",
 				pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
 				pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
 				pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
     else
     {
         EdbgOutputDebugString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		EPDOutputString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	EPDOutputFlush();
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 
@@ -529,6 +499,27 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
     BOOLEAN bDownload = TRUE;
     UINT32 nSyncRet;
 
+#ifdef	OMNIBOOK_VER
+	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+	EPDOutputString("\t[Board] Revision(%B)\r\n", pBSPArgs->bBoardRevision);
+	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n", S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n", pBSPArgs->BS_wRevsionCode, pBSPArgs->BS_wProductCode);
+	EPDOutputString("\t[Disp] %W : Command Type\r\n", pBSPArgs->CMD_wType);
+	EPDOutputString("\t[Disp] %B.%B : Command Version\r\n", pBSPArgs->CMD_bMajor, pBSPArgs->CMD_bMinor);
+	EPDOutputString("\t[Disp] %X : Waveform File Size\r\n", pBSPArgs->WFM_dwFileSize);
+	EPDOutputString("\t[Disp] %X : Waveform Serial Number\r\n", pBSPArgs->WFM_dwSerialNumber);
+	EPDOutputString("\t[Disp] %B : Waveform Run Type\r\n", pBSPArgs->WFM_bRunType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Platform\r\n", pBSPArgs->WFM_bFPLPlatform);
+	EPDOutputString("\t[Disp] %W : Waveform FPL Lot\r\n", pBSPArgs->WFM_wFPLLot);
+	EPDOutputString("\t[Disp] %B : Waveform Mode Version\r\n", pBSPArgs->WFM_bModeVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Version\r\n", pBSPArgs->WFM_bWaveformVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Subversion\r\n", pBSPArgs->WFM_bWaveformSubVersion);
+	EPDOutputString("\t[Disp] %B : Waveform Type\r\n", pBSPArgs->WFM_bWaveformType);
+	EPDOutputString("\t[Disp] %B : Waveform FPL Size\r\n", pBSPArgs->WFM_bFPLSize);
+	EPDOutputString("\t[Disp] %B : Waveform MFG Code\r\n", pBSPArgs->WFM_bMFGCode);
+	EPDOutputFlush();
+#endif	OMNIBOOK_VER
 
     while(TRUE)
     {
@@ -555,18 +546,18 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "B) Format VFL (Format FIL + VFL Format)\r\n");
         EdbgOutputDebugString ( "C) Format FTL (Erase FTL Area + FTL Format)\r\n");
         EdbgOutputDebugString ( "E) Erase Physical Block 0\r\n");
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
         EdbgOutputDebugString ( "F) Make Initial Bad Block Information (Warning)\r\n");
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
         EdbgOutputDebugString ( "T) MLC Low level test \r\n");
         EdbgOutputDebugString ( "D) Download image now\r\n");
         EdbgOutputDebugString ( "L) LAUNCH existing Boot Media image\r\n");
         EdbgOutputDebugString ( "R) Read Configuration \r\n");
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		EdbgOutputDebugString ( "H) Hive Clean on Boot-time      : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_HIVECLEAN) ? "True" : "*False");
 		EdbgOutputDebugString ( "P) Format Partition on Boot-time: [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_FORMATPARTITION) ? "True" : "*False");
 		EdbgOutputDebugString ( "S) DOWNLOAD image now(SDMMCCard)\r\n");
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         EdbgOutputDebugString ( "U) DOWNLOAD image now(USB)\r\n");
         EdbgOutputDebugString ( "W) Write Configuration Right Now\r\n");
 #ifdef	DISPLAY_BROADSHEET
@@ -574,9 +565,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #endif	DISPLAY_BROADSHEET
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
 
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 		EPDOutputString("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
-#if	(EBOOK2_VER == 3)
 		EPDOutputString("7) Program CS8900 MAC address (%B:%B:%B:%B:%B:%B)\r\n",
 							g_pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[0] >> 8,
 							g_pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[1] >> 8,
@@ -588,16 +578,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
 		EPDOutputString("X) Epson Instruction byte code update\r\n");
-#elif	(EBOOK2_VER == 2)
-		EPDOutputString("L-0) LAUNCH existing Boot Media image\r\n");
-		EPDOutputString("S-1) DOWNLOAD image now(SDMMCCard)\r\n");
-		EPDOutputString("U-2) DOWNLOAD image now(USB)\r\n");
-		EPDOutputString("C-3) Format FTL (Erase FTL Area + FTL Format)\r\n");
-		EPDOutputString("X-4) Epson Instruction byte code update\r\n");
-#endif	EBOOK2_VER
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
         while (! ( ( (KeySelect >= '0') && (KeySelect <= '8') ) ||
                    ( (KeySelect == 'A') || (KeySelect == 'a') ) ||
@@ -605,17 +588,17 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'C') || (KeySelect == 'c') ) ||
                    ( (KeySelect == 'D') || (KeySelect == 'd') ) ||
                    ( (KeySelect == 'E') || (KeySelect == 'e') ) ||
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
                    ( (KeySelect == 'F') || (KeySelect == 'f') ) ||
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                    ( (KeySelect == 'T') || (KeySelect == 't') ) ||
                    ( (KeySelect == 'L') || (KeySelect == 'l') ) ||
                    ( (KeySelect == 'R') || (KeySelect == 'r') ) ||
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
                    ( (KeySelect == 'H') || (KeySelect == 'h') ) ||
                    ( (KeySelect == 'P') || (KeySelect == 'p') ) ||
                    ( (KeySelect == 'S') || (KeySelect == 's') ) ||
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                    ( (KeySelect == 'U') || (KeySelect == 'u') ) ||
 #ifdef	DISPLAY_BROADSHEET
                    ( (KeySelect == 'X') || (KeySelect == 'x') ) ||
@@ -623,13 +606,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'W') || (KeySelect == 'w') ) ))
         {
             KeySelect = OEMReadDebugByte();
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 			if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 			{
 				EKEY_DATA KeyData = GetKeypad();
 				switch (KeyData)
 				{
-#if	(EBOOK2_VER == 3)
 				case KEY_7:
 					KeySelect = '7';	break;
 				case KEY_H:
@@ -646,31 +628,19 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 					KeySelect = 'U';	break;
 				case KEY_X:
 					KeySelect = 'X';	break;
-#elif	(EBOOK2_VER == 2)
-				case KEY_F13:	// LAUNCH existing Boot Media image
-					KeySelect = 'L';	break;
-				case KEY_F14:	// DOWNLOAD image now(SDMMCCard)
-					KeySelect = 'S';	break;
-				case KEY_F15:	// DOWNLOAD image now(USB)
-					KeySelect = 'U';	break;
-				case KEY_F16:	// Format FTL (Erase FTL Area + FTL Format)
-					KeySelect = 'C';	break;
-				case KEY_F17:	// Epson Instruction byte code update
-					KeySelect = 'X';	break;
-#endif	EBOOK2_VER
 				default:
 					KeySelect = OEM_DEBUG_READ_NODATA;
 					break;
 				}
 			}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         }
 
         EdbgOutputDebugString ( "%c\r\n", KeySelect);
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 		EPDOutputString("%c\r\n", KeySelect);
 		EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
         switch(KeySelect)
         {
@@ -821,7 +791,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			OALMSG(TRUE, (TEXT(" --Erase Physical Block 0\r\n")));
 		}
 		break;
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
 	case 'F' :
 	case 'f' :
 		{
@@ -934,7 +904,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			OALMSG(TRUE, (TEXT(" --Make Initial Bad Block Information (Warning)\r\n")));
 		}
 		break;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         case 'T':           // Download? Yes.
         case 't':
 			MLC_LowLevelTest();
@@ -953,7 +923,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			TOC_Print();
             // TODO
             break;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		case 'H':	// Toggle
 		case 'h':
 			pBootCfg->ConfigFlags= (pBootCfg->ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
@@ -974,33 +944,33 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			g_bSDMMCDownload = TRUE;
 			bDownload = TRUE;
 			goto MENU_DONE;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         case 'U':           // Download? No.
         case 'u':
             //bConfigChanged = TRUE;  // Write to NAND too frequently causes wearout
-#ifdef	EBOOK2_VER
-{
-	volatile S3C6410_SYSCON_REG *pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);    
-	UINT8 data[2];
+#ifdef	OMNIBOOK_VER
+			{
+				volatile S3C6410_SYSCON_REG *pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
+				UINT8 data[2];
 
-	// ELDO3, ELDO8 On
-	data[0] = 0x32 | (1<<3);	// [bit3] ELDO3 - VDD_OTGI(1.2V)
-	IICWriteByte(PMIC_ADDR, 0x00, data[0]);
-	data[0] = 0x91 | (1<<5);	// [bit5] ELDO8 - VDD_OTG(3.3V)
-	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+				// ELDO3, ELDO8 On
+				data[0] = 0x32 | (1<<3);	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+				IICWriteByte(PMIC_ADDR, 0x00, data[0]);
+				data[0] = 0x91 | (1<<5);	// [bit5] ELDO8 - VDD_OTG(3.3V)
+				IICWriteByte(PMIC_ADDR, 0x01, data[0]);
 
-	InitializeInterrupt();
-    pSysConReg->HCLK_GATE |= (1<<20);
-	OTGDEV_SetSoftDisconnect();
-	InitializeUSB();
-}
-#else	EBOOK2_VER
+				InitializeInterrupt();
+			    pSysConReg->HCLK_GATE |= (1<<20);
+				OTGDEV_SetSoftDisconnect();
+				InitializeUSB();
+			}
+#else	//!OMNIBOOK_VER
 /*        if (!InitializeUSB())
 			{
 				DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
 				return(FALSE);
         }*/
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 			g_bUSBDownload = TRUE;
             bDownload = TRUE;
@@ -1058,14 +1028,15 @@ BOOL OEMPlatformInit(void)
 	UINT32 dwStartTime, dwPrevTime, dwCurrTime;
 	BOOL bResult = FALSE;
 	FlashInfo flashInfo;
+#ifdef	OMNIBOOK_VER
+	UINT8 data[2];
+	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+#endif	OMNIBOOK_VER
 
 	OALMSG(OAL_FUNC, (TEXT("+OEMPlatformInit.\r\n")));
 
-#ifdef	EBOOK2_VER
-// +++ i2c settings +++
-{
-	UINT8 data[2];
-
+#ifdef	OMNIBOOK_VER
+	// +++ i2c settings +++
 	// 1.30V(B), 1.20V(9), 1.10V(7), 1.05V(6)
 	data[0] = 0x79;	// DVSARM2[7:4]=1.10V, DVSARM1[3:0]=1.20V
 	IICWriteByte(PMIC_ADDR, 0x04, data[0]);
@@ -1073,9 +1044,8 @@ BOOL OEMPlatformInit(void)
 	IICWriteByte(PMIC_ADDR, 0x05, data[0]);
 	data[0] = 0x9B;	// DVSINT2[7:4]=1.20V, DVSINT1[3:0]=1.30V
 	IICWriteByte(PMIC_ADDR, 0x06, data[0]);
-}
-// --- i2c settings ---
-#endif	EBOOK2_VER
+	// --- i2c settings ---
+#endif	OMNIBOOK_VER
 
 	// Check if Current ARM speed is not matched to Target Arm speed
 	// then To get speed up, set Voltage
@@ -1090,11 +1060,8 @@ BOOL OEMPlatformInit(void)
     LTC3714_VoltageSet(2,1200,100);     // INT
 #endif
 
-#ifdef	EBOOK2_VER
-// +++ gpio settings +++
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-
+#ifdef	OMNIBOOK_VER
+	// +++ gpio settings +++
 	// GPC[3] PWRHOLD
 	pGPIOReg->GPCCON = (pGPIOReg->GPCCON & ~(0xF<<12)) | (0x1<<12);	// Output
 	pGPIOReg->GPCPUD = (pGPIOReg->GPCPUD & ~(0x3<<6)) | (0x0<<6);	// Pull-up/down disable
@@ -1104,22 +1071,16 @@ BOOL OEMPlatformInit(void)
 	// GPA[7] LED_R, GPA[6] LED_B
 	pGPIOReg->GPACON = (pGPIOReg->GPACON & ~(0xFF<<24)) | (0x11<<24);	// Output
 	pGPIOReg->GPAPUD = (pGPIOReg->GPAPUD & ~(0xF<<12)) | (0x0<<12);		// Pull-up/down disable
-#if (EBOOK2_VER == 3)
 	// GPA[7] LED_R#, GPA[6] LED_B On
 	pGPIOReg->GPADAT = (pGPIOReg->GPADAT & ~(0x3<<6)) | (1<<6);
-#elif (EBOOK2_VER == 2)
-	// GPA[7] LED_R, GPA[6] LED_B On
-	pGPIOReg->GPADAT = (pGPIOReg->GPADAT & ~(0x3<<6)) | (3<<6);
-#endif
 
 	// GPE[2] TOUCH_SLP, GPE[1] WCDMA_PD#, GPE[0] WLAN_PD#
 	pGPIOReg->GPECON = (pGPIOReg->GPECON & ~(0xFFF<<0)) | (0x111<<0);	// Output
 	pGPIOReg->GPEPUD = (pGPIOReg->GPEPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-up/down disable
 	// GPE[2] TOUCH_SLP
 	pGPIOReg->GPEDAT = (pGPIOReg->GPEDAT & ~(0x1<<2)) | (1<<2);
-}
-// --- gpio settings ---
-#endif	EBOOK2_VER
+	// --- gpio settings ---
+#endif	OMNIBOOK_VER
 
     EdbgOutputDebugString("Microsoft Windows CE Bootloader for the Samsung SMDK6410 Version %d.%d Built %s\r\n\r\n",
 	EBOOT_VERSION_MAJOR, EBOOT_VERSION_MINOR, __DATE__);
@@ -1128,35 +1089,24 @@ BOOL OEMPlatformInit(void)
 	OALArgsInit(pBSPArgs);
 
 	g_bCleanBootFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_CLEANBOOT) ;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_bHiveCleanFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_HIVECLEAN);
 	g_bFormatPartitionFlag = (BOOL*)OALArgsQuery(BSP_ARGS_QUERY_FORMATPART);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	g_KITLConfig = (OAL_KITL_ARGS *)OALArgsQuery(OAL_ARGS_QUERY_KITL);
 	g_DevID = (UCHAR *)OALArgsQuery( OAL_ARGS_QUERY_DEVID);
 
 	// Initialize the display.
 	InitializeDisplay();
 
-#ifdef	EBOOK2_VER
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-
+#ifdef	OMNIBOOK_VER
 	// GPM[2:0] BOARD_REV
 	pGPIOReg->GPMCON = (pGPIOReg->GPMCON & ~(0xFFF<<0)) | (0x000<<0);	// Input
-#if (EBOOK2_VER == 3)
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x2A<<0);		// Pull-up enable
-#elif (EBOOK2_VER == 2)
-	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x0<<0);		// Pull-down disable
-#endif
-	pArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
-}
-#endif	EBOOK2_VER
+	pBSPArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
 
-#ifndef	EBOOK2_VER
 	InitializeInterrupt();
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 	g_dwImageStartBlock = IMAGE_START_BLOCK;
 
@@ -1190,14 +1140,11 @@ BOOL OEMPlatformInit(void)
 		// use default settings
 		TOC_Init(DEFAULT_IMAGE_DESCRIPTOR, (IMAGE_TYPE_RAMIMAGE), 0, 0, 0);
 	}
-#ifdef	EBOOK2_VER
-{
-	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-	CvtMAC2UUID(g_pBootCfg, (BSP_ARGS *)pArgs);
-	EdbgOutputDebugString("pArgs->uuid : %s\r\n", pArgs->uuid);
-	EdbgOutputDebugString("pArgs->deviceId : %s\r\n", pArgs->deviceId);
-}
-#endif	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+	CvtMAC2UUID(g_pBootCfg, (BSP_ARGS *)pBSPArgs);
+	EdbgOutputDebugString("pBSPArgs->uuid : %s\r\n", pBSPArgs->uuid);
+	EdbgOutputDebugString("pBSPArgs->deviceId : %s\r\n", pBSPArgs->deviceId);
+#endif	OMNIBOOK_VER
 
 	// Display boot message - user can halt the autoboot by pressing any key on the serial terminal emulator.
 	BootDelay = g_pBootCfg->BootDelay;
@@ -1218,36 +1165,30 @@ BOOL OEMPlatformInit(void)
 	dwCurrTime  = dwStartTime;
 	KeySelect   = 0;
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
         if (!InitializeUSB())
         {
             DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
             return(FALSE);
         }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	InitializeKeypad();
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 	// Allow the user to break into the bootloader menu.
 	while((dwCurrTime - dwStartTime) < g_pBootCfg->BootDelay)
 	{
 		KeySelect = OEMReadDebugByte();
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 		{
 			EKEY_DATA KeyData = GetKeypad();
-#if	(EBOOK2_VER == 3)
 			if (KeyData == (KEY_HOLD | KEY_HOME))
-#elif	(EBOOK2_VER == 2)
-			if (KeyData == (KEY_HOLD | KEY_F16))
-#endif	EBOOK2_VER
-			{
 				KeySelect = 0x20;
-			}
 		}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 		if ((KeySelect == 0x20) || (KeySelect == 0x0d))
 		{
@@ -1293,39 +1234,6 @@ BOOL OEMPlatformInit(void)
 
 	OALMSG(OAL_INFO, (TEXT("\r\n")));
 
-#ifdef	DISPLAY_BROADSHEET
-if (0x20 == KeySelect)
-{
-	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-
-	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
-
-	EPDOutputString("\t[Board] Revision(%B)\r\n", pArgs->bBoardRevision);
-	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
-	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n", S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
-
-	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n",
-		pArgs->BS_wRevsionCode, pArgs->BS_wProductCode);
-
-	EPDOutputString("\t[Disp] %W : Command Type\r\n", pArgs->CMD_wType);
-	EPDOutputString("\t[Disp] %B.%B : Command Version\r\n", pArgs->CMD_bMajor, pArgs->CMD_bMinor);
-
-	EPDOutputString("\t[Disp] %X : Waveform File Size\r\n", pArgs->WFM_dwFileSize);
-	EPDOutputString("\t[Disp] %X : Waveform Serial Number\r\n", pArgs->WFM_dwSerialNumber);
-	EPDOutputString("\t[Disp] %B : Waveform Run Type\r\n", pArgs->WFM_bRunType);
-	EPDOutputString("\t[Disp] %B : Waveform FPL Platform\r\n", pArgs->WFM_bFPLPlatform);
-	EPDOutputString("\t[Disp] %W : Waveform FPL Lot\r\n", pArgs->WFM_wFPLLot);
-	EPDOutputString("\t[Disp] %B : Waveform Mode Version\r\n", pArgs->WFM_bModeVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Version\r\n", pArgs->WFM_bWaveformVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Subversion\r\n", pArgs->WFM_bWaveformSubVersion);
-	EPDOutputString("\t[Disp] %B : Waveform Type\r\n", pArgs->WFM_bWaveformType);
-	EPDOutputString("\t[Disp] %B : Waveform FPL Size\r\n", pArgs->WFM_bFPLSize);
-	EPDOutputString("\t[Disp] %B : Waveform MFG Code\r\n", pArgs->WFM_bMFGCode);
-
-	EPDOutputFlush();
-}
-#endif	DISPLAY_BROADSHEET
-
 	// Boot or enter bootloader menu.
 	//
 	switch(KeySelect)
@@ -1361,7 +1269,7 @@ if (0x20 == KeySelect)
 	{
 		*g_bCleanBootFlag =FALSE;
 	}
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (g_pBootCfg->ConfigFlags &  BOOT_OPTION_HIVECLEAN)
 	{
 		*g_bHiveCleanFlag = TRUE;
@@ -1378,7 +1286,7 @@ if (0x20 == KeySelect)
 	{
 		*g_bFormatPartitionFlag = FALSE;
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	if(g_pBootCfg->ConfigFlags & CONFIG_FLAGS_KITL)
 	{
 		g_KITLConfig->flags=OAL_KITL_FLAGS_ENABLED | OAL_KITL_FLAGS_VMINI;
@@ -1419,9 +1327,9 @@ if (0x20 == KeySelect)
 		case IMAGE_TYPE_RAMIMAGE:
 			OTGDEV_SetSoftDisconnect();
 			OALMSG(TRUE, (TEXT("OEMPlatformInit: IMAGE_TYPE_RAMIMAGE\r\n")));
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 			EPDDisplayImage(IMAGE_BOOTUP);	// BootUp
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 			if ( !ReadOSImageFromBootMedia( ) )
 			{
 				OALMSG(OAL_ERROR, (TEXT("OEMPlatformInit ERROR: Failed to load kernel region into RAM.\r\n")));
@@ -1436,11 +1344,11 @@ if (0x20 == KeySelect)
 	}
 
 	// Configure Ethernet controller.
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (g_bDownloadImage && (g_bUSBDownload == FALSE) && (g_bSDMMCDownload == FALSE))
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	if ( g_bDownloadImage && (g_bUSBDownload == FALSE))
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	{
 		if (!InitEthDevice(g_pBootCfg))
 		{
@@ -1479,11 +1387,11 @@ DWORD OEMPreDownload(void)
     OALKitlCreateName(BSP_DEVICE_PREFIX, pBSPArgs->kitl.mac, pBSPArgs->deviceId);
     OALMSG(OAL_INFO, (L"INFO: *** Device Name '%hs' ***\r\n", pBSPArgs->deviceId));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (g_bUSBDownload == FALSE && g_bSDMMCDownload == FALSE)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	if ( g_bUSBDownload == FALSE)
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	{
 		// If the user wants to use a static IP address, don't request an address
 		// from a DHCP server.  This is done by passing in a NULL for the DHCP
@@ -1547,7 +1455,7 @@ DWORD OEMPreDownload(void)
 	{
 		OALMSG(TRUE, (TEXT("Please send the Image through USB.\r\n")));
 	}
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
@@ -1557,7 +1465,7 @@ DWORD OEMPreDownload(void)
 			SpinForever();
 		}
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     return(bGotJump ? BL_JUMP : BL_DOWNLOAD);
 }
@@ -1576,11 +1484,11 @@ BOOL OEMReadData(DWORD dwData, PUCHAR pData)
    	OALMSG(OAL_FUNC, (TEXT("+OEMReadData.\r\n")));
 	//OALMSG(TRUE, (TEXT("\r\nINFO: dwData = 0x%x, pData = 0x%x \r\n"), dwData, pData));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (g_bUSBDownload == FALSE && g_bSDMMCDownload == FALSE)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	if ( g_bUSBDownload == FALSE )
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	{
 		ret = EbootEtherReadData(dwData, pData);
 	}
@@ -1589,12 +1497,12 @@ BOOL OEMReadData(DWORD dwData, PUCHAR pData)
 	{
 		ret = UbootReadData(dwData, pData);
 	}
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		ret = SDMMCReadData(dwData, pData);
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 /*
 	OALMSG(TRUE, (TEXT("\r\n")));
@@ -1695,14 +1603,14 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
             		goto CleanUp;
         		}
 		        OALMSG(TRUE, (TEXT("INFO: Step loader image stored to Smart Media.  Please Reboot.  Halting...\r\n")));
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 				SpinForever();
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	        	while(1)
 	        	{
             		// Wait...
 	        	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         		break;
 
             case IMAGE_TYPE_LOADER:
@@ -1725,14 +1633,14 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 
 				}
 		        OALMSG(TRUE, (TEXT("INFO: Eboot image stored to Smart Media.  Please Reboot.  Halting...\r\n")));
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 				SpinForever();
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 		        while(1)
 		        {
             		// Wait...
         		}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                 break;
 
             case IMAGE_TYPE_RAMIMAGE:
@@ -1824,25 +1732,25 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 		OALMSG(OAL_INFO, (TEXT("INFO: using TOC[%d] dwJumpAddress: 0x%x\r\n"), g_dwTocEntry, dwLaunchAddr));
 	}
 
-#ifdef	EBOOK2_VER
-{
-	unsigned char buf[2];
-	IICReadByte(PMIC_ADDR, 0x00, buf);
-	if ((buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+#ifdef	OMNIBOOK_VER
 	{
-		buf[0] &= ~(1<<3);	// off
-		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
-		OALMSG(TRUE, (TEXT("VDD_OTGI(1.2V) OFF\r\n")));
+		unsigned char buf[2];
+		IICReadByte(PMIC_ADDR, 0x00, buf);
+		if ((buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+		{
+			buf[0] &= ~(1<<3);	// off
+			IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+			OALMSG(TRUE, (TEXT("VDD_OTGI(1.2V) OFF\r\n")));
+		}
+		IICReadByte(PMIC_ADDR, 0x01, buf);
+		if ((buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+		{
+			buf[0] &= ~(1<<5);	// off
+			IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+			OALMSG(TRUE, (TEXT("VDD_OTG(3.3V) OFF\r\n")));
+		}
 	}
-	IICReadByte(PMIC_ADDR, 0x01, buf);
-	if ((buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
-	{
-		buf[0] &= ~(1<<5);	// off
-		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
-		OALMSG(TRUE, (TEXT("VDD_OTG(3.3V) OFF\r\n")));
-	}
-}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // Jump to downloaded image (use the physical address since we'll be turning the MMU off)...
     //
@@ -2169,7 +2077,7 @@ static void InitializeDisplay(void)
 
     EdbgOutputDebugString("[Eboot] ++InitializeDisplay()\r\n");
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	{
 		UINT8 data[2];
 		volatile int loop = 5000;
@@ -2179,7 +2087,7 @@ static void InitializeDisplay(void)
 			IICWriteByte(PMIC_ADDR, 0x01, (data[0] |(1<<6)));
 		while (loop--);
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // Initialize Display Power Gating
     if(!(pSysConReg->BLK_PWR_STAT & (1<<4))) {
@@ -2299,18 +2207,18 @@ static void InitializeDisplay(void)
 static void SpinForever(void)
 {
 	EdbgOutputDebugString("SpinForever...\r\n");
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("SpinForever...\r\n");
 	EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
-#ifdef	EBOOK2_VER
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-	// GPC[3] PWRHOLD
-	pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);
-}
-#endif	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+	{
+		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+		// GPC[3] PWRHOLD
+		pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);
+	}
+#endif	OMNIBOOK_VER
 	while(1)
 	{
 		;

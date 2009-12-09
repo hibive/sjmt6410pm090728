@@ -25,11 +25,11 @@
 //
 //  Prefix used to generate device name for bootload/KITL
 //
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define	BSP_DEVICE_PREFIX		"SJMT6410"
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 #define BSP_DEVICE_PREFIX       "SMDK6410"        // Device name prefix
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 //------------------------------------------------------------------------------
 // SMDK6410 Display Dimension
@@ -50,7 +50,7 @@
 
 #ifdef	DISPLAY_BROADSHEET
 #define SMDK6410_LCD_MODULE		(LCD_MODULE_EPD600)
-#else	DISPLAY_BROADSHEET
+#else	//!DISPLAY_BROADSHEET
 #define SMDK6410_LCD_MODULE    (LCD_MODULE_LTE480)
 #endif	DISPLAY_BROADSHEET
 
@@ -144,11 +144,11 @@
 #define LAYOUT0                (0)        // 8*8 Keypad board
 #define LAYOUT1                (1)        // On-Board Key
 #define LAYOUT2                (2)        // Qwerty Key board
-#if (EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 #define MATRIX_LAYOUT        (LAYOUT2)
-#elif (EBOOK2_VER == 2)
+#else	//!OMNIBOOK_VER
 #define MATRIX_LAYOUT        (LAYOUT1)
-#endif
+#endif	OMNIBOOK_VER
 
 #endif // __BSP_CFG_H
 

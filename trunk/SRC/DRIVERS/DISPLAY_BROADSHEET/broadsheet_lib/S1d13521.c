@@ -27,11 +27,7 @@
 #define S1D13521_ORI_WIDTH		S1D13521_FB_WIDTH
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_HEIGHT
 #else
-#if	(EBOOK2_VER == 3)
 #define S1D13521_ORIENTATION	1	// 0(0), 90(1), 180(2), 270(3)
-#elif	(EBOOK2_VER == 2)
-#define S1D13521_ORIENTATION	3	// 0(0), 90(1), 180(2), 270(3)
-#endif	EBOOK2_VER
 #define S1D13521_ORI_WIDTH		S1D13521_FB_HEIGHT
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_WIDTH
 #endif
@@ -73,12 +69,12 @@ static BOOL Command(CMDARG CmdArg);
 
 static void delay(DWORD dwMSecs)
 {
-#ifdef	_EBOOT_
+#ifdef	FOR_EBOOT
 	volatile DWORD dwScaledSecs = (dwMSecs * (133000000 / 1200/*1585*/));
 	while (dwScaledSecs--);
-#else	_EBOOT_
+#else	FOR_EBOOT
 	Sleep(dwMSecs);
-#endif	_EBOOT_
+#endif	FOR_EBOOT
 }
 
 static void initChip(void)
@@ -91,11 +87,13 @@ static void initChip(void)
 	RegWrite(0x0014, 0x0040);
 	RegWrite(0x0016, 0x0000);
 	// bit0 : 0(not stable), 1(stable)
+	MYERR((_T("[S1D13521] initChip()")));
 	while (!(RegRead(0x000A)&(1<<0)))
 	{
-		MYERR((_T("1")));
+		MYERR((_T(".")));
 		delay(1);
 	}
+	MYERR((_T("\r\n")));
 
 	// addr : Power Save Mode Register(0x0006)
 	// data : Run(0), Off_Sleep_Standby(1)
@@ -683,9 +681,9 @@ static BOOL ImageWrite(PIMAGERECT pir)
 static BOOL UpdateWrite(PRECT pRect)
 {
 	CMDARG CmdArg;
-#ifndef	_EBOOT_
+#ifndef	FOR_EBOOT
 	DWORD dwStart = GetTickCount();
-#endif	_EBOOT_
+#endif	FOR_EBOOT
 
 	if (NULL == pRect)
 	{
@@ -722,7 +720,7 @@ static BOOL UpdateWrite(PRECT pRect)
 	CmdArg.bCmd = 0x29;
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
-#ifndef	_EBOOT_
+#ifndef	FOR_EBOOT
 /*if (DSPUPD_FULL == g_DspUpdState)
 {
 	DWORD i=0, loop=0;
@@ -740,7 +738,7 @@ static BOOL UpdateWrite(PRECT pRect)
 		delay(10);
 	}
 }*/
-#endif	_EBOOT_
+#endif	FOR_EBOOT
 
 	if (DRVESC_WRITE_UPDATE == g_dwDebugLevel)
 	{
@@ -749,9 +747,9 @@ static BOOL UpdateWrite(PRECT pRect)
 			: (0, 0, 0, 0))));
 	}
 
-#ifndef	_EBOOT_
+#ifndef	FOR_EBOOT
 	MYMSG((_T("\t%d\r\n"), GetTickCount()-dwStart));
-#endif	_EBOOT_
+#endif	FOR_EBOOT
 	return TRUE;
 }
 static BOOL ImageUpdate(PIMAGERECT pir)
@@ -982,13 +980,13 @@ void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
 	g_pS1D13521Reg = (S1D13521_REG *)pS1d13521;
 	g_pGPIOPReg = (S3C6410_GPIO_REG *)pGPIOReg;
 
-#ifdef	_EBOOT_
+#ifdef	FOR_EBOOT
 	initChip();
 	initDisplay(TRUE);
-#else	_EBOOT_
+#else	FOR_EBOOT
 	g_bBorder = FALSE;
 	Sleep(1000);
-#endif	_EBOOT_
+#endif	FOR_EBOOT
 }
 
 void S1d13521SetDibBuffer(void *pv)

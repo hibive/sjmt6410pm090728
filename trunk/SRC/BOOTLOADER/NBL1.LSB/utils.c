@@ -5,32 +5,30 @@
 
 void Port_Init(void)
 {
-#ifdef	EBOOK2_VER
-    // GPA[3:2] for LED
-    rGPACON = (rGPACON & ~(0xff<<8)) | (0x11<<8);	// GPA[3:2] set to output
-    rGPAPUD = (rGPAPUD & ~(0xf<<4));				// Pull Up/Down Disable
-
-    // GPA[7:6] for LED
-    rGPACON = (rGPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
-    rGPAPUD = (rGPAPUD & ~(0xf<<12));				// Pull Up/Down Disable
-#else	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+	// GPA[7:6] for LED
+	rGPACON = (rGPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
+	rGPAPUD = (rGPAPUD & ~(0xf<<12));				// Pull Up/Down Disable
+#else	//!OMNIBOOK_VER
 	// GPN[15:12] for LED
     rGPNCON = (rGPNCON & ~(0xff<<24))|(0x55<<24); // GPN[15:12] as output
     rGPNPUD = (rGPNPUD & ~(0xff<<24)); // Pull-Down/Up Disable
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 void Led_Display(int data)
 {
-#ifdef	EBOOK2_VER
-    rGPADAT = (rGPADAT & ~(0x3<<2)) | ((data & 0x3)<<2);
-#else	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+	// GPA7(LED_R#), GPA6(LED_B) : 0->2, 1->3, 2->0, 3->1
+	data = (data + 2) % 4;
+	rGPADAT = (rGPADAT & ~(0x3<<6)) | ((data & 0x3)<<6);
+#else	//!OMNIBOOK_VER
     // Active is low.(LED On)
     // GPN15  GPN14  GPN13  GPN12
     // nLED_8 nLED4 nLED_2 nLED_1
     //
     rGPNDAT = (rGPNDAT & ~(0xf<<12)) | ((data & 0xf)<<12);    
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 static void Delay(void)

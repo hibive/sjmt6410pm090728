@@ -95,7 +95,7 @@ typedef enum
 // WM8580 Codec-chip Initialization Value 
 unsigned int WM8580_Codec_Init_Table[][2] =
 {
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 	{ 15, 0x000 },  // Reset
 	{ 25, 0x0C0 },  // VMID=50K, Enable VREF
 	{  9, 0x040 },	// GPIO Pin
@@ -117,34 +117,7 @@ unsigned int WM8580_Codec_Init_Table[][2] =
 	{ 32, 0x128 },	// LINPUT1 to PGA(LMN1), Connect left input PGA to left input boost(LMIC2B)
 	{  0, 0x13F },	// Unmute left input PGA(LINMUTE), Left Input PGA Vol 0dB, Volume Update
 	{ 21, 0x1C3 },	// Left ADC Vol 0dB, Volume Update
-#elif	(EBOOK2_VER == 2)
-	{ 0x01, 0x01D },	// Power Management 1
-	{ 0x02, 0x195 },	// Power Management 2
-	{ 0x03, 0x06F },	// Power Management 3
-	{ 0x04, 0x010 },	// Audio Interface
-	{ 0x06, 0x000 },	// Clock Generator Control
-	{ 0x07, 0x001 },	// Additional Control
-	{ 0x09, 0x1C0 },	// Jack Detect Control
-	{ 0x0B, 0x1FF },	// Left DAC Digital Volume
-	{ 0x0C, 0x1FF },	// Right DAC Digital Volume
-	{ 0x0D, 0x021 },	// Jack Detect Control
-	{ 0x0F, 0x1FF },	// Left ADC Digital Volume
-	//{ 0x10, 0x1FF },	// Right ADC Digital Volume
-	{ 0x2B, 0x010 },	// Beep Control
-	{ 0x2C, 0x002 },	// Input Control
-	{ 0x2D, 0x130 },	// Left INP PGA Gain Control
-	//{ 0x2E, 0x110 },	// Right INP PGA Gain Control
-	{ 0x2F, 0x100 },	// ADC Boost Control
-	//{ 0x30, 0x000 },	// Right PGA Boost Control
-	{ 0x32, 0x001 },	// Left Mixer Control
-	{ 0x33, 0x001 },	// Right Mixer Control
-	{ 0x34, 0x139 },	// LOUT1(HP) Volume Control
-	{ 0x35, 0x139 },	// ROUT1(HP) Volume Control
-	{ 0x36, 0x13F },	// LOUT2(SPK) Volume Control
-	{ 0x37, 0x13F },	// ROUT2(SPK) Volume Control
-	{ 0x38, 0x040 },	// OUT3 Mixer Control
-	{ 0x39, 0x040 },	// OUT3(MONO) Mixer Control
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 #if 1
     { 0x35, 0x000 },    // R53
     { 0x32, 0x000 },    // R50
@@ -155,7 +128,7 @@ unsigned int WM8580_Codec_Init_Table[][2] =
     { 0x0C, 0x182 },    // R12
     { 0x0D, 0x082 },    // R13
 #endif
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 };
 
 

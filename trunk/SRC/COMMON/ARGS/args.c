@@ -24,15 +24,15 @@ VOID OALArgsInit(BSP_ARGS* pArgs)
 
     // Check the BSP Args area
     //
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if ((pArgs->header.signature  == OAL_ARGS_SIGNATURE) &&
 		(pArgs->header.oalVersion == OAL_ARGS_VERSION) &&
 		(pArgs->header.bspVersion == BSP_ARGS_VERSION))
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if ((pArgs->header.signature  == OAL_ARGS_SIGNATURE)
         || (pArgs->header.oalVersion == OAL_ARGS_VERSION)
         || (pArgs->header.bspVersion == BSP_ARGS_VERSION))
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     {
         OALMSG(OAL_INFO, (TEXT("Arguments area has some values. Do not Initialize\r\n")));
         OALMSG(OAL_VERBOSE, (TEXT("pArgs :0x%x\r\n"), pArgs));
@@ -57,7 +57,7 @@ VOID OALArgsInit(BSP_ARGS* pArgs)
         pArgs->header.bspVersion = BSP_ARGS_VERSION;
 
         //Set-up device ID for SMDK6410
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		count = sizeof(BSP_DEVICE_PREFIX) - 1;	// 9 - 1
 		memcpy(pArgs->deviceId, BSP_DEVICE_PREFIX, count);
 		code = pSysConReg->SYS_ID;
@@ -66,7 +66,7 @@ VOID OALArgsInit(BSP_ARGS* pArgs)
 			d = (UCHAR)((code >> j) & 0xF);
 			pArgs->deviceId[count++] = ((d < 10) ? ('0' + d) : ('A' + d - 10));
 		}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         count = sizeof(BSP_DEVICE_PREFIX) - 1;            // BSP_DEVICE_PREFIX = "SMDK6410" defined in bsp_cfg.h
 
         if (count > sizeof(pArgs->deviceId)/2) count = sizeof(pArgs->deviceId)/2;
@@ -85,7 +85,7 @@ VOID OALArgsInit(BSP_ARGS* pArgs)
 
         // End string will be "SMDK6410641010x"
         while (count < sizeof(pArgs->deviceId)) pArgs->deviceId[count++] = '\0';
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
         count = 0;
         // Set-up dummy uuid for SMDK6410.
@@ -126,15 +126,15 @@ VOID* OALArgsQuery(UINT32 type)
     pArgs = (BSP_ARGS*)IMAGE_SHARE_ARGS_UA_START;
 
     // Check if there is expected signature
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if ((pArgs->header.signature  == OAL_ARGS_SIGNATURE) &&
 		(pArgs->header.oalVersion == OAL_ARGS_VERSION) &&
 		(pArgs->header.bspVersion == BSP_ARGS_VERSION))
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if ((pArgs->header.signature  == OAL_ARGS_SIGNATURE)
         || (pArgs->header.oalVersion == OAL_ARGS_VERSION)
         || (pArgs->header.bspVersion == BSP_ARGS_VERSION))
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     {
         // Depending on required args
         switch (type)

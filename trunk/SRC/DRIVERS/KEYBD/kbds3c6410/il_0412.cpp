@@ -134,13 +134,13 @@ static VK_TO_WCHARS2 aVkToWch2[] = {
     {VK_OEM_3     , 0      ,'`'       ,'~'       },
     {VK_OEM_7     , 0      ,0x27      ,'"'       },
     {VK_OEM_8     , 0      ,WCH_NONE  ,WCH_NONE  },
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
     {VK_OEM_COMMA , 0      ,'>'       ,'<'       },
     {VK_OEM_PERIOD, 0      ,'.'       ,','       },
-#else	(EBOOK2_VER == 3)
+#else	//!OMNIBOOK_VER
     {VK_OEM_COMMA , 0      ,','       ,'<'       },
     {VK_OEM_PERIOD, 0      ,'.'       ,'>'       },
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
     {VK_OEM_PLUS  , 0      ,'='       ,'+'       },
     {VK_TAB       , 0      ,'\t'      ,'\t'      },
     {VK_ADD       , 0      ,'+'       ,'+'       },

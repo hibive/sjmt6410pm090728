@@ -34,9 +34,9 @@
 { IOCTL_HAL_PROFILE_DVS,                    0,    OALIoCtlHalProfileDVS             },
 { IOCTL_HAL_CLOCK_INFO,                     0,    OALIoCtlHalClockInfo              },
 
-#ifdef	EBOOK2_VER
-{ IOCTL_HAL_EBOOK2_SHUTDOWN,                0,    OALIoCtlHalEBook2Shutdown         },
-#endif	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
+{ IOCTL_HAL_OMNIBOOK_SHUTDOWN,				0,    OALIoCtlHalOmnibookShutdown       },
+#endif	OMNIBOOK_VER
 
 // Required Termination
 { 0,                                        0,    NULL    }

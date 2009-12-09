@@ -11,25 +11,25 @@ see the LICENSE.RTF on your install media or the root of your tools installation
 THE SAMPLE SOURCE CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 !endif
 
-!if "$(APPS_EBOOK2_COMMAND)" != "1"
+!if "$(APP_COMMAND)" != "1"
 SKIPBUILD=1
 !endif
 
-TARGETNAME=EBook2Command
+TARGETNAME=App_Command
 TARGETTYPE=PROGRAM
 RELEASETYPE=LOCAL
 EXEENTRY=mainWCRTStartup
 
-INCLUDES= \
-	$(_TARGETPLATROOT)\src\inc;	\
-	$(_WINCEROOT)\public\common\oak\inc; \
-	$(_WINCEROOT)\public\common\sdk\inc; \
-	$(_PUBLICROOT)\GDIEX\SDK\INC; \
+INCLUDES=\
+	$(_TARGETPLATROOT)\src\inc;\
+	$(_WINCEROOT)\public\common\oak\inc;\
+	$(_WINCEROOT)\public\common\sdk\inc;\
+	$(_PUBLICROOT)\GDIEX\SDK\INC;\
 
-TARGETLIBS= \
+TARGETLIBS=\
 	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
 	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\ole32.lib\
 
-SOURCES= \
-	EBook2Command.cpp \
+SOURCES=\
+	Command.cpp\
 

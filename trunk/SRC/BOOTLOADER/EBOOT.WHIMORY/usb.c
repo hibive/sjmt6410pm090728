@@ -939,11 +939,11 @@ void OTGDEV_HandleEvent_BulkOut(UINT32 fifoCntByte)
 void OTGDEV_InitPhyCon(void)
 {
     Outp32(PHYPWR, 0x0);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	Outp32(PHYCTRL, 0x00);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     Outp32(PHYCTRL, 0x20);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     Outp32(RSTCON, 0x1);
     delayLoop(100);
     Outp32(RSTCON, 0x0);

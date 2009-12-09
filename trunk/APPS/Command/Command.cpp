@@ -1,4 +1,4 @@
-// EBook2Command.cpp : Defines the entry point for the console application.
+// Command.cpp : Defines the entry point for the console application.
 //
 
 #include <objbase.h>
@@ -8,9 +8,11 @@
 #include "s1d13521.h"
 
 
-#define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
-#define IMAGE_SHUTDOWN_REG_STRING	_T("BmpShutdown")
-#define IMAGE_LOWBATTERY_REG_STRING	_T("BmpLowbattery")
+#define OMNIBOOK_REG_KEY				_T("Software\\Omnibook")
+#define IMAGE_SHUTDOWN_REG_STRING		_T("BmpShutdown")
+#define DEFAULT_SHUTDOWN_REG_STRING		_T("\\Windows\\Omnibook_Shutdown.bmp")
+#define IMAGE_LOWBATTERY_REG_STRING		_T("BmpLowbattery")
+#define DEFAULT_LOWBATTERY_REG_STRING	_T("\\Windows\\Omnibook_Lowbattery.bmp")
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -149,7 +151,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		return 0;
 
 	/*for (int i=1; i<argc; i++)
-		RETAILMSG(1, (_T("EBook2Command => argv : %s\r\n"), argv[i]));*/
+		RETAILMSG(1, (_T("App_Command => argv : %s\r\n"), argv[i]));*/
 
 	if (FAILED(CoInitializeEx(0, COINIT_MULTITHREADED)))
 		return FALSE;
@@ -160,24 +162,28 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		TCHAR szShutdown[MAX_PATH] = {0,};
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
 		{
-			LPCTSTR lpszDefShutdown = _T("\\Windows\\ebook2_shutdown.bmp");
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_SHUTDOWN_REG_STRING));
-			_tcscpy_s(szShutdown, _countof(szShutdown), lpszDefShutdown);
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr(%s), Default(%s)\r\n"),
+				IMAGE_SHUTDOWN_REG_STRING, DEFAULT_SHUTDOWN_REG_STRING));
+			_tcscpy_s(szShutdown, _countof(szShutdown), DEFAULT_SHUTDOWN_REG_STRING);
 		}
 		bRet = dispShutDown(hDC, szShutdown);
-		RETAILMSG(1, (_T("EBook2Command => SHUTDOWN(%d)\r\n"), bRet));
+		RETAILMSG(1, (_T("App_Command => SHUTDOWN(%d)\r\n"), bRet));
+		RegFlushKey(HKEY_LOCAL_MACHINE);
+		RegFlushKey(HKEY_CURRENT_USER);
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
 	{
 		TCHAR szLowbattery[MAX_PATH] = {0,};
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
 		{
-			LPCTSTR lpszDefLowbattery = _T("\\Windows\\ebook2_lowbattery.bmp");
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), IMAGE_LOWBATTERY_REG_STRING));
-			_tcscpy_s(szLowbattery, _countof(szLowbattery), lpszDefLowbattery);
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr(%s), Default(%s)\r\n"),
+				IMAGE_LOWBATTERY_REG_STRING, DEFAULT_LOWBATTERY_REG_STRING));
+			_tcscpy_s(szLowbattery, _countof(szLowbattery), DEFAULT_LOWBATTERY_REG_STRING);
 		}
 		bRet = dispShutDown(hDC, szLowbattery);
-		RETAILMSG(1, (_T("EBook2Command => LOWBATTERY(%d)\r\n"), bRet));
+		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
+		RegFlushKey(HKEY_LOCAL_MACHINE);
+		RegFlushKey(HKEY_CURRENT_USER);
 	}
 
 	else if (0 == _tcsnicmp(_T("DIRTYRECT"), argv[1], _tcslen(_T("DIRTYRECT"))))
@@ -188,7 +194,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			bSet = _ttoi(argv[2]);
 			ExtEscape(hDC, DRVESC_SET_DIRTYRECT, bSet, NULL, 0, NULL);
 		}
-		RETAILMSG(1, (_T("EBook2Command => DIRTYRECT(%d)\r\n"), bSet));
+		RETAILMSG(1, (_T("App_Command => DIRTYRECT(%d)\r\n"), bSet));
 	}
 	else if (0 == _tcsnicmp(_T("DSPUPDSTATE"), argv[1], _tcslen(_T("DSPUPDSTATE"))))
 	{
@@ -198,7 +204,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			dus = (DSPUPDSTATE)_ttoi(argv[2]);
 			ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, dus, NULL, 0, NULL);
 		}
-		RETAILMSG(1, (_T("EBook2Command => DSPUPDSTATE(%d)\r\n"), dus));
+		RETAILMSG(1, (_T("App_Command => DSPUPDSTATE(%d)\r\n"), dus));
 	}
 	else if (0 == _tcsnicmp(_T("BORDER"), argv[1], _tcslen(_T("BORDER"))))
 	{
@@ -208,7 +214,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			bSet = _ttoi(argv[2]);
 			ExtEscape(hDC, DRVESC_SET_BORDER, bSet, NULL, 0, NULL);
 		}
-		RETAILMSG(1, (_T("EBook2Command => BORDER(%d)\r\n"), bSet));
+		RETAILMSG(1, (_T("App_Command => BORDER(%d)\r\n"), bSet));
 	}
 	else if (0 == _tcsnicmp(_T("WAVEFORMMODE"), argv[1], _tcslen(_T("WAVEFORMMODE"))))
 	{
@@ -218,7 +224,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			wfm = (WAVEFORMMODE)_ttoi(argv[2]);
 			ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, wfm, NULL, 0, NULL);
 		}
-		RETAILMSG(1, (_T("EBook2Command => WAVEFORMMODE(%d)\r\n"), wfm));
+		RETAILMSG(1, (_T("App_Command => WAVEFORMMODE(%d)\r\n"), wfm));
 	}
 
 	// ...
@@ -228,11 +234,11 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	return 0;
 }
 
-// _T("\\Windows\\EBook2Command.exe SHUTDOWN");
-// _T("\\Windows\\EBook2Command.exe LOWBATTERY");
+// _T("\\Windows\\App_Command.exe SHUTDOWN");
+// _T("\\Windows\\App_Command.exe LOWBATTERY");
 
-// _T("\\Windows\\EBook2Command.exe DIRTYRECT [0(off) or 1(on)]");
-// _T("\\Windows\\EBook2Command.exe DSPUPDSTATE [0(full) or 1(part)]");
-// _T("\\Windows\\EBook2Command.exe BORDER [0(off) or 1(on)]");
-// _T("\\Windows\\EBook2Command.exe WAVEFORMMODE [0(init), 1(du), 2(gu), 3(gc), 4(autodugu)]");
+// _T("\\Windows\\App_Command.exe DIRTYRECT [0(off) or 1(on)]");
+// _T("\\Windows\\App_Command.exe DSPUPDSTATE [0(full) or 1(part)]");
+// _T("\\Windows\\App_Command.exe BORDER [0(off) or 1(on)]");
+// _T("\\Windows\\App_Command.exe WAVEFORMMODE [0(init), 1(du), 2(gu), 3(gc), 4(autodugu)]");
 

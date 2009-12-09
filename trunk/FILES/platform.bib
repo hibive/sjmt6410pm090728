@@ -339,27 +339,27 @@ IF BSP_NOOES !
     libEGL.dll                   $(_FLATRELEASEDIR)\libEGL.dll          NK     U
 ENDIF BSP_NOOES !
 
-IF EBOOK2_VER
+IF OMNIBOOK_VER
 	cerdisp2.exe				$(_FLATRELEASEDIR)\cerdisp2.exe				NK	U
 
-IF APPS_EBOOK2_STARTUP
-	ebook2startup.exe			$(_FLATRELEASEDIR)\ebook2startup.exe		NK	U
-ENDIF APPS_EBOOK2_STARTUP
-
 IF BSP_DISPLAY_BROADSHEET
-	ebook2_wallpaper.gif		$(_FLATRELEASEDIR)\ebook2_wallpaper.gif		NK	S
+	Omnibook_Wallpaper.gif		$(_FLATRELEASEDIR)\Img_Wallpaper.gif		NK	S
+	Omnibook_Shutdown.bmp		$(_FLATRELEASEDIR)\Img_Shutdown.bmp			NK	S
+	Omnibook_Lowbattery.bmp		$(_FLATRELEASEDIR)\Img_Lowbattery.bmp		NK	S
 ENDIF BSP_DISPLAY_BROADSHEET
 
-IF APPS_EBOOK2_COMMAND
-	ebook2command.exe			$(_FLATRELEASEDIR)\ebook2command.exe		NK	U
-	ebook2_shutdown.bmp			$(_FLATRELEASEDIR)\ebook2_shutdown.bmp		NK	S
-	ebook2_lowbattery.bmp		$(_FLATRELEASEDIR)\ebook2_lowbattery.bmp	NK	S
-ENDIF APPS_EBOOK2_COMMAND
+IF APP_COMMAND
+	Omnibook_Command.exe		$(_FLATRELEASEDIR)\App_Command.exe			NK	U
+ENDIF APP_COMMAND
 
-IF APPS_SIP_SYMBOL
-	Omnibook_SipSymbol.exe			$(_FLATRELEASEDIR)\AppSipSymbol.exe		NK	U
-ENDIF APPS_SIP_SYMBOL
+IF APP_SIPSYMBOL
+	Omnibook_SipSymbol.exe		$(_FLATRELEASEDIR)\App_SipSymbol.exe		NK	U
+ENDIF APP_SIP_SYMBOL
 
-ENDIF EBOOK2_VER
+IF APP_STARTUP
+	Omnibook_Startup.exe		$(_FLATRELEASEDIR)\App_Startup.exe			NK	U
+ENDIF APP_STARTUP
+
+ENDIF OMNIBOOK_VER
 ;####################################################################
 

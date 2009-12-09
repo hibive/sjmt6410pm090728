@@ -717,7 +717,7 @@ IIC_IST(
             break;
 
         case Master_receive:
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 			if (g_uIIC_PT <= g_uIIC_DATALEN)
 			{
 				bDone = FALSE;
@@ -734,7 +734,7 @@ IIC_IST(
 			}
 
 			g_uIIC_PT++;
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
             if (g_uIIC_PT>0)
             {
                 bDone = FALSE;
@@ -752,7 +752,7 @@ IIC_IST(
                 bDone = TRUE;
                 g_pIICReg->IICSTAT = MRX_STOP;
             }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
             g_pIICReg->IICCON &= ~(1<<4);
             break;
 

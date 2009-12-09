@@ -58,19 +58,19 @@ void IIS_initialize_interface(void)
     IIS_set_active_off();
 
     // Initialize IIS Interface
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	IIS_port_initialize(IIS_CH_0);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     IIS_port_initialize(IIS_CH_2);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 #if    1    // Sampling Rate 44.1 KHz with EPLL 84,666,667 Hz
     // Configurre IIS clock prescale value
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	IIS_set_prescale_value(5);            // EPLL Fout/(5+1) = 67,738,000 Hz / 6 = 11,289,667 Hz (256fs)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     IIS_set_prescale_value(4);            // EPLL Fout/(4+1) = 84,666,667 Hz / 5 = 16,933,334 Hz
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     IIS_set_prescale_enable();
 
     // Flush IIS fifo
@@ -90,11 +90,11 @@ void IIS_initialize_interface(void)
     IIS_set_interface_tranmit_receive_mode(IIS_TRANSFER_BOTH);
     IIS_set_interface_clock_polarity(LOW_FOR_LEFT);
     IIS_set_interface_serial_data_format(IIS_FORMAT);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
     IIS_set_interface_codec_clock_frequency(IIS_CODEC_CLOCK_256FS);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     IIS_set_interface_codec_clock_frequency(IIS_CODEC_CLOCK_384FS);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     IIS_set_interface_bit_clock_frequency(IIS_BIT_CLOCK_32FS);
     IIS_set_interface_bit_length(IIS_BIT_LENGTH_16BIT);
 #else

@@ -57,31 +57,31 @@ BOOL Button_initialize_register_address(void *pGPIOReg)
     return TRUE;
 }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 // Power Button -> GPN[9] : EINT9
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 // In SMDK6410 Eval. Board, Button is mapped to this GPIOs
 // Power Button -> GPN[11] : EINT11
 // Reset Button -> GPN[9] : EINT9 / ADDR_CF[1]
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 void Button_port_initialize(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] %s()\n\r"), _T(__FUNCTION__)));
     
     // GPN[9] to EINT9, GPN[11] to EINT11
     SET_GPIO(g_pGPIOReg, GPNCON, 9, GPNCON_EXTINT);
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     SET_GPIO(g_pGPIOReg, GPNCON, 11, GPNCON_EXTINT);
-#endif	EBOOK2_VER
+#endif	/!OMNIBOOK_VER
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	// GPN[9], GPN[11] set Pull-down Enable
 	SET_GPIO(g_pGPIOReg, GPNPUD, 9, GPNPUD_PULLDOWN);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     // GPN[9], GPN[11] set Pull-up Enable
     SET_GPIO(g_pGPIOReg, GPNPUD, 9, GPNPUD_PULLUP);
     SET_GPIO(g_pGPIOReg, GPNPUD, 11, GPNPUD_PULLUP);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 BOOL Button_pwrbtn_set_interrupt_method(EINT_SIGNAL_METHOD eMethod)
@@ -97,11 +97,11 @@ BOOL Button_pwrbtn_set_interrupt_method(EINT_SIGNAL_METHOD eMethod)
     case EINT_SIGNAL_FALL_EDGE:        
     case EINT_SIGNAL_RISE_EDGE:        
     case EINT_SIGNAL_BOTH_EDGE:        
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		g_pGPIOReg->EINT0CON0 = (g_pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT9)) | (eMethod<<EINT0CON_EINT9);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         g_pGPIOReg->EINT0CON0 = (g_pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT11)) | (eMethod<<EINT0CON_EINT11);        
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         break;
     default:
         RETAILMSG(PWR_ZONE_ERROR, (_T("[BTN:ERR] %s() : Unknown Method = %d\n\r"), _T(__FUNCTION__), eMethod));
@@ -122,7 +122,7 @@ BOOL Button_pwrbtn_set_filter_method(EINT_FILTER_METHOD eMethod, unsigned int ui
 
     switch(eMethod)
     {
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
     case EINT_FILTER_DISABLE:
 		g_pGPIOReg->EINT0FLTCON1 &= ~(0x1<<FLTSEL_9);
 		break;
@@ -134,7 +134,7 @@ BOOL Button_pwrbtn_set_filter_method(EINT_FILTER_METHOD eMethod, unsigned int ui
                                     | ((0x1<<FLTSEL_9) | (0x1<<FLTEN_9)
                                     | (uiFilterWidth & (EINT0FILTER_WIDTH_MASK<<FLTWIDTH_9)));
 		break;
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     case EINT_FILTER_DISABLE:
         g_pGPIOReg->EINT0FLTCON1 &= ~(0x1<<FLTSEL_11);
         break;
@@ -145,7 +145,7 @@ BOOL Button_pwrbtn_set_filter_method(EINT_FILTER_METHOD eMethod, unsigned int ui
         g_pGPIOReg->EINT0FLTCON1 = (g_pGPIOReg->EINT0FLTCON1 & ~(EINT0FILTERCON_MASK<<FLTWIDTH_11))
                                     | ((0x1<<FLTSEL_11) | (0x1<<FLTEN_11)
                                     | (uiFilterWidth & (EINT0FILTER_WIDTH_MASK<<FLTWIDTH_11)));
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     default:
         RETAILMSG(PWR_ZONE_ERROR, (_T("[BTN:ERR] %s() : Unknown Method = %d\n\r"), _T(__FUNCTION__), eMethod));
         bRet = FALSE;
@@ -161,44 +161,44 @@ void Button_pwrbtn_enable_interrupt(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] %s()\n\r"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pGPIOReg->EINT0MASK &= ~(0x1<<9);		// Unmask EINT9
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pGPIOReg->EINT0MASK &= ~(0x1<<11);    // Unmask EINT11
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 void Button_pwrbtn_disable_interrupt(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] %s()\n\r"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pGPIOReg->EINT0MASK |= (0x1<<9);		// Mask EINT9
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pGPIOReg->EINT0MASK |= (0x1<<11);    // Mask EINT11
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 void Button_pwrbtn_clear_interrupt_pending(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] %s()\n\r"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pGPIOReg->EINT0PEND = (0x1<<9);		// Clear pending EINT9
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pGPIOReg->EINT0PEND = (0x1<<11);        // Clear pending EINT11
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 BOOL Button_pwrbtn_is_pushed(void)
 {
     RETAILMSG(PWR_ZONE_ENTER,(_T("[BTN] %s()\n\r"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (!(g_pGPIOReg->GPNDAT & (0x1<<9)))	// We can read GPDAT pin level when configured as EINT
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if (g_pGPIOReg->GPNDAT & (0x1<<11))        // We can read GPDAT pin level when configured as EINT
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     {
         return FALSE;    // Low Active Switch (Pull-up switch)
     }
@@ -214,7 +214,7 @@ BOOL Button_rstbtn_set_interrupt_method(EINT_SIGNAL_METHOD eMethod)
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] %s(%d)\n\r"), _T(__FUNCTION__), eMethod));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     switch(eMethod)
     {
     case EINT_SIGNAL_LOW_LEVEL:
@@ -229,7 +229,7 @@ BOOL Button_rstbtn_set_interrupt_method(EINT_SIGNAL_METHOD eMethod)
         bRet = FALSE;
         break;
     }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] --%s() = %d\n\r"), _T(__FUNCTION__), bRet));
 
@@ -242,7 +242,7 @@ BOOL Button_rstbtn_set_filter_method(EINT_FILTER_METHOD eMethod, unsigned int ui
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] ++%s(%d, %d)\n\r"), _T(__FUNCTION__), eMethod, uiFilterWidth));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     switch(eMethod)
     {
     case EINT_FILTER_DISABLE:
@@ -261,7 +261,7 @@ BOOL Button_rstbtn_set_filter_method(EINT_FILTER_METHOD eMethod, unsigned int ui
         bRet = FALSE;
         break;
     }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] --%s() = %d\n\r"), _T(__FUNCTION__), bRet));
 
@@ -272,38 +272,38 @@ void Button_rstbtn_enable_interrupt(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] ++%s()\n\r"), _T(__FUNCTION__)));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     g_pGPIOReg->EINT0MASK &= ~(0x1<<9);    // Unmask EINT9
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 }
 
 void Button_rstbtn_disable_interrupt(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] ++%s()\n\r"), _T(__FUNCTION__)));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     g_pGPIOReg->EINT0MASK |= (0x1<<9);        // Mask EINT9
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 }
 
 void Button_rstbtn_clear_interrupt_pending(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] ++%s()\n\r"), _T(__FUNCTION__)));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     g_pGPIOReg->EINT0PEND = (0x1<<9);        // Clear pending EINT9
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 }
 
 BOOL Button_rstbtn_is_pushed(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[BTN] ++%s()\n\r"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (1)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if (GET_GPIO(g_pGPIOReg, GPNDAT, 9))        // We can read GPDAT pin level when configured as EINT
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     {
         return FALSE;    // Low Active Switch (Pull-up switch)
     }

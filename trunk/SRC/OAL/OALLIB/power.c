@@ -31,11 +31,11 @@ extern INT32 NAND_Init(VOID);
 static void BSPConfigGPIOforPowerOff(void);
 static void S3C6410_WakeUpSource_Configure(void);
 static void S3C6410_WakeUpSource_Detect(void);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define	PMIC_ADDR	0xCC
 extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
 extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 VOID BSPPowerOff()
 {
@@ -51,7 +51,7 @@ VOID BSPPowerOff()
     pRTCReg = (S3C6410_RTC_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_RTC, FALSE);
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
 	
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	{
 		unsigned char buf[2];
 		IICReadByte(PMIC_ADDR, 0x00, buf);
@@ -67,7 +67,7 @@ VOID BSPPowerOff()
 			IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
 		}
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     //-----------------------------
     // Wait till NAND Erase/Write operation is finished
@@ -102,7 +102,7 @@ VOID BSPPowerOn()
 {
     OALMSG(OAL_FUNC, (TEXT("++BSPPowerOn()\n")));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 {
 	unsigned char buf[2];
 	IICReadByte(PMIC_ADDR, 0x00, buf);
@@ -118,7 +118,7 @@ VOID BSPPowerOn()
 		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
 	}
 }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 // The OEM can add BSP specific procedure here when system power up
     //----------------------------
@@ -177,28 +177,28 @@ static void S3C6410_WakeUpSource_Configure(void)
     //-----------------
     // External Interrupt
     //-----------------
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	// Power Button EINT[9] (GPN[9] is Retention Port)
 	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
-{
-	BOOL bIsUSB = !(pGPIOReg->GPNDAT & (0x1<<0));
-	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
-	pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
-		| ((bIsUSB ? EINT_SIGNAL_RISE_EDGE : EINT_SIGNAL_FALL_EDGE)<<EINT0CON_EINT0);
-	pGPIOReg->EINT0FLTCON1 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
-}
-#else	EBOOK2_VER
+	{
+		BOOL bIsUSB = !(pGPIOReg->GPNDAT & (0x1<<0));
+		pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
+		pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
+			| ((bIsUSB ? EINT_SIGNAL_RISE_EDGE : EINT_SIGNAL_FALL_EDGE)<<EINT0CON_EINT0);
+		pGPIOReg->EINT0FLTCON1 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
+	}
+#else	//!OMNIBOOK_VER
     // Power Button EINT[11] (GPN[11] is Retention Port)
     pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<22)) | (0x2<<22);    // GPN[11] as EINT[11]
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     pSysConReg->EINT_MASK = 0x0FFFFFFF;        // Mask All EINT Wake Up Source at Sleep
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	pSysConReg->EINT_MASK &= ~(1<<9);	// Enable EINT[9] as Wake Up Source at Sleep
 	pSysConReg->EINT_MASK &= ~(1<<0);	// Enable EINT[0] as Wake Up Source at Sleep
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     pSysConReg->EINT_MASK &= ~(1<<11);        // Enable EINT[11] as Wake Up Source at Sleep
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     //-----------------
     // RTC Tick
@@ -232,7 +232,7 @@ static void S3C6410_WakeUpSource_Detect(void)
     switch(g_LastWakeupStatus)
     {
     case 0x1:    // External Interrupt
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		if (pGPIOReg->EINT0PEND&(1<<9))			// Power Button : EINT[9]
 		{
 			g_oalWakeSource = SYSWAKE_POWER_BUTTON;	// OEMWAKE_EINT9;
@@ -245,13 +245,13 @@ static void S3C6410_WakeUpSource_Detect(void)
 
 			pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x0<<0);	// GPN[0] as Input
 		}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         if (pGPIOReg->EINT0PEND&(1<<11))		// Power Button : EINT[11]
         {
             g_oalWakeSource = SYSWAKE_POWER_BUTTON;    // OEMWAKE_EINT11;
             pGPIOReg->EINT0PEND = (1<<11);    // Clear Pending (Power Button Driver No Need to Handle Wake Up Interrupt)
         }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         else
         {
             // The else case here will not happen because all other external interrupts were
@@ -307,44 +307,39 @@ static void BSPConfigGPIOforPowerOff(void)
 
     OALMSG(OAL_FUNC, (TEXT("++BSPConfigGPIOforPowerOff()\n")));
 
-#ifdef	EBOOK2_VER
-{
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+#ifdef	OMNIBOOK_VER
+	{
+		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 
-	// GPA[1:0] : UART0 - 2.4[mA] - Input(2), Pull-up/down disabled(0)
-	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<0)) | (0xA<<0);
-	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<0)) | (0x0<<0);
+		// GPA[1:0] : UART0 - 2.4[mA] - Input(2), Pull-up/down disabled(0)
+		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<0)) | (0xA<<0);
+		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<0)) | (0x0<<0);
 
-	// GPA[3:2] : LED_2, LED_1 - Output0(0), Pull-up/down disabled(0)
-	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<4)) | (0x0<<4);
-	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<4)) | (0x0<<4);
+		// GPA[3:2] : LED_2, LED_1 - Output0(0), Pull-up/down disabled(0)
+		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<4)) | (0x0<<4);
+		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<4)) | (0x0<<4);
 
-	// GPA[5:4] : UART1 - 20.0[mA] - Input(2), Pull-up enabled(2)
-	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<8)) | (0xA<<8);
-	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<8)) | (0xA<<8);
+		// GPA[5:4] : UART1 - 20.0[mA] - Input(2), Pull-up enabled(2)
+		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<8)) | (0xA<<8);
+		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<8)) | (0xA<<8);
 
-#if (EBOOK2_VER == 3)
-	// GPA[7:6] : LED_R#, LED_B - Output0(0), Pull-up/down disabled(0)
-	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x4<<12);
-#elif (EBOOK2_VER == 2)
-	// GPA[7:6] : LED_R, LED_B - Output0(0), Pull-up/down disabled(0)
-	pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x0<<12);
-#endif
-	pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<12)) | (0x0<<12);
+		// GPA[7:6] : LED_R#, LED_B - Output0(0), Pull-up/down disabled(0)
+		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x4<<12);
+		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<12)) | (0x0<<12);
 
-	// GPB[6:5] : I2C - 1.2[mA] - Input(2), Pull-up/down disabled(0)
-	pGPIOReg->GPBCONSLP = (pGPIOReg->GPBCONSLP & ~(0xF<<10)) | (0xA<<10);	// input mode
-	pGPIOReg->GPBPUDSLP = (pGPIOReg->GPBPUDSLP & ~(0xF<<10)) | (0x0<<10);	// pull-up/down disable
+		// GPB[6:5] : I2C - 1.2[mA] - Input(2), Pull-up/down disabled(0)
+		pGPIOReg->GPBCONSLP = (pGPIOReg->GPBCONSLP & ~(0xF<<10)) | (0xA<<10);	// input mode
+		pGPIOReg->GPBPUDSLP = (pGPIOReg->GPBPUDSLP & ~(0xF<<10)) | (0x0<<10);	// pull-up/down disable
 
-	// GPC[3] PWRHOLD, GPC[2] DVM_SET3, GPC[1] DVM_SET2, GPC[0] DVM_SET1
-	pGPIOReg->GPCCONSLP = (pGPIOReg->GPCCONSLP & ~(0xFF<<0)) | (0x40<<0);	// output 0 or 1
-	pGPIOReg->GPCPUDSLP = (pGPIOReg->GPCPUDSLP & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
+		// GPC[3] PWRHOLD, GPC[2] DVM_SET3, GPC[1] DVM_SET2, GPC[0] DVM_SET1
+		pGPIOReg->GPCCONSLP = (pGPIOReg->GPCCONSLP & ~(0xFF<<0)) | (0x40<<0);	// output 0 or 1
+		pGPIOReg->GPCPUDSLP = (pGPIOReg->GPCPUDSLP & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
 
-	// GPE[2] TOUCH_SLP, GPE[1] WCDMA_PD#, GPE[0] WLAN_PD#
-	pGPIOReg->GPECONSLP = (pGPIOReg->GPECONSLP & ~(0x3F<<0)) | (0x10<<0);	// output 0 or 1
-	pGPIOReg->GPEPUDSLP = (pGPIOReg->GPEPUDSLP & ~(0x3F<<0)) | (0x00<<0);	// pull-up/down disable
-}
-#endif	EBOOK2_VER
+		// GPE[2] TOUCH_SLP, GPE[1] WCDMA_PD#, GPE[0] WLAN_PD#
+		pGPIOReg->GPECONSLP = (pGPIOReg->GPECONSLP & ~(0x3F<<0)) | (0x10<<0);	// output 0 or 1
+		pGPIOReg->GPEPUDSLP = (pGPIOReg->GPEPUDSLP & ~(0x3F<<0)) | (0x00<<0);	// pull-up/down disable
+	}
+#endif	OMNIBOOK_VER
 
     // The OEM can implement this function to cut GPIO when system falls into sleep mode.
 #if OEM_IMPLEMENT
