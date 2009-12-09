@@ -6,7 +6,6 @@ typedef enum
 {
 	KEY_NONE=0x00,
 
-#if	(EBOOK2_VER == 3)
 	KEY_0, KEY_3, KEY_T, KEY_L, KEY_A, KEY_N, KEY_KE, KEY_VOLDOWN,
 	KEY_9, KEY_2, KEY_Y, KEY_K, KEY_S, KEY_M, KEY_PP, KEY_VOLUP,
 	KEY_8, KEY_1, KEY_U, KEY_J, KEY_Z, KEY_DOT, KEY_NP, KEY_RIGHT,
@@ -15,30 +14,13 @@ typedef enum
 	KEY_5, KEY_E, KEY_O, KEY_F, KEY_V, KEY_SYM, KEY_HOME, KEY_DOWN,
 	KEY_4, KEY_R, KEY_BACKSPACE, KEY_D, KEY_B, KEY_FONT, KEY_SPACE, KEY_LEFT,
 	KEY_FN, KEY_SHIFT, KEY_ALT,
-#elif	(EBOOK2_VER == 2)
-	KEY_RIGHT,
-	KEY_F13,
-	KEY_F14,
-	KEY_F15,
-
-	KEY_F16,
-	KEY_F17,
-	KEY_MENU,
-	KEY_LEFT,
-
-	KEY_UP,
-	KEY_DOWN,
-	KEY_VOLDOWN,
-	KEY_VOLUP,
-
-	KEY_ENTER,
-#endif	EBOOK2_VER
 
 	KEY_HOLD=0x80,
 } EKEY_DATA;
 
 void InitializeKeypad(void);
 EKEY_DATA GetKeypad(void);
+BYTE GetKeypad2(void);
 
 #endif  _KEYPAD_H_
 

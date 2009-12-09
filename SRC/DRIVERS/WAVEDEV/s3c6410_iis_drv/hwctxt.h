@@ -71,11 +71,11 @@ typedef enum
     INPUT_DMA_BUFFER_COUNT
 } INPUT_BUFFER_NUMBER;
 
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 #define	AUDIO_DMA_PAGE_SIZE		(16384)	// Size in bytes
-#else
+#else	//!OMNIBOOK_VER
 #define AUDIO_DMA_PAGE_SIZE        (4096)                    // Size in bytes
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
 #define AUDIO_DMA_BUFFER_SIZE        (AUDIO_DMA_PAGE_SIZE*(OUTPUT_DMA_BUFFER_COUNT+INPUT_DMA_BUFFER_COUNT))
 
 //----- Used to track DMA controllers status -----
@@ -86,13 +86,11 @@ typedef enum
 #define DMA_STRTB            0x00000040
 #define DMA_BIU                0x00000080    // Determines which buffer is in use: (A=0, B=1)
 
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 #define WM8580_MAX_REGISTER_COUNT					56
-#elif	(EBOOK2_VER == 2)
-#define WM8580_MAX_REGISTER_COUNT					58
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 #define WM8580_MAX_REGISTER_COUNT                    54
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 class HardwareContext
 {

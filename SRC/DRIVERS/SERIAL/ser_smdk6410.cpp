@@ -309,16 +309,16 @@ public:
                 return FALSE;
             }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 			// TXD1(GPA5), RXD1(GPA4), (00)pull-up/down disabled
 			m_pIOPregs->GPACON = (m_pIOPregs->GPACON & ~(0xff<<16)) | (0x22<<16);	
 			m_pIOPregs->GPAPUD = (m_pIOPregs->GPAPUD & ~(0xf<<8)) | (0x0<<8);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
             // TXD1(GPA5), RXD1(GPA4), RTS1(GPA7), CTS1(GPA6)
             m_pIOPregs->GPACON &= ~(0xf<<16 | 0xf<<20 | 0xf<<24 | 0xf<<28); 
             m_pIOPregs->GPACON |= (0x2<<16 | 0x2<<20 | 0x2<<24 | 0x2<<28); 
             m_pIOPregs->GPAPUD &= ~(0x3<<8  | 0x3<<10 | 0x3<<12 | 0x3<<14);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
             /* switch UART1 clock to EPLL to get access to higher baud rates */
             CPdd6410Uart::SetClockSelect(UART_CS_EPLLCLK);

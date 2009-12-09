@@ -72,11 +72,11 @@ typedef enum
 
 #define INTERRUPT_THREAD_PRIORITY_DEFAULT    (150)
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define CHIP_ID                         (0x34)        // WM8976 Chip ID
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 #define CHIP_ID                         (0x36)        // WM8580 Chip ID
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 #define WM8580_READ                (CHIP_ID + 1)
 #define WM8580_WRITE            (CHIP_ID + 0)
 
@@ -217,13 +217,13 @@ HardwareContext::Initialize(DWORD Index)
     // Enable Clock for IIS CH0
     // PCLK Case
     //g_pSysConReg->CLKSRC = (g_pSysConReg->CLKSRC & ~(0x7<<7)) | (0x /// ????? No config data for CLKSRC on F/W code.. WHY???
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pSysConReg->PCLK_GATE |= (1<<15);
 	g_pSysConReg->SCLK_GATE |= (1<<8);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pSysConReg->PCLK_GATE |= (1<<26);
     g_pSysConReg->SCLK_GATE |= (1<<11);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // Initialize SFR address for PDD Library
     IIS_initialize_register_address((void *)g_pIISReg, (void *)g_pGPIOReg);
@@ -310,21 +310,21 @@ HardwareContext::PowerUp()
     WAV_MSG((_T("[WAV] ++PowerUp()\n\r")));
 
     // Enable Clock for IIS CH0
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pSysConReg->PCLK_GATE |= (1<<15);
 	g_pSysConReg->SCLK_GATE |= (1<<8);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pSysConReg->PCLK_GATE |= (1<<26);
     g_pSysConReg->SCLK_GATE |= (1<<11);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     IIS_initialize_interface();
 
     InitIISCodec();
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	CodecPowerControl();
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	CodecMuteControl(DMA_CH_OUT|DMA_CH_IN, TRUE);
 
     WAV_MSG((_T("[WAV] --PowerUp()\n\r")));
@@ -339,13 +339,13 @@ void HardwareContext::PowerDown()
     CodecPowerControl();
 
     // Disable Clock for IIS CH0
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pSysConReg->PCLK_GATE &= ~(1<<15);
 	g_pSysConReg->SCLK_GATE &= ~(1<<8);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     g_pSysConReg->PCLK_GATE &= ~(1<<26);
     g_pSysConReg->SCLK_GATE &= ~(1<<11);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     WAV_MSG((_T("[WAV] --PowerDown()\n\r")));
 }
@@ -578,11 +578,11 @@ HardwareContext::StartOutputDMA()
 
             // Output DMA Start
             DMA_set_channel_source(&g_OutputDMA, m_OutputDMABufferPhyPage[OUTPUT_DMA_BUFFER0], WORD_UNIT, BURST_1, INCREASE);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 			DMA_set_channel_destination(&g_OutputDMA, IIS_get_output_physical_buffer_address(IIS_CH_0), WORD_UNIT, BURST_1, FIXED);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
             DMA_set_channel_destination(&g_OutputDMA, IIS_get_output_physical_buffer_address(IIS_CH_2), WORD_UNIT, BURST_1, FIXED);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
             DMA_set_channel_transfer_size(&g_OutputDMA, AUDIO_DMA_PAGE_SIZE);
             DMA_set_initial_LLI(&g_OutputDMA, 1);
             DMA_channel_start(&g_OutputDMA);
@@ -651,11 +651,11 @@ HardwareContext::StartInputDMA()
         // IIS PCM input enable
         IIS_set_rx_mode_control(IIS_TRANSFER_NOPAUSE);
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		DMA_set_channel_source(&g_InputDMA, IIS_get_input_physical_buffer_address(IIS_CH_0), WORD_UNIT, BURST_1, FIXED);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         DMA_set_channel_source(&g_InputDMA, IIS_get_input_physical_buffer_address(IIS_CH_2), WORD_UNIT, BURST_1, FIXED);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         DMA_set_channel_destination(&g_InputDMA, m_InputDMABufferPhyPage[INPUT_DMA_BUFFER0], WORD_UNIT, BURST_1, INCREASE);
         DMA_set_channel_transfer_size(&g_InputDMA, AUDIO_DMA_PAGE_SIZE);
         DMA_set_initial_LLI(&g_InputDMA, 1);
@@ -764,37 +764,15 @@ HardwareContext::SetOutputMute (BOOL bMute)
 
     m_bOutputMute = bMute;
 
-#if	(EBOOK2_VER == 3)
-{
-	USHORT usData = ReadCodecRegister(5);
-	if (bMute)
-		WriteCodecRegister(5, usData |  (1<<3));
-	else
-		WriteCodecRegister(5, usData & ~(1<<3));
-}
-#elif	(EBOOK2_VER == 2)
-{
-	USHORT usData1, usData2, usData3, usData4;
-	usData1 = ReadCodecRegister(0x34);
-	usData2 = ReadCodecRegister(0x35);
-	usData3 = ReadCodecRegister(0x36);
-	usData4 = ReadCodecRegister(0x37);
-	if (bMute)
+#ifdef	OMNIBOOK_VER
 	{
-		WriteCodecRegister(0x34, usData1 | (1<<6));
-		WriteCodecRegister(0x35, usData2 | (1<<6));
-		WriteCodecRegister(0x36, usData3 | (1<<6));
-		WriteCodecRegister(0x37, usData4 | (1<<6));
+		USHORT usData = ReadCodecRegister(5);
+		if (bMute)
+			WriteCodecRegister(5, usData |  (1<<3));
+		else
+			WriteCodecRegister(5, usData & ~(1<<3));
 	}
-	else
-	{
-		WriteCodecRegister(0x34, usData1 & ~(1<<6));
-		WriteCodecRegister(0x35, usData2 & ~(1<<6));
-		WriteCodecRegister(0x36, usData3 & ~(1<<6));
-		WriteCodecRegister(0x37, usData4 & ~(1<<6));
-	}
-}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if (bMute)
     {
         WriteCodecRegister(WM8580_DAC_CONTROL5, 0x010);    
@@ -803,7 +781,7 @@ HardwareContext::SetOutputMute (BOOL bMute)
     {
         WriteCodecRegister(WM8580_DAC_CONTROL5, 0x000);
     }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     WAV_INF((_T("[WAV:INF] --SetOutputMute()\n\r")));
 
@@ -1035,11 +1013,11 @@ HardwareContext::MapRegisters()
     }
 
     // Alloc and Map IIS Interface SFR
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_IIS0;
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_I2S_40;      
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     g_pIISReg = (S3C6410_IIS_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_IIS_REG), FALSE);
     if (g_pIISReg == NULL)
     {
@@ -1211,33 +1189,33 @@ HardwareContext::InitOutputDMA()
         goto CleanUp;
     }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	bRet = DMA_request_channel(&g_OutputDMA, DMA_I2S0_TX);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     bRet = DMA_request_channel(&g_OutputDMA, DMA_I2S_V40_TX);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     if (bRet)
     {
         DMA_initialize_channel(&g_OutputDMA, TRUE);
         DMA_set_channel_source(&g_OutputDMA, m_OutputDMABufferPhyPage[0], WORD_UNIT, BURST_1, INCREASE);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		DMA_set_channel_destination(&g_OutputDMA, IIS_get_output_physical_buffer_address(IIS_CH_0), WORD_UNIT, BURST_1, FIXED);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         DMA_set_channel_destination(&g_OutputDMA, IIS_get_output_physical_buffer_address(IIS_CH_2), WORD_UNIT, BURST_1, FIXED);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         DMA_set_channel_transfer_size(&g_OutputDMA, AUDIO_DMA_PAGE_SIZE);
         DMA_initialize_LLI(&g_OutputDMA, 2);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		DMA_set_LLI_entry(&g_OutputDMA, 0, LLI_NEXT_ENTRY, m_OutputDMABufferPhyPage[0],
 							IIS_get_output_physical_buffer_address(IIS_CH_0), AUDIO_DMA_PAGE_SIZE);
 		DMA_set_LLI_entry(&g_OutputDMA, 1, LLI_FIRST_ENTRY, m_OutputDMABufferPhyPage[1],
 							IIS_get_output_physical_buffer_address(IIS_CH_0), AUDIO_DMA_PAGE_SIZE);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         DMA_set_LLI_entry(&g_OutputDMA, 0, LLI_NEXT_ENTRY, m_OutputDMABufferPhyPage[0],
                             IIS_get_output_physical_buffer_address(IIS_CH_2), AUDIO_DMA_PAGE_SIZE);
         DMA_set_LLI_entry(&g_OutputDMA, 1, LLI_FIRST_ENTRY, m_OutputDMABufferPhyPage[1],
                             IIS_get_output_physical_buffer_address(IIS_CH_2), AUDIO_DMA_PAGE_SIZE);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         DMA_set_initial_LLI(&g_OutputDMA, 1);
     }
 
@@ -1262,34 +1240,34 @@ BOOL HardwareContext::InitInputDMA()
         goto CleanUp;
     }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	bRet = DMA_request_channel(&g_InputDMA, DMA_I2S0_RX);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     bRet = DMA_request_channel(&g_InputDMA, DMA_I2S_V40_RX);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     if (bRet)
     {
         DMA_initialize_channel(&g_InputDMA, TRUE);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		DMA_set_channel_source(&g_InputDMA, IIS_get_input_physical_buffer_address(IIS_CH_0), WORD_UNIT, BURST_1, FIXED);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         DMA_set_channel_source(&g_InputDMA, IIS_get_input_physical_buffer_address(IIS_CH_2), WORD_UNIT, BURST_1, FIXED);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         DMA_set_channel_destination(&g_InputDMA, m_InputDMABufferPhyPage[0], WORD_UNIT, BURST_1, INCREASE);
         DMA_set_channel_transfer_size(&g_InputDMA, AUDIO_DMA_PAGE_SIZE);
         DMA_initialize_LLI(&g_InputDMA, 2);
         DMA_set_initial_LLI(&g_InputDMA, 1);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		DMA_set_LLI_entry(&g_InputDMA, 0, LLI_NEXT_ENTRY, IIS_get_input_physical_buffer_address(IIS_CH_0),
 							m_InputDMABufferPhyPage[0], AUDIO_DMA_PAGE_SIZE);
 		DMA_set_LLI_entry(&g_InputDMA, 1, LLI_FIRST_ENTRY, IIS_get_input_physical_buffer_address(IIS_CH_0),
 							m_InputDMABufferPhyPage[1], AUDIO_DMA_PAGE_SIZE);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         DMA_set_LLI_entry(&g_InputDMA, 0, LLI_NEXT_ENTRY, IIS_get_input_physical_buffer_address(IIS_CH_2),
                             m_InputDMABufferPhyPage[0], AUDIO_DMA_PAGE_SIZE);
         DMA_set_LLI_entry(&g_InputDMA, 1, LLI_FIRST_ENTRY, IIS_get_input_physical_buffer_address(IIS_CH_2),
                             m_InputDMABufferPhyPage[1], AUDIO_DMA_PAGE_SIZE);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
 
 CleanUp:
@@ -1684,7 +1662,7 @@ HardwareContext::ReadCodecRegister(UCHAR Reg)
 BOOL
 HardwareContext::CodecPowerControl()
 {
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 	USHORT usData25, usData47;
 
 	if (m_bInputDMARunning || m_bOutputDMARunning)
@@ -1723,36 +1701,7 @@ HardwareContext::CodecPowerControl()
 		WriteCodecRegister(26, 0x000);
 		WriteCodecRegister(47, 0x000);
 	}
-#elif	(EBOOK2_VER == 2)
-	if( m_bInputDMARunning & m_bOutputDMARunning )
-	{
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
-		WriteCodecRegister(0x01, 0x01D);
-		WriteCodecRegister(0x02, 0x195);
-		WriteCodecRegister(0x03, 0x06F);
-	}
-	else if( m_bInputDMARunning )
-	{
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
-		WriteCodecRegister(0x01, 0x01D);
-		WriteCodecRegister(0x02, 0x015);
-		WriteCodecRegister(0x03, 0x000);
-	}
-	else if( m_bOutputDMARunning )
-	{
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
-		WriteCodecRegister(0x01, 0x00D);
-		WriteCodecRegister(0x02, 0x180);
-		WriteCodecRegister(0x03, 0x06F);
-	}
-	else
-	{
-		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC Off\n\r")));
-		WriteCodecRegister(0x01, 0x000);
-		WriteCodecRegister(0x02, 0x000);
-		WriteCodecRegister(0x03, 0x000);
-	}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     if( m_bInputDMARunning & m_bOutputDMARunning )
     {
         WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
@@ -1773,7 +1722,7 @@ HardwareContext::CodecPowerControl()
         WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC Off\n\r")));
         WriteCodecRegister(WM8580_PWRDN1, WM8580_PWRDN1_ADCPD_DISABLE|WM8580_PWRDN1_DACPD_ALL_DISABLE ); // ADC/DAC power down
     }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     return(TRUE);
 }
@@ -1785,33 +1734,13 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
 
     if(channel & DMA_CH_OUT)
     {
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 		USHORT usData = ReadCodecRegister(5);
 		if (bMute)
 			WriteCodecRegister(5, usData |  (1<<3));
 		else
 			WriteCodecRegister(5, usData & ~(1<<3));
-#elif	(EBOOK2_VER == 2)
-		USHORT usData1, usData2, usData3, usData4;
-		usData1 = ReadCodecRegister(0x34);
-		usData2 = ReadCodecRegister(0x35);
-		usData3 = ReadCodecRegister(0x36);
-		usData4 = ReadCodecRegister(0x37);
-		if (bMute)
-		{
-			WriteCodecRegister(0x34, usData1 | (1<<6));
-			WriteCodecRegister(0x35, usData2 | (1<<6));
-			WriteCodecRegister(0x36, usData3 | (1<<6));
-			WriteCodecRegister(0x37, usData4 | (1<<6));
-		}
-		else
-		{
-			WriteCodecRegister(0x34, usData1 & ~(1<<6));
-			WriteCodecRegister(0x35, usData2 & ~(1<<6));
-			WriteCodecRegister(0x36, usData3 & ~(1<<6));
-			WriteCodecRegister(0x37, usData4 & ~(1<<6));
-		}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         if(bMute)
         {
             WriteCodecRegister(WM8580_DAC_CONTROL5, 0x010);
@@ -1820,24 +1749,17 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
         {
             WriteCodecRegister(WM8580_DAC_CONTROL5, 0x000);
         }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
     if(channel & DMA_CH_IN) 
     {
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 		USHORT usData0 = ReadCodecRegister(0);
 		if (bMute)
 			WriteCodecRegister(0, usData0 |  (1<<7));
 		else
 			WriteCodecRegister(0, usData0 & ~(1<<7));
-#elif	(EBOOK2_VER == 2)
-		USHORT usData;
-		usData = ReadCodecRegister(0x2D);
-		if (bMute)
-			WriteCodecRegister(0x2D, usData | (1<<6));
-		else
-			WriteCodecRegister(0x2D, usData & ~(1<<6));
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         if(bMute)
         {
             WriteCodecRegister(WM8580_ADC_CONTROL1, 0x044);
@@ -1846,7 +1768,7 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
         {
             WriteCodecRegister(WM8580_ADC_CONTROL1, 0x040);
         }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
 
     return(TRUE);

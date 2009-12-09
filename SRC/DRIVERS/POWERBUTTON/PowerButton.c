@@ -67,9 +67,9 @@ DBGPARAM dpCurSettings =                                \
 INT WINAPI PowerButtonThread(void)
 {
     DWORD nBtnCount = 0;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	DWORD dwTickStart, dwTickCount;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR:INF] ++%s()\r\n"), _T(__FUNCTION__)));
 
@@ -92,21 +92,20 @@ INT WINAPI PowerButtonThread(void)
         // Enter in when the power button is pushed
         // Hold in loop
         // Loop out when the power button is released
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		dwTickStart = GetTickCount();
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         while(Button_pwrbtn_is_pushed())
         {
             // Wait for Button Released...
             Sleep(10);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define	TIMEOUT_POWEROFF	2000	//[mSec]
 			dwTickCount = GetTickCount() - dwTickStart;
 			if (TIMEOUT_POWEROFF <= dwTickCount)	// GPC[3] - PWRHOLD(3)
 			{
-				LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
+				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 				PROCESS_INFORMATION pi;
-				LONG lRet;
 
 				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_SHUTDOWN")), 0, 0);
 
@@ -127,14 +126,10 @@ INT WINAPI PowerButtonThread(void)
 					CloseHandle(pi.hProcess);
 				}
 
-				lRet = RegFlushKey(HKEY_LOCAL_MACHINE);
-				RETAILMSG(1, (_T("[PWR] RegFlushKey(HKEY_LOCAL_MACHINE) = %d\r\n"), lRet));
-				lRet = RegFlushKey(HKEY_CURRENT_USER);
-				RETAILMSG(1, (_T("[PWR] RegFlushKey(HKEY_CURRENT_USER) = %d\r\n"), lRet));
 				SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
-				KernelIoControl(IOCTL_HAL_EBOOK2_SHUTDOWN, NULL, 0, NULL, 0, NULL);
+				KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
 			}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
         }
 #endif
 
@@ -156,7 +151,7 @@ INT WINAPI PowerButtonThread(void)
     return 0;
 }
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
 INT WINAPI ResetButtonThread(void)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR:INF] ++%s()\r\n"), _T(__FUNCTION__)));
@@ -189,7 +184,7 @@ INT WINAPI ResetButtonThread(void)
 
     return 0;
 }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
 static BOOL
 AllocResources(void)
@@ -213,11 +208,11 @@ AllocResources(void)
     //--------------------
     // Power Button Interrupt
     //--------------------
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	dwIRQ = IRQ_EINT9;
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     dwIRQ = IRQ_EINT11;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     g_dwSysIntrPowerBtn = SYSINTR_UNDEFINED;
     g_hEventPowerBtn = NULL;
 
@@ -241,7 +236,7 @@ AllocResources(void)
         return FALSE;
     }
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     //--------------------
     // Reset Button Interrupt
     //--------------------
@@ -268,7 +263,7 @@ AllocResources(void)
         RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : InterruptInitialize() Reset Button Failed \n\r"), _T(__FUNCTION__)));
         return FALSE;
     }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
 
@@ -337,11 +332,11 @@ static void InitInterrupt(void)
     Button_port_initialize();
 
     // Interrupt Siganl Method and Filtering
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	Button_pwrbtn_set_interrupt_method(EINT_SIGNAL_RISE_EDGE);
-#elif	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     Button_pwrbtn_set_interrupt_method(EINT_SIGNAL_FALL_EDGE);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     Button_pwrbtn_set_filter_method(EINT_FILTER_DELAY, 0);
     Button_rstbtn_set_interrupt_method(EINT_SIGNAL_FALL_EDGE);
     Button_rstbtn_set_filter_method(EINT_FILTER_DELAY, 0);
@@ -381,9 +376,9 @@ PWR_PowerUp(DWORD pContext)
 {
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] %s(0x%08x)\r\n"), _T(__FUNCTION__), pContext));
     Button_rstbtn_enable_interrupt();
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	Button_pwrbtn_enable_interrupt();	// UnMask EINT
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     return TRUE;
 }
 
@@ -465,7 +460,7 @@ PWR_Init(DWORD dwContext)
         goto CleanUp;
     }
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     // Create Reset Button Thread
     g_hThreadResetBtn = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) ResetButtonThread, NULL, 0, NULL);
     if (g_hThreadResetBtn == NULL )
@@ -473,7 +468,7 @@ PWR_Init(DWORD dwContext)
         RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateThread() Reset Button Failed \n\r"), _T(__FUNCTION__)));
         goto CleanUp;
     }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
     
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
 

@@ -1,6 +1,6 @@
 
 #include <bsp.h>
-#include "ebook2_etc.h"
+#include "etc.h"
 #include <iic.h>
 
 
@@ -14,15 +14,8 @@ volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
 volatile BSP_ARGS *g_pBspArgs = NULL;
 static HANDLE m_MutexEtc = NULL;
-
 static HANDLE g_hFileI2C = INVALID_HANDLE_VALUE;
 
-#if	(EBOOK2_VER == 2)
-static DWORD g_dwSysIntrKeyHold = SYSINTR_UNDEFINED;
-static HANDLE g_hEventKeyHold = NULL;
-static HANDLE g_hThreadKeyHold = NULL;
-static BOOL g_bExitThreadKeyHold = FALSE;
-#endif	(EBOOK2_VER == 2)
 
 
 DWORD ETC_Init(DWORD dwContext);
@@ -135,96 +128,6 @@ static void i2c_WriteRegister(UCHAR Reg, UCHAR Val)
 }
 
 
-#if	(EBOOK2_VER == 2)
-static DWORD WINAPI KeyHoldThread(LPVOID lpParameter)
-{
-	BOOL bKeyHold, bRet;
-
-	g_pGPIOReg->EINT0MASK |= (0x1<<6);	// Mask EINT6
-	g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0x3<<12)) | (0x2<<12);	// Ext. Interrupt
-	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0x3<<12)) | (0x1<<12);	// pull-down enable
-	g_pGPIOReg->EINT0CON0 = (g_pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT6))
-		| (EINT_SIGNAL_BOTH_EDGE<<EINT0CON_EINT6);
-	g_pGPIOReg->EINT0FLTCON0 = (g_pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_6)) | (0x1<<FLTEN_6);
-	g_pGPIOReg->EINT0PEND = (0x1<<6);	// Clear pending EINT6
-	g_pGPIOReg->EINT0MASK &= ~(0x1<<6);	// Unmask EINT6
-
-	bKeyHold = (g_pGPIOReg->GPNDAT & (0x1<<6));
-	ETC_IOControl(0, IOCTL_SET_KEY_HOLD, NULL, bKeyHold, NULL, 0, NULL);
-	while (!g_bExitThreadKeyHold)
-	{
-		WaitForSingleObject(g_hEventKeyHold, INFINITE);
-
-		if (g_bExitThreadKeyHold)
-			break;
-
-		g_pGPIOReg->EINT0MASK |= (0x1<<6);	// Mask EINT6
-		g_pGPIOReg->EINT0PEND = (0x1<<6);	// Clear pending EINT6
-		InterruptDone(g_dwSysIntrKeyHold);
-
-		bKeyHold = (g_pGPIOReg->GPNDAT & (0x1<<6));
-		bRet = ETC_IOControl(0, IOCTL_SET_KEY_HOLD, NULL, bKeyHold, NULL, 0, NULL);
-		MYMSG((_T("[ETC] IOCTL_SET_KEY_HOLD(%d) = %d\n\r"), bKeyHold, bRet));
-
-		g_pGPIOReg->EINT0MASK &= ~(0x1<<6);	// Unmask EINT6
-	}
-
-	return 0;
-}
-static BOOL keyhold_Initialize(void)
-{
-	DWORD dwIRQ = IRQ_EINT6;
-
-	if (!KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &dwIRQ, sizeof(DWORD), &g_dwSysIntrKeyHold, sizeof(DWORD), NULL))
-	{
-		MYERR((_T("[ETC] !KernelIoControl()\n\r")));
-		g_dwSysIntrKeyHold = SYSINTR_UNDEFINED;
-		return FALSE;
-	}
-	g_hEventKeyHold = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (NULL == g_hEventKeyHold)
-	{
-		MYERR((_T("[ETC] NULL == g_hEventKeyHold\n\r")));
-		return FALSE;
-	}
-	if (!InterruptInitialize(g_dwSysIntrKeyHold, g_hEventKeyHold, 0, 0))
-	{
-		MYERR((_T("[ETC] !InterruptInitialize()\n\r")));
-		return FALSE;
-	}
-	g_hThreadKeyHold = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)KeyHoldThread, NULL, 0, NULL);
-	if (NULL == g_hThreadKeyHold)
-	{
-		MYERR((_T("[ETC] NULL == g_hThreadKeyHold\n\r")));
-		return FALSE;
-	}
-
-	return TRUE;
-}
-static void keyhold_Deinitialize(void)
-{
-	g_bExitThreadKeyHold = TRUE;
-	if (g_hThreadKeyHold)
-	{
-		g_pGPIOReg->EINT0MASK |= (0x1<<6);	// Mask EINT6
-		g_pGPIOReg->EINT0PEND = (0x1<<6);	// Clear pending EINT6
-		SetEvent(g_hEventKeyHold);
-		WaitForSingleObject(g_hThreadKeyHold, INFINITE);
-		CloseHandle(g_hThreadKeyHold);
-		g_hThreadKeyHold = NULL;
-	}
-	if (SYSINTR_UNDEFINED != g_dwSysIntrKeyHold)
-		InterruptDisable(g_dwSysIntrKeyHold);
-	if (NULL != g_hEventKeyHold)
-		CloseHandle(g_hEventKeyHold);
-	if (SYSINTR_UNDEFINED != g_dwSysIntrKeyHold)
-		KernelIoControl(IOCTL_HAL_RELEASE_SYSINTR, &g_dwSysIntrKeyHold, sizeof(DWORD), NULL, 0, NULL);
-	g_dwSysIntrKeyHold = SYSINTR_UNDEFINED;
-	g_hEventKeyHold = NULL;
-}
-#endif	(EBOOK2_VER == 2)
-
-
 
 DWORD ETC_Init(DWORD dwContext)
 {
@@ -267,14 +170,6 @@ DWORD ETC_Init(DWORD dwContext)
 		goto goto_err;
 	}
 
-#if	(EBOOK2_VER == 2)
-	if (FALSE == keyhold_Initialize())
-	{
-		MYERR((_T("[ETC] FALSE == keyhold_Initialize()\r\n")));
-		goto goto_err;
-	}
-#endif	(EBOOK2_VER == 2)
-
     return 0x12345678;
 goto_err:
 	ETC_Deinit(0);
@@ -284,10 +179,6 @@ goto_err:
 
 BOOL ETC_Deinit(DWORD InitHandle)
 {
-#if	(EBOOK2_VER == 2)
-	keyhold_Deinitialize();
-#endif	(EBOOK2_VER == 2)
-
 	i2c_Deinitialize();
 
 	if (m_MutexEtc)
@@ -339,11 +230,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 	switch (dwIoControlCode)
 	{
 	case IOCTL_SET_POWER_WLAN:
-#if	(EBOOK2_VER == 3)
 		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("SDMMCCH2CardDetect_Event"));
-#elif	(EBOOK2_VER == 2)
-		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("SDMMCCH0CardDetect_Event"));
-#endif	EBOOK2_VER
 		if (hEvent)
 		{
 			UCHAR i2c_Val = i2c_ReadRegister(0x00);
@@ -353,11 +240,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			{
 				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x1<<0);
 
-#if	(EBOOK2_VER == 3)
 				g_pBspArgs->bSDMMCCH2CardDetect = TRUE;
-#elif	(EBOOK2_VER == 2)
-				g_pBspArgs->bSDMMCCH0CardDetect = TRUE;
-#endif	EBOOK2_VER
 				SetEvent(hEvent);
 
 				i2c_Val |= (1<<2);
@@ -368,11 +251,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				i2c_Val &= ~(1<<2);
 				i2c_WriteRegister(0x00, i2c_Val);
 
-#if	(EBOOK2_VER == 3)
 				g_pBspArgs->bSDMMCCH2CardDetect = FALSE;
-#elif	(EBOOK2_VER == 2)
-				g_pBspArgs->bSDMMCCH0CardDetect = FALSE;
-#endif	EBOOK2_VER
 				SetEvent(hEvent);
 
 				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x0<<0);
@@ -391,20 +270,6 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 	case IOCTL_GET_POWER_WCDMA:
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
 		break;
-
-	case IOCTL_SET_KEY_HOLD:
-		g_pBspArgs->bKeyHold = (BOOL)nInBufSize;
-#if	(EBOOK2_VER == 2)
-		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("EBOOK2_TSP"));	// Ebook2_touch.h
-		if (hEvent)
-		{
-			SetEvent(hEvent);
-			CloseHandle(hEvent);
-		}
-#endif	(EBOOK2_VER == 2)
-	case IOCTL_GET_KEY_HOLD:
-		bRet = g_pBspArgs->bKeyHold;//(g_pGPIOReg->GPNDAT & (0x1<<6));
-		break;
 	}
 	ReleaseMutex(m_MutexEtc);
 
@@ -413,8 +278,6 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 
 void ETC_PowerUp(DWORD InitHandle)
 {
-	//BOOL bKeyHold = (g_pGPIOReg->GPNDAT & (0x1<<6));
-	//ETC_IOControl(0, IOCTL_SET_KEY_HOLD, NULL, bKeyHold, NULL, 0, NULL);
 }
 
 void ETC_PowerDown(DWORD InitHandle)

@@ -26,19 +26,19 @@ UINT32 g_oalIoCtlClockSpeed;
 //
 SYSTEMTIME g_oalRtcResetTime =
 {
-#if	(EBOOK2_VER == 3)
+#ifdef	OMNIBOOK_VER
 	2009,	// wYear
-	11,		// wMonth
-	1,		// wDayofWeek
-	2,		// wDay
+	12,		// wMonth
+	2,		// wDayofWeek
+	1,		// wDay
 	12,		// wHour
-#else	(EBOOK2_VER == 3)
+#else	//!OMNIBOOK_VER
     2007,     // wYear
     2,        // wMonth
     3,        // wDayofWeek
     14,        // wDay
     12,        // wHour
-#endif	(EBOOK2_VER == 3)
+#endif	OMNIBOOK_VER
     0,        // wMinute
     0,        // wSecond
     0        // wMilliseconds
@@ -50,11 +50,11 @@ static void InitializeBlockPower(void);
 static void InitializeCLKSource(void);
 static void InitializeRTC(void);
 extern void InitializeOTGCLK(void);
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 #define	PMIC_ADDR	0xCC
 extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
 extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 //------------------------------------------------------------------------------
 //
@@ -135,25 +135,25 @@ void OEMInit()
     //
     InitializeBlockPower();
 
-#ifdef	EBOOK2_VER
-{
-	unsigned char buf[2];
-	IICReadByte(PMIC_ADDR, 0x00, buf);
-	if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+#ifdef	OMNIBOOK_VER
 	{
-		buf[0] |= (1<<3);	// on
-		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
-		OALMSG(1, (L"VDD_OTGI(1.2V) ON\r\n"));
+		unsigned char buf[2];
+		IICReadByte(PMIC_ADDR, 0x00, buf);
+		if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
+		{
+			buf[0] |= (1<<3);	// on
+			IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+			OALMSG(1, (L"VDD_OTGI(1.2V) ON\r\n"));
+		}
+		IICReadByte(PMIC_ADDR, 0x01, buf);
+		if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
+		{
+			buf[0] |= (1<<5);	// on
+			IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
+			OALMSG(1, (L"VDD_OTG(3.3V) ON\r\n"));
+		}
 	}
-	IICReadByte(PMIC_ADDR, 0x01, buf);
-	if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
-	{
-		buf[0] |= (1<<5);	// on
-		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
-		OALMSG(1, (L"VDD_OTG(3.3V) ON\r\n"));
-	}
-}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // Initialize OTG PHY Clock
     //
@@ -232,12 +232,12 @@ static void InitializeCLKGating(void)
     // HCLK_IROM, HCLK_MEM1, HCLK_MEM0, HCLK_MFC Should be Always On for power Mode
     // Because we can not expect when Warm Reset will be triggered..
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	pSysConReg->HCLK_GATE = (0<<31)		// 3D
 							|(1<<30)	// Reserved
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     pSysConReg->HCLK_GATE = (0x3<<30)    // Reserved
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                             |(0<<29)    // USB Host
                             |(0<<28)    // Security Sub-system
                             |(0<<27)    // SDMA1
@@ -266,25 +266,25 @@ static void InitializeCLKGating(void)
                             |(0<<4)        // Rotator
 #ifdef	DISPLAY_BROADSHEET
                             |(0<<3)        // Display Controller
-#else	DISPLAY_BROADSHEET
+#else	//!DISPLAY_BROADSHEET
                             |(1<<3)        // Display Controller            <--- Always On
 #endif	DISPLAY_BROADSHEET
                             |(0<<2)        // Trust Interrupt Controller
                             |(1<<1)        // Interrupt Controller        <--- Always On
 #ifdef	DISPLAY_BROADSHEET
 							|(0<<0);		// MFC
-#else	DISPLAY_BROADSHEET
+#else	//!DISPLAY_BROADSHEET
                             |(1<<0);        // MFC                    <--- Always On (for Power Mode)
 #endif	DISPLAY_BROADSHEET
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	pSysConReg->PCLK_GATE = (0xF<<28)	// Reserved
 							|(0<<27)	// IIC1
 							|(0<<26)	// IIS2
 							|(1<<25)	// Reserved
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     pSysConReg->PCLK_GATE = (0x7F<<25)    // Reserved
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                             |(0<<24)    // Security Key
                             |(0<<23)    // CHIP ID
                             |(0<<22)    // SPI1
@@ -351,7 +351,7 @@ static void InitializeCLKGating(void)
                             |(0<<15)    // Display Controller 27
 #ifdef	DISPLAY_BROADSHEET
 							|(0<<14)	// Display Controller
-#else	DISPLAY_BROADSHEET
+#else	//!DISPLAY_BROADSHEET
                             |(1<<14)    // Display Controller            <--- Always On
 #endif	DISPLAY_BROADSHEET
                             |(0<<13)    // Post Processor1 27
@@ -380,25 +380,25 @@ static void InitializeBlockPower(void)
     pSysConReg->NORMAL_CFG = (1<<31)        // Reserved
                             |(0<<30)        // IROM Block Off    (Internal 32KB Boot ROM)
                             |(0x1FFF<<17)    // Reserved
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
                             |(0<<16)		// DOMAIN_ETM On	(JTAG not connected when ETM off)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
                             |(1<<16)        // DOMAIN_ETM On    (JTAG not connected when ETM off)
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                             |(0<<15)        // DOMAIN_S Off    (SDMA0, SDMA1, Security System)
 #ifdef	DISPLAY_BROADSHEET
                             |(0<<14)		// DOMAIN_F On	  (LCD, Post, Rotator)
-#else	DISPLAY_BROADSHEET
+#else	//!DISPLAY_BROADSHEET
                             |(1<<14)        // DOMAIN_F On    (LCD, Post, Rotator)
 #endif	DISPLAY_BROADSHEET
                             |(0<<13)        // DOMAIN_P Off    (TV Scaler, TV Encoder, 2D)
                             |(0<<12)        // DOMAIN_I Off    (Cam I/F, Jpeg)
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
                             |(1<<11)        // Reserved
                             |(0<<10)        // DOMAIN_G Off    (3D)
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
                             |(0x3<<10)        // Reserved
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                             |(0<<9)            // DOMAIN_V Off    (MFC)
                             |(0x100);        // Reserved
 }
@@ -440,7 +440,7 @@ static void InitializeRTC(void)
     pRTCReg->RTCCON |= (1<<3);
     pRTCReg->RTCCON &= ~(1<<3);
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     // The value of BCD registers in the RTC are undefined at reset. Set them to a known value
     pRTCReg->BCDSEC  = 0;
     pRTCReg->BCDMIN  = 0;
@@ -449,7 +449,7 @@ static void InitializeRTC(void)
     pRTCReg->BCDDAY  = 1;
     pRTCReg->BCDMON  = 1;
     pRTCReg->BCDYEAR = 0;
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 
     // Disable RTC control.
     pRTCReg->RTCCON &= ~(1<<0);

@@ -55,11 +55,11 @@
        ; adhoc default band, 1:G, 0:B
    "AdhocDefaultBand"=dword:1
        ; 1:SDIO 4 bit mode; 0: SDIO 1 bit mode
-IF EBOOK2_VER
+IF OMNIBOOK_VER
    "SetSD4BIT"=dword:0
-ELSE	;EBOOK2_VER
+ELSE
    "SetSD4BIT"=dword:1
-ENDIF	EBOOK2_VER
+ENDIF OMNIBOOK_VER
        ;Set the priority of SdioIstThread
    "SdioIstThread"=dword:65
        ;Set the value of AvoidScanTime after connected

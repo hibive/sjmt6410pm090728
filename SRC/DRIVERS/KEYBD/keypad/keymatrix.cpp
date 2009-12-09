@@ -56,15 +56,9 @@ Notes:
 #define SIZE_COLS   8
 #define SIZE_ROWS   8
 #elif (MATRIX_LAYOUT == LAYOUT1)
-#ifdef	EBOOK2_VER
-#define SIZE_BITS	4
-#define SIZE_COLS	4
-#define SIZE_ROWS	4	
-#else	EBOOK2_VER
 #define SIZE_BITS   2
 #define SIZE_COLS   5
 #define SIZE_ROWS   2
-#endif	EBOOK2_VER
 #endif
 
 // Pointer to device control registers
@@ -189,14 +183,6 @@ struct KCODE KeyCode[SIZE_KEY] =
     {KCODE_TYPE_NORMAL , 0x0007 , 0, 0},
     {KCODE_TYPE_NORMAL , 0x0008 , 0, 0},
     {KCODE_TYPE_NORMAL , 0x0009 , 0, 0}
-#ifdef	EBOOK2_VER
-	,{KCODE_TYPE_NORMAL , 0x000a , 0, 0}
-	,{KCODE_TYPE_NORMAL , 0x000b , 0, 0}
-	,{KCODE_TYPE_NORMAL , 0x000c , 0, 0}
-	,{KCODE_TYPE_NORMAL , 0x000d , 0, 0}
-	,{KCODE_TYPE_NORMAL , 0x000e , 0, 0}
-	,{KCODE_TYPE_NORMAL , 0x000f , 0, 0}
-#endif	EBOOK2_VER
 };
 #elif (MATRIX_LAYOUT == LAYOUT2) 
 struct KSTATE KeyChange[SIZE_KEY];
@@ -738,15 +724,8 @@ BOOL KeyMatrix::IsrThreadProc()
             {
                 for (UINT iEvent = 0; iEvent < cEvents; ++iEvent)
                 {
-#ifdef	EBOOK2_VER
-					if (FALSE == g_gBspArgs->bKeyHold)
-					{
-#endif	EBOOK2_VER
 					v_pfnKeybdEvent(v_uiPddId, rguiScanCode[iEvent], rgfKeyUp[iEvent]);
                     RETAILMSG(FALSE,(TEXT("PddID : %x, ScanCode : %x, KeyUp : %d\r\n"),v_uiPddId, rguiScanCode[iEvent], rgfKeyUp[iEvent]));
-#ifdef	EBOOK2_VER
-					}
-#endif	EBOOK2_VER
                 }
             }
         }
@@ -821,11 +800,7 @@ BOOL KeyMatrix::KeybdPowerOn()
 #if ((MATRIX_LAYOUT == LAYOUT0)||(MATRIX_LAYOUT == LAYOUT2))
     pKeyPadReg->KEYIFCOL = (0x00<<8);
 #elif (MATRIX_LAYOUT == LAYOUT1)
-#ifdef	EBOOK2_VER
-	pKeyPadReg->KEYIFCOL = (0xF<<8);
-#else	EBOOK2_VER
     pKeyPadReg->KEYIFCOL = (0x7<<8);
-#endif	EBOOK2_VER
 #endif
 
     VarInit();
@@ -882,12 +857,6 @@ static void GPIO_PuEnable(ENUM_COL_ROW iClass, bool bFlag)
 
     if(iClass == ENUM_COL)    // Column setting
     {
-#if (EBOOK2_VER == 2)
-		if(bFlag)		// Pull up Enable
-			pGPIOReg->GPLPUD =	pGPIOReg->GPLPUD  | (0xAA<<0);
-		else
-			pGPIOReg->GPLPUD =	pGPIOReg->GPLPUD & ~(0xFF<<0);
-#elif (EBOOK2_VER == 3)
         if(bFlag)        // Pull up Enable
         {
             pGPIOReg->GPLPUD =  pGPIOReg->GPLPUD  | (0xaaaa<<0);    // KBC_0~7
@@ -896,16 +865,9 @@ static void GPIO_PuEnable(ENUM_COL_ROW iClass, bool bFlag)
         {
             pGPIOReg->GPLPUD =  pGPIOReg->GPLPUD & ~ (0xffff<<0);    // KBC_0~7
         }
-#endif
     }
     else         // Row Setting
     {
-#if (EBOOK2_VER == 2)
-		if(bFlag)		// Pull up Enable
-			pGPIOReg->GPKPUD =	pGPIOReg->GPKPUD | (0xAA<<16);
-		else
-			pGPIOReg->GPKPUD =	pGPIOReg->GPKPUD & ~(0xFF<<16);
-#elif (EBOOK2_VER == 3)
         if(bFlag)        // Pull up Enable
         {
             pGPIOReg->GPKPUD =  pGPIOReg->GPKPUD | (0xaaaa<<16);    // KBR_0~7
@@ -914,7 +876,6 @@ static void GPIO_PuEnable(ENUM_COL_ROW iClass, bool bFlag)
         {
             pGPIOReg->GPKPUD =  pGPIOReg->GPKPUD & ~ (0xffff<<16);    // KBR_0~7
         }
-#endif
     }
 
 }
@@ -980,20 +941,6 @@ static void GPIO_CtrlHandler(ENUM_COL_ROW iClass, ENUM_GPIO_FUNC iLevel)
     {
         switch(iLevel)
         {
-#if (EBOOK2_VER == 2)
-		case ENUM_INPUT :
-			pGPIOReg->GPLCON0 = (pGPIOReg->GPLCON0 & ~(0xFFFF<<0)) | (0x0000<<0);
-			break;
-		case ENUM_OUTPUT :
-			pGPIOReg->GPLCON0 = (pGPIOReg->GPLCON0 & ~(0xFFFF<<0)) | (0x1111<<0);
-			break;
-		case ENUM_AUXFUNC :
-			pGPIOReg->GPLCON0 = (pGPIOReg->GPLCON0 & ~(0xFFFF<<0)) | (0x3333<<0);
-			break;
-		default :	//ENUM_RESERVED
-			pGPIOReg->GPLCON0 =	(pGPIOReg->GPLCON0 & ~(0xFFFF<<0)) | (0x4444<<0);
-			break;
-#else	(EBOOK2_VER == 2)
         case ENUM_INPUT :
             pGPIOReg->GPLCON0=
                 (pGPIOReg->GPLCON0 & ~(0xfffff<<12)) | (0x00000<<12);    //KBC_3(GPL3)~ KBC_7(GPL7)
@@ -1010,27 +957,12 @@ static void GPIO_CtrlHandler(ENUM_COL_ROW iClass, ENUM_GPIO_FUNC iLevel)
             pGPIOReg->GPLCON0=
                 (pGPIOReg->GPLCON0 & ~(0xfffff<<12)) | (0x44444<<12);    //KBC_3(GPL3)~ KBC_7(GPL7)
             break;
-#endif	(EBOOK2_VER == 2)
         }
     }
     else if(iClass == ENUM_ROW)        // Row Setting
     {
         switch(iLevel)
         {
-#if (EBOOK2_VER == 2)
-		case ENUM_INPUT :
-			pGPIOReg->GPKCON1 = (pGPIOReg->GPKCON1 & ~(0xFFFF<<0)) | (0x0000<<0);
-			break;
-		case ENUM_OUTPUT :
-			pGPIOReg->GPKCON1 = (pGPIOReg->GPKCON1 & ~(0xFFFF<<0)) | (0x1111<<0);
-			break;
-		case ENUM_AUXFUNC :
-			pGPIOReg->GPKCON1 = (pGPIOReg->GPKCON1 & ~(0xFFFF<<0)) | (0x3333<<0);
-			break;
-		default :	//ENUM_RESERVED
-			pGPIOReg->GPKCON1 = (pGPIOReg->GPKCON1 & ~(0xFFFF<<0)) | (0xFFFF<<0);
-			break;
-#else	(EBOOK2_VER == 2)
         case ENUM_INPUT :
             pGPIOReg->GPKCON1=
                 (pGPIOReg->GPKCON1 & ~(0xff<<0)) | (0x00<<0);    //KBR_0(GPK8)~ KBR_1(GPK9)
@@ -1047,7 +979,6 @@ static void GPIO_CtrlHandler(ENUM_COL_ROW iClass, ENUM_GPIO_FUNC iLevel)
             pGPIOReg->GPKCON1=
                 (pGPIOReg->GPKCON1 & ~(0xff<<0)) | (0x44<<0);    //KBR_0(GPK8)~ KBR_1(GPK9)
             break;
-#endif	(EBOOK2_VER == 2)
         }
     }
     else
@@ -1077,12 +1008,6 @@ static void KEYIF_Column_Bitset(bool bVal, int cIdx)
         pKeyPadReg->KEYIFCOL = pKeyPadReg->KEYIFCOL | (0xff & ~(0x1 << cIdx));
     }
 #elif (MATRIX_LAYOUT == LAYOUT1)
-#if (EBOOK2_VER == 2)
-	if(bVal)
-		pKeyPadReg->KEYIFCOL = pKeyPadReg->KEYIFCOL | (0x1 << (cIdx));
-	else
-		pKeyPadReg->KEYIFCOL = pKeyPadReg->KEYIFCOL | (0xFF & ~(0x1 << (cIdx)));
-#else	(EBOOK2_VER == 2)
     if(bVal)
     {
         pKeyPadReg->KEYIFCOL = pKeyPadReg->KEYIFCOL | (0x1 << (cIdx+3));
@@ -1091,7 +1016,6 @@ static void KEYIF_Column_Bitset(bool bVal, int cIdx)
     {
         pKeyPadReg->KEYIFCOL = pKeyPadReg->KEYIFCOL | (0xff & ~(0x1 << (cIdx+3)));
     }
-#endif	(EBOOK2_VER == 2)
 #endif
 }
 

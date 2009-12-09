@@ -120,10 +120,10 @@ CONFIG                  ; Other System Configuration for making image
     KERNELFIXUPS=ON     ; Kernel address fixup
     AUTOSIZE=ON         ; ROM and RAM size will be resizing automatically for padding region
 
-IF EBOOK2_VER
+IF OMNIBOOK_VER
 	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
 ;	FSRAMPERCENT=0x30303030	; object store(12.5%)
-ENDIF EBOOK2_VER
+ENDIF OMNIBOOK_VER
 
 IF IMGMULTIXIP
 
@@ -170,4 +170,3 @@ IF IMGMULTIXIP
 #include "$(_TARGETPLATROOT)\FILES\MultipleXIP.bib"
 ENDIF
 
-    

@@ -1,6 +1,6 @@
 
-#ifndef __EBOOK2_DISPDRVR_H__
-#define __EBOOK2_DISPDRVR_H__
+#ifndef __DISPDRVR_H__
+#define __DISPDRVR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,5 +29,5 @@ ULONG DispDrvrDrvEscape(SURFOBJ *pso, ULONG iEsc,
 }
 #endif
 
-#endif	//__EBOOK2_DISPDRVR_H__
+#endif	//__DISPDRVR_H__
 

@@ -184,10 +184,10 @@ CSDHCSlotBase::Init(
 	            return FALSE;
 	        }
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
 	        v_gBspArgs->g_SDCardState = CARD_REMOVED;    //initialize
 	        v_gBspArgs->g_SDCardDetectEvent = CreateEvent(NULL, FALSE, FALSE,NULL);
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 	    }
 
     }
@@ -239,13 +239,13 @@ CSDHCSlotBase::Stop(
 
     SoftwareReset(SOFT_RESET_ALL);
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     if(NULL != v_gBspArgs->g_SDCardDetectEvent) 
     {
         CloseHandle(v_gBspArgs->g_SDCardDetectEvent);
         v_gBspArgs->g_SDCardDetectEvent = NULL;
     }
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
     if (v_gBspArgs)
     {
         MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
@@ -1185,11 +1185,6 @@ VOID CSDHCSlotBase::HandleInterrupt(SDSLOT_INT_TYPE intType)
 BOOL CSDHCSlotBase::IsCardPresent()
 {
     BOOL fRetVal;
-#if (EBOOK2_VER == 2)
-	fRetVal = FALSE;
-	if (v_gBspArgs)
-		fRetVal = v_gBspArgs->bSDMMCCH0CardDetect;
-#else	(EBOOK2_VER == 2)
     volatile S3C6410_GPIO_REG *pIOPreg = NULL;
 
     PHYSICAL_ADDRESS    ioPhysicalBase = {0,0};
@@ -1210,7 +1205,6 @@ BOOL CSDHCSlotBase::IsCardPresent()
     }
 
     MmUnmapIoSpace((PVOID)pIOPreg, sizeof(S3C6410_GPIO_REG));
-#endif	(EBOOK2_VER == 2)
 
     return fRetVal;
 }
@@ -1280,10 +1274,10 @@ CSDHCSlotBase::HandleRemoval(
         WriteWord(SDHC_ERROR_INT_STATUS,wErrIntStatus);
         WriteWord(SDHC_ERROR_INT_SIGNAL_ENABLE,wErrIntSignalEn);    
     }
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     v_gBspArgs->g_SDCardState = CARD_REMOVED;
     SetEvent( v_gBspArgs->g_SDCardDetectEvent );
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 }
 
 
@@ -1341,10 +1335,10 @@ CSDHCSlotBase::HandleInsertion(
     // Disable the command and data CRC error
     WriteWord(SDHC_ERROR_INT_SIGNAL_ENABLE, (wErrIntSignalEn | (0x20)));
     WriteWord(SDHC_ERROR_INT_STATUS_ENABLE, (wErrIntStatusEn | (0x20)));
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     v_gBspArgs->g_SDCardState = CARD_INSERTED;
     SetEvent( v_gBspArgs->g_SDCardDetectEvent );
-#endif	EBOOK2_VER
+#endif	//!OMNIBOOK_VER
 }
 
 BOOL 

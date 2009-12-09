@@ -27,8 +27,8 @@
     MACRO
 
         LED_ON     $data
-	IF :DEF: EBOOK2_VER
-	ELSE	;EBOOK2_VER
+	IF :DEF: OMNIBOOK_VER
+	ELSE	;!OMNIBOOK_VER
         ldr          r10, =GPNPUD
         ldr          r11, [r10]
         bic          r11, r11, #0xFF000000     ; Pull-Up-Down Disable
@@ -47,7 +47,7 @@
         bic          r11, r11, #0xFF000000
         orr          r11, r11, #0x55000000     ; GPN[15:12] Output .
         str          r11, [r10]
-	ENDIF	;EBOOK2_VER
+	ENDIF	;OMNIBOOK_VER
     MEND
 
     STARTUPTEXT

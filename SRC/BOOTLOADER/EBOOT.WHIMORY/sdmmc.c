@@ -55,7 +55,7 @@ BOOL ChooseImageFromSDMMC(void)
 	EdbgOutputDebugString("4) CHAIN.LST\r\n");
 	EdbgOutputDebugString("5) Power Off ...\r\n");
 	EdbgOutputDebugString("\r\nEnter your selection: ");
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
 	EPDOutputString("1) BLOCK0.NB0\r\n");
 	EPDOutputString("2) EBOOT.BIN\r\n");
@@ -64,51 +64,20 @@ BOOL ChooseImageFromSDMMC(void)
 	EPDOutputString("5) Power Off ...\r\n");
 	EPDOutputString("\r\nEnter your selection: ");
 	EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
 	while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
 	{
 		KeySelect = OEMReadDebugByte();
 		if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
-		{
-			EKEY_DATA KeyData = GetKeypad();
-			switch (KeyData)
-			{
-#if	(EBOOK2_VER == 3)
-			case KEY_1:
-				KeySelect = '1';	break;
-			case KEY_2:
-				KeySelect = '2';	break;
-			case KEY_3:
-				KeySelect = '3';	break;
-			case KEY_4:
-				KeySelect = '4';	break;
-			case KEY_5:
-				KeySelect = '5';	break;
-#elif	(EBOOK2_VER == 3)
-			case KEY_F13:
-				KeySelect = '1';	break;
-			case KEY_F14:
-				KeySelect = '2';	break;
-			case KEY_F15:
-				KeySelect = '3';	break;
-			case KEY_F16:
-				KeySelect = '4';	break;
-			case KEY_F17:
-				KeySelect = '5';	break;
-#endif	EBOOK2_VER
-			default:
-				KeySelect = OEM_DEBUG_READ_NODATA;
-				break;
-			}
-		}
+			KeySelect = GetKeypad2();
 	}
 
 	EdbgOutputDebugString("%c\r\n", KeySelect);
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("%c\r\n", KeySelect);
 	EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
 	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
@@ -136,10 +105,10 @@ BOOL ChooseImageFromSDMMC(void)
 	}
 
 	EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
 	EPDOutputString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
 	EPDOutputFlush();
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
 
 	return bRet;
 }

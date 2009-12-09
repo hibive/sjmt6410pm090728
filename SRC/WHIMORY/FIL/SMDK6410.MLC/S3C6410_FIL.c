@@ -75,7 +75,11 @@
 //#define NAND_ERR(x)
 //#define NAND_MSG(x)	RETAILMSG(TRUE, x)
 #define NAND_MSG(x)
+#ifdef	OMNIBOOK_VER
+#define NAND_LOG(x)	RETAILMSG(FALSE, x)
+#else	//!OMNIBOOK_VER
 #define NAND_LOG(x)	RETAILMSG(TRUE, x)
+#endif	OMNIBOOK_VER
 //#define NAND_LOG(x)
 
 ///////////////////////////////////////////////

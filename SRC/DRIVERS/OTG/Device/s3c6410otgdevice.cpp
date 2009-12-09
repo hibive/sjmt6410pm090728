@@ -21,9 +21,9 @@
 
 #define USB_DD_VERSION 100
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
 static volatile BSP_ARGS *v_gBspArgs;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 // Caution: Turning on more debug zones can cause STALLs due
 // to corrupted setup packets.
@@ -1427,7 +1427,7 @@ DWORD MapRegisterSet(
     g_pUDCBase = pVMem + BASE_REGISTER_OFFSET;
     DEBUGMSG(UFN_ZONE_INIT, (_T("%s MmMapIoSpace, pVMem:%x\r\n"), pszFname, pVMem));
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;  
     v_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
     if (v_gBspArgs == NULL)
@@ -1436,7 +1436,7 @@ DWORD MapRegisterSet(
         RETAILMSG(UFN_ZONE_ERROR, (_T("%s MmMapIoSpace: FAILED\r\n"), pszFname));
         goto CleanUp;
     }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 CleanUp:
 
@@ -1454,13 +1454,13 @@ CleanUp:
             pVMem = NULL;
         }
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
 		if (v_gBspArgs)
             {
             MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
                v_gBspArgs = NULL;
             }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
     }
 
     FUNCTION_LEAVE_MSG();
@@ -1498,13 +1498,13 @@ UnmapRegisterSet(
         g_pUDCBase = NULL;
     }    
 
-#ifndef	EBOOK2_VER
+#ifndef	OMNIBOOK_VER
     if (v_gBspArgs)
     {
         MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
         v_gBspArgs = NULL;
     }
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 

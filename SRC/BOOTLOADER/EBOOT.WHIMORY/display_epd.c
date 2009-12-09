@@ -1,9 +1,9 @@
 
-#if	1
-
 #include "display_epd.h"
 
-#define	_EBOOT_	1
+#ifdef	DISPLAY_BROADSHEET
+
+#define	FOR_EBOOT	1
 #include "..\\Drivers\\Display_Broadsheet\\broadsheet_lib\\S1d13521.c"
 // const unsigned char Eng_Font_8x16[128][16];
 #include "display_epd_eng_font_8x16.h"
@@ -146,9 +146,6 @@ void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 	bPercent = (BYTE)((dwCurrent * 100.) / dwTotal + 0.5);
 	if (g_bOldPercent != bPercent)
 	{
-		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
-
-		//EdbgOutputDebugString("dwCurrent(%d), dwTotal(%d), bPercent(%d)\r\n", dwCurrent, dwTotal, bPercent);
 		if (0 == bPercent)
 		{
 			S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
@@ -425,10 +422,7 @@ int EPDSerialFlashWrite(void)
 	return nRet;
 }
 
-#else
-
-#include "display_epd.h"
-
+#else	//!DISPLAY_BROADSHEET
 
 void EPDInitialize(void)
 {
@@ -452,5 +446,5 @@ int EPDSerialFlashWrite(void)
 	return 0;
 }
 
-#endif
+#endif	DISPLAY_BROADSHEET
 

@@ -132,7 +132,7 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 			g_PowerStatus.ACLineStatus = AC_LINE_OFFLINE;
 #ifdef	BATT_LOG_TEST
 			g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
-#else	BATT_LOG_TEST
+#else	//!BATT_LOG_TEST
 			if (50 <= nPercent)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
 			else if (5 <= nPercent)
@@ -140,7 +140,7 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_LOW;
 				if (10 > nPercent)
 				{
-					LPCTSTR lpszPathName = _T("\\Windows\\EBook2Command.exe");
+					LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 					PROCESS_INFORMATION pi;
 
 					ZeroMemory(&pi,sizeof(pi));
@@ -159,7 +159,8 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 						CloseHandle(pi.hThread);
 						CloseHandle(pi.hProcess);
 					}
-					KernelIoControl(IOCTL_HAL_EBOOK2_SHUTDOWN, NULL, 0, NULL, 0, NULL);
+					SetSystemPowerState(NULL, POWER_STATE_CRITICAL, POWER_FORCE);
+					KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
 				}
 			}
 			else

@@ -18,8 +18,9 @@ extern "C" {
 #include <DrvLib.h>
 #include <HSMMCDrv.h>
 
+
+#if	(OMNIBOOK_VER == 3)
 #define	FOR_EBOOT	// jhlee
-#if	(EBOOK2_VER == 3)
 #define	USE_CHANNEL0
 #endif
 
@@ -398,11 +399,11 @@ BOOL TOC_Init(DWORD dwEntry, DWORD dwImageType, DWORD dwImageStart, DWORD dwImag
 
     g_pBootCfg->SubnetMask = inet_addr("255.255.255.0");
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	g_pBootCfg->ConfigFlags |=  BOOT_TYPE_DIRECT;	// Launch Existing OS image from Storage
 	g_pBootCfg->ConfigFlags &= ~CONFIG_FLAGS_KITL;	// KITL Configuration Disabled
 	g_pBootCfg->BootDevice   = 3;					// USB_DNW
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     // update our index
     g_dwTocEntry = dwEntry;

@@ -54,12 +54,12 @@ void LTC3714_Init()
         g_pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
     }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	// GPC[2] DVM_SET3, GPC[1] DVM_SET2, GPC[0] DVM_SET1
 	g_pGPIOReg->GPCCON = (g_pGPIOReg->GPCCON & ~(0xFFF<<0)) | (0x111<<0);	// Output
 	g_pGPIOReg->GPCPUD = (g_pGPIOReg->GPCPUD & ~(0x3F<<0)) | (0x00<<0);		// Pull-up/down disable
 	g_pGPIOReg->GPCDAT = (g_pGPIOReg->GPCDAT & ~(0x7<<0)) | (0x0<<0);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
     //GPIO Setting - For LTC3714 VID
     g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0x3ff<<22)) | (0x155<<22);
 
@@ -71,7 +71,7 @@ void LTC3714_Init()
     g_pGPIOReg->GPLCON1 = (g_pGPIOReg->GPLCON1 & ~(0xfff)) | (0x111);
 
     g_pGPIOReg->GPLPUD = (g_pGPIOReg->GPLPUD & ~(0x3f<<16));
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 
 //////////
@@ -90,7 +90,7 @@ void LTC3714_VoltageSet(UINT32 uPwr, UINT32 uVoltage, UINT32 uDelay)
         OALMSG(TRUE, (_T("%s(%d,%d,%d)\r\n"), _T(__FUNCTION__), uPwr, uVoltage, uDelay));
     }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	uvtg = uVoltage;
 
 	if (uPwr & SETVOLTAGE_ARM)
@@ -133,7 +133,7 @@ void LTC3714_VoltageSet(UINT32 uPwr, UINT32 uVoltage, UINT32 uDelay)
 		}
 		g_pGPIOReg->GPCDAT = uRegValue;	// GPCDAT Register
 	}
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
      //DWORD    oldGPNDAT;
      //DWORD    oldGPLDAT;
     //////////////////////////////////////////////
@@ -334,6 +334,6 @@ void LTC3714_VoltageSet(UINT32 uPwr, UINT32 uVoltage, UINT32 uDelay)
 
     g_pGPIOReg->GPLDAT = (g_pGPIOReg->GPLDAT & ~(0x1<<8));
     g_pGPIOReg->GPLDAT = (g_pGPIOReg->GPLDAT & ~(0x1<<10));
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 }
 

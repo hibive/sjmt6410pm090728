@@ -53,8 +53,8 @@ BANK_SHIFT          EQU     (20)
     MACRO
 
         LED_ON     $data
-	IF :DEF: EBOOK2_VER
-	ELSE	;EBOOK2_VER
+	IF :DEF: OMNIBOOK_VER
+	ELSE	;!OMNIBOOK_VER
         ldr          r10, =GPNPUD
         ldr          r11, [r10]
         bic          r11, r11, #0xFF000000     ; Pull-Up-Down Disable
@@ -73,15 +73,15 @@ BANK_SHIFT          EQU     (20)
         bic          r11, r11, #0xFF000000
         orr          r11, r11, #0x55000000     ; GPN[15:12] Output .
         str          r11, [r10]
-	ENDIF	;EBOOK2_VER
+	ENDIF	;OMNIBOOK_VER
     MEND
 
 
     MACRO
 
         VLED_ON     $data
-	IF :DEF: EBOOK2_VER
-	ELSE	;EBOOK2_VER
+	IF :DEF: OMNIBOOK_VER
+	ELSE	;!OMNIBOOK_VER
         ldr          r10, =vGPNPUD
         ldr          r11, [r10]
         bic          r11, r11, #0xFF000000     ; Pull-Up-Down Disable
@@ -100,7 +100,7 @@ BANK_SHIFT          EQU     (20)
         bic          r11, r11, #0xFF000000
         orr          r11, r11, #0x55000000     ; GPN[15:12] Output .
         str          r11, [r10]
-	ENDIF	;EBOOK2_VER
+	ENDIF	;OMNIBOOK_VER
     MEND
 
 ;------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ ResetHandler
 
 ;   CLKDIV & PLL Change code was here.
 
-	IF :DEF: EBOOK2_VER
+	IF :DEF: OMNIBOOK_VER
 ;------------------------------------
 ;     Setting EPLL for iROM SDMMC
 ;------------------------------------
@@ -192,7 +192,7 @@ ResetHandler
         ldr          r0, =EPLL_CON0
         ldr          r1, =((1<<31)+(EPLL_MVAL<<16)+(EPLL_PVAL<<8)+(EPLL_SVAL))
         str          r1, [r0]
-	ENDIF	;EBOOK2_VER
+	ENDIF	;OMNIBOOK_VER
 
 ;------------------------------------
 ;     Expand Memory Port 1 to x32

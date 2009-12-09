@@ -38,9 +38,9 @@ Notes:
 #include "precomp.h"
 
 static volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 static HANDLE g_hThreadPowerMon = NULL;
 static HANDLE g_hMsgQueue = NULL;
 static BOOL g_aIPPowerStatus[PWR_IP_MAX] = {FALSE, };
@@ -169,7 +169,7 @@ PowerMonitorThread(void)
                             RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] SetSystemPowerState(POWER_STATE_ON)\n")));
                             SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
                             break;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 						case OEMWAKE_EINT0:
 							RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:INF] Wake Up by Eint0\n")));
 							if (g_pGPIOReg->GPNDAT & (0x1<<0))
@@ -183,7 +183,7 @@ PowerMonitorThread(void)
 								SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
 							}
 							break;
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
                         case OEMWAKE_RTC_ALARM:
                             RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] Wake Up by RTC Alarm\n")));
                             //PWRCON_INF((_T("[PWRCON:INF] SetSystemPowerState(POWER_STATE_ON)\n")));
@@ -305,7 +305,7 @@ AllocResources(void)
         return FALSE;
     }
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
 	g_pGPIOReg = (S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
 	if (g_pGPIOReg == NULL)
@@ -313,7 +313,7 @@ AllocResources(void)
 		RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:ERR] %s->g_pGPIOReg MmMapIoSpace() Failed \n"), _T(__FUNCTION__)));
 		return FALSE;
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     //--------------------
     // Critical Section
@@ -334,13 +334,13 @@ ReleaseResources(void)
 {
     DEBUGMSG(PWC_ZONE_ENTER, (_T("[PWRCON] ++%s\n"), _T(__FUNCTION__)));
 
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	if (g_pGPIOReg != NULL)
 	{
 		MmUnmapIoSpace((PVOID)g_pGPIOReg, sizeof(S3C6410_GPIO_REG));
 		g_pGPIOReg = NULL;
 	}
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
     if (g_pSysConReg != NULL)
     {

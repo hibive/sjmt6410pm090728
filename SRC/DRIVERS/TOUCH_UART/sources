@@ -25,7 +25,7 @@ SYNCHRONIZE_DRAIN=1
 RELEASETYPE=PLATFORM
 NOMIPS16CODE=1
 TARGETNAME=s3c6410_touch_uart
-DEFFILE=ebook2_touch.def
+DEFFILE=touch_uart.def
 TARGETTYPE=DYNLINK
 DLLENTRY=TSP_DllMain
 
@@ -36,10 +36,10 @@ TARGETLIBS=\
 SOURCELIBS=\
 
 SOURCES=\
-	ebook2_touch.cpp\
+	touch_uart.cpp\
 
 FILE_VIEW_INCLUDES_FOLDER=\
-	ebook2_touch.h\
+	touch_uart.h\
 
 CPPBROWSE=1
 FILE_VIEW_ROOT_FOLDER=\

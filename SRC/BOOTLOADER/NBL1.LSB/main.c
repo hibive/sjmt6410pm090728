@@ -104,11 +104,11 @@ void main(void)
     nPage = 10;
 	for (nCnt = 0; nCnt < uNumOfLoadPage; nCnt++)
 	{
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		Led_Display(0x1);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	    Led_Display(0x2);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 		if (nPage >= (NAND_PAGE_PER_BLOCK-2) || (NAND_Read(0, nPage, pBuf, b4KPage) == FALSE))
 		{
 #ifdef DEBUGUART
@@ -116,11 +116,11 @@ void main(void)
 			Uart_SendString("ECC Error @ Page 0x");
 			Uart_SendBYTE(nPage, 1);
 #endif
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 			Led_Display(0x0);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 			Led_Display(0x9);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 			while(1);
 		}
 
@@ -130,11 +130,11 @@ void main(void)
 			pBuf += NAND_BYTE_PER_PAGE*2;
 		else
 			pBuf += NAND_BYTE_PER_PAGE;
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 		Led_Display(0x2);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
         Led_Display(0x4);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 	}
 
 	//Uart_SendString("Jump to 2nd Bootloader...\r\n");
@@ -142,11 +142,11 @@ void main(void)
 
 	// Turn the LEDs on.
 	//
-#ifdef	EBOOK2_VER
+#ifdef	OMNIBOOK_VER
 	Led_Display(0x3);
-#else	EBOOK2_VER
+#else	//!OMNIBOOK_VER
 	Led_Display(0x5);
-#endif	EBOOK2_VER
+#endif	OMNIBOOK_VER
 
 #ifdef DEBUGUART
 	Uart_SendString("Jump to 2nd Bootloader...\r\n");

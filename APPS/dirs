@@ -13,6 +13,6 @@ THE SAMPLE SOURCE CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 !endif
 
 DIRS=\
-	EBook2Startup\
-	EBook2Command\
+	Startup\
+	Command\
 	SipSymbol\
