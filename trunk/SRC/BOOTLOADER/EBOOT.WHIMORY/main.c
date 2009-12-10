@@ -1328,7 +1328,7 @@ BOOL OEMPlatformInit(void)
 			OTGDEV_SetSoftDisconnect();
 			OALMSG(TRUE, (TEXT("OEMPlatformInit: IMAGE_TYPE_RAMIMAGE\r\n")));
 #ifdef	OMNIBOOK_VER
-			EPDDisplayImage(IMAGE_BOOTUP);	// BootUp
+			EPDDisplayBitmap(BITMAP_BOOTUP);	// BootUp
 #endif	OMNIBOOK_VER
 			if ( !ReadOSImageFromBootMedia( ) )
 			{

@@ -13,6 +13,7 @@
 #define DEFAULT_SHUTDOWN_REG_STRING		_T("\\Windows\\Omnibook_Shutdown.bmp")
 #define IMAGE_LOWBATTERY_REG_STRING		_T("BmpLowbattery")
 #define DEFAULT_LOWBATTERY_REG_STRING	_T("\\Windows\\Omnibook_Lowbattery.bmp")
+#define IMAGE_SLEEP_REG_STRING			_T("BmpSleep")
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -92,7 +93,7 @@ static BOOL drawShutDown(HDC hDC, LPCTSTR lpszFileName)
 	return bRet;
 }
 
-static BOOL dispImage(HDC hDC, LPCTSTR lpszFileName)
+static BOOL dispBitmap(HDC hDC, LPCTSTR lpszFileName)
 {
 	HANDLE hFile = CreateFile(lpszFileName,
 		GENERIC_READ, FILE_SHARE_READ,
@@ -100,39 +101,48 @@ static BOOL dispImage(HDC hDC, LPCTSTR lpszFileName)
 	if (INVALID_HANDLE_VALUE == hFile)
 		return FALSE;
 
-	DISPIMAGE dispImg;
-	dispImg.nCount = (int)GetFileSize(hFile, NULL);
-	dispImg.x = dispImg.y = 0;
-	dispImg.pBuffer = new BYTE [dispImg.nCount];
-	if (NULL == dispImg.pBuffer)
+	DISPBITMAP dispBmp;
+	dispBmp.nCount = (int)GetFileSize(hFile, NULL);
+	dispBmp.x = dispBmp.y = 0;
+	dispBmp.pBuffer = new BYTE [dispBmp.nCount];
+	if (NULL == dispBmp.pBuffer)
 	{
 		CloseHandle(hFile);
 		return FALSE;
 	}
 
 	DWORD dwNumberOfBytesRead;
-	ReadFile(hFile, dispImg.pBuffer, dispImg.nCount, &dwNumberOfBytesRead, NULL);
-	if (dispImg.nCount != dwNumberOfBytesRead)
+	ReadFile(hFile, dispBmp.pBuffer, dispBmp.nCount, &dwNumberOfBytesRead, NULL);
+	if (dispBmp.nCount != dwNumberOfBytesRead)
 	{
 		CloseHandle(hFile);
-		delete [] dispImg.pBuffer;
+		delete [] dispBmp.pBuffer;
 		return FALSE;
 	}
 
-	int nRet = ExtEscape(hDC, DRVESC_DISP_IMAGE, sizeof(DISPIMAGE), (LPCSTR)&dispImg, 0, NULL);
-	RETAILMSG(1, (_T("+ DRVESC_DISP_IMAGE %d\r\n"), nRet));
+	dispBmp.pUpdate = NULL;
+	int nRet = ExtEscape(hDC, DRVESC_DISP_BITMAP, sizeof(dispBmp), (LPCSTR)&dispBmp, 0, NULL);
+	RETAILMSG(1, (_T("+ DRVESC_DISP_BITMAP %d\r\n"), nRet));
 
-	delete [] dispImg.pBuffer;
+	delete [] dispBmp.pBuffer;
 	CloseHandle(hFile);
 
 	return TRUE;
 }
-static BOOL dispShutDown(HDC hDC, LPCTSTR lpszFileName)
+static BOOL dispSleep(HDC hDC, LPCTSTR lpszFileName)
+{
+	ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 0, NULL, 0, NULL);
+	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, FALSE, NULL, 0, NULL);
+	ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_FULL, NULL, 0, NULL);
+	ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
+	return dispBitmap(hDC, lpszFileName);
+}
+static BOOL dispShutdown(HDC hDC, LPCTSTR lpszFileName)
 {
 	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, FALSE, NULL, 0, NULL);
 	ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_FULL, NULL, 0, NULL);
 	ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
-	return dispImage(hDC, lpszFileName);
+	return dispBitmap(hDC, lpszFileName);
 }
 
 
@@ -157,7 +167,18 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		return FALSE;
 
 	hDC = GetDC(HWND_DESKTOP);
-	if (0 == _tcsnicmp(_T("SHUTDOWN"), argv[1], _tcslen(_T("SHUTDOWN"))))
+	if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
+	{
+		TCHAR szSleep[MAX_PATH] = {0,};
+		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_SLEEP_REG_STRING, szSleep, MAX_PATH, FALSE))
+		{
+			RETAILMSG(1, (_T("SLEEP : RegOpenCreateStr(%s, %s)\r\n"),
+				IMAGE_SLEEP_REG_STRING, szSleep));
+			bRet = dispSleep(hDC, szSleep);
+		}
+		RETAILMSG(1, (_T("App_Command => SLEEP(%d)\r\n"), bRet));
+	}
+	else if (0 == _tcsnicmp(_T("SHUTDOWN"), argv[1], _tcslen(_T("SHUTDOWN"))))
 	{
 		TCHAR szShutdown[MAX_PATH] = {0,};
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, IMAGE_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
@@ -166,7 +187,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 				IMAGE_SHUTDOWN_REG_STRING, DEFAULT_SHUTDOWN_REG_STRING));
 			_tcscpy_s(szShutdown, _countof(szShutdown), DEFAULT_SHUTDOWN_REG_STRING);
 		}
-		bRet = dispShutDown(hDC, szShutdown);
+		bRet = dispShutdown(hDC, szShutdown);
 		RETAILMSG(1, (_T("App_Command => SHUTDOWN(%d)\r\n"), bRet));
 		RegFlushKey(HKEY_LOCAL_MACHINE);
 		RegFlushKey(HKEY_CURRENT_USER);
@@ -180,7 +201,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 				IMAGE_LOWBATTERY_REG_STRING, DEFAULT_LOWBATTERY_REG_STRING));
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), DEFAULT_LOWBATTERY_REG_STRING);
 		}
-		bRet = dispShutDown(hDC, szLowbattery);
+		bRet = dispShutdown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
 		RegFlushKey(HKEY_LOCAL_MACHINE);
 		RegFlushKey(HKEY_CURRENT_USER);
@@ -234,6 +255,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	return 0;
 }
 
+// _T("\\Windows\\App_Command.exe SLEEP");
 // _T("\\Windows\\App_Command.exe SHUTDOWN");
 // _T("\\Windows\\App_Command.exe LOWBATTERY");
 

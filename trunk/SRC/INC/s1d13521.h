@@ -46,12 +46,7 @@ typedef struct {
 	PBYTE	pBuffer;	// NULL == GPE BUFFER
 	PRECT	pRect;		// NULL == GPE FULL
 } IMAGERECT, *PIMAGERECT;
-typedef struct {
-	PBYTE		pBuffer;
-	int			nCount;
-	ALIGNIMAGE	Align;
-	int			x, y;
-} DISPIMAGE, *PDISPIMAGE;
+
 typedef struct {
 	BOOL			bWriteImage;
 	PRECT			pRect;
@@ -59,6 +54,13 @@ typedef struct {
 	BOOL			bBorder;
 	WAVEFORMMODE	wfMode;
 } DISPUPDATE, *PDISPUPDATE;
+typedef struct {
+	PBYTE		pBuffer;
+	int			nCount;
+	ALIGNIMAGE	Align;
+	int			x, y;
+	PDISPUPDATE	pUpdate;
+} DISPBITMAP, *PDISPBITMAP;
 //////////////////////////////////////////////////////////////////////////////////
 // Microsoft reserves the range 0 to 0x10000 for its escape codes.
 enum {
@@ -81,6 +83,7 @@ enum {
 	DRVESC_SYSTEM_SLEEP,		// ...Removed...[ret]
 	DRVESC_SYSTEM_WAKEUP,		// ...Removed...[ret]
 	DRVESC_WAIT_HRDY,			// BOOL			[ret]
+
 	DRVESC_COMMAND,				// CMDARG		[set]
 	DRVESC_READ_DATA,			// WORD			[ret]
 	DRVESC_WRITE_BURST,			// BLOB			[set]
@@ -94,7 +97,7 @@ enum {
 	DRVESC_WRITE_UPDATE,		// RECT			[set]
 	DRVESC_IMAGE_UPDATE,		// IMAGERECT	[set]
 
-	DRVESC_DISP_IMAGE,			// DISPIMAGE	[set]
+	DRVESC_DISP_BITMAP,			// DISPBITMAP	[set]
 	DRVESC_DISP_UPDATE,			// DISPUPDATE	[set]
 
 	DRVESC_MAX

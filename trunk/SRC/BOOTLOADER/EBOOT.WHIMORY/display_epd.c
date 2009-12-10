@@ -111,15 +111,15 @@ void EPDInitialize(void)
 	}
 }
 
-void EPDDisplayImage(EIMAGE_TYPE eImageType)
+void EPDDisplayBitmap(EBITMAP_TYPE eBitmapType)
 {
 	BLOB RleData;
-	DISPIMAGE dispImg;
+	DISPBITMAP dispBmp;
 
 	S1d13521DrvEscape(DRVESC_SET_DSPUPDSTATE, DSPUPD_PART, NULL, 0, NULL);
-	switch (eImageType)
+	switch (eBitmapType)
 	{
-	case IMAGE_BOOTUP:
+	case BITMAP_BOOTUP:
 		delay(100);
 		RleData.cbSize = sizeof(Rle_Image_BootUp) / sizeof(Rle_Image_BootUp[0]);
 		RleData.pBlobData = (PBYTE)Rle_Image_BootUp;
@@ -129,11 +129,12 @@ void EPDDisplayImage(EIMAGE_TYPE eImageType)
 		break;
 	}
 
-	dispImg.nCount = rleDecode(RleData, (PBYTE)EBOOT_FRAMEBUFFER_UA_START);
-	dispImg.pBuffer = (PBYTE)EBOOT_FRAMEBUFFER_UA_START;
-	dispImg.Align = ALIGN_CENTER | ALIGN_VCENTER;
-	dispImg.x = dispImg.y = 0;
-	S1d13521DrvEscape(DRVESC_DISP_IMAGE, sizeof(DISPIMAGE), (PVOID)&dispImg, 0, NULL);
+	dispBmp.nCount = rleDecode(RleData, (PBYTE)EBOOT_FRAMEBUFFER_UA_START);
+	dispBmp.pBuffer = (PBYTE)EBOOT_FRAMEBUFFER_UA_START;
+	dispBmp.Align = ALIGN_CENTER | ALIGN_VCENTER;
+	dispBmp.x = dispBmp.y = 0;
+	dispBmp.pUpdate = NULL;
+	S1d13521DrvEscape(DRVESC_DISP_BITMAP, sizeof(dispBmp), (PVOID)&dispBmp, 0, NULL);
 }
 
 static BYTE g_bOldPercent = 0xFF;

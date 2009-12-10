@@ -38,9 +38,6 @@ Notes:
 #include "precomp.h"
 
 static volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
-#ifdef	OMNIBOOK_VER
-static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
-#endif	OMNIBOOK_VER
 static HANDLE g_hThreadPowerMon = NULL;
 static HANDLE g_hMsgQueue = NULL;
 static BOOL g_aIPPowerStatus[PWR_IP_MAX] = {FALSE, };
@@ -145,6 +142,13 @@ PowerMonitorThread(void)
             // Notified State Transition
             //-----------------------
             case PBT_TRANSITION:
+#ifdef	OMNIBOOK_VER
+				if (POWER_STATE_SUSPEND & pB->Flags)
+				{
+					RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SUSPEND)\r\n")));
+					PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SUSPEND")), 0, 0);
+				}
+#endif	OMNIBOOK_VER
 
                 RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] Notified [PBT_TRANSITION : %s (0x%08x)]\n"), pB->SystemPowerState, pB->Flags));
                 break;
@@ -171,17 +175,9 @@ PowerMonitorThread(void)
                             break;
 #ifdef	OMNIBOOK_VER
 						case OEMWAKE_EINT0:
-							RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:INF] Wake Up by Eint0\n")));
-							if (g_pGPIOReg->GPNDAT & (0x1<<0))
-							{
-								RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:INF] SetSystemPowerState(POWER_STATE_SUSPEND)\n")));
-								SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
-							}
-							else
-							{
-								RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:INF] SetSystemPowerState(POWER_STATE_ON)\n")));
-								SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
-							}
+							RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] Wake Up by Eint0\n")));
+							RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] SetSystemPowerState(POWER_STATE_ON)\n")));
+							SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
 							break;
 #endif	OMNIBOOK_VER
                         case OEMWAKE_RTC_ALARM:
@@ -224,6 +220,20 @@ PowerMonitorThread(void)
                             break;
                         }
 
+#ifdef	OMNIBOOK_VER
+						{
+							WCHAR szBuffer[128] = {0,};	// ERROR_INSUFFICIENT_BUFFER
+							DWORD dwFlags = 0;
+							if (ERROR_SUCCESS == GetSystemPowerState(szBuffer, 128, &dwFlags))
+							{
+								if (POWER_STATE_ON & dwFlags)
+								{
+									RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_RESUME)\r\n")));
+									PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_RESUME")), 0, 0);
+								}
+							}
+						}
+#endif	OMNIBOOK_VER
 
                     }
                     else
@@ -305,16 +315,6 @@ AllocResources(void)
         return FALSE;
     }
 
-#ifdef	OMNIBOOK_VER
-	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
-	g_pGPIOReg = (S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
-	if (g_pGPIOReg == NULL)
-	{
-		RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:ERR] %s->g_pGPIOReg MmMapIoSpace() Failed \n"), _T(__FUNCTION__)));
-		return FALSE;
-	}
-#endif	OMNIBOOK_VER
-
     //--------------------
     // Critical Section
     //--------------------
@@ -333,14 +333,6 @@ static void
 ReleaseResources(void)
 {
     DEBUGMSG(PWC_ZONE_ENTER, (_T("[PWRCON] ++%s\n"), _T(__FUNCTION__)));
-
-#ifdef	OMNIBOOK_VER
-	if (g_pGPIOReg != NULL)
-	{
-		MmUnmapIoSpace((PVOID)g_pGPIOReg, sizeof(S3C6410_GPIO_REG));
-		g_pGPIOReg = NULL;
-	}
-#endif	OMNIBOOK_VER
 
     if (g_pSysConReg != NULL)
     {

@@ -4,14 +4,14 @@
 
 typedef enum
 {
-	IMAGE_NONE=0x00,
+	BITMAP_NONE=0x00,
 
-	IMAGE_BOOTUP,
-	IMAGE_BOOTMENU,
-} EIMAGE_TYPE;
+	BITMAP_BOOTUP,
+	BITMAP_BOOTMENU,
+} EBITMAP_TYPE;
 
 void EPDInitialize(void);
-void EPDDisplayImage(EIMAGE_TYPE eImageType);
+void EPDDisplayBitmap(EBITMAP_TYPE eBitmapType);
 void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal);
 
 void EPDOutputString(const char *fmt, ...);

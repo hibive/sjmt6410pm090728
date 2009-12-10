@@ -215,9 +215,9 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 		MYERR((_T("[BAT_ERR] g_pGPIOReg = MmMapIoSpace()\r\n")));
 		goto goto_err;
 	}
-	// GPN[3:0] : CHARGING#(3), CHG_DONW#(2), USBPWR_OK#(1), DCPWR_OK#(0)
+	// GPN[3:0] : CHARGING#(3), CHG_DONE#(2), USBPWR_OK#(1), DCPWR_OK#(0)
 	g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0xFF<<0)) | (0x00<<0);	// input mode
-	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0xFF<<0)) | (0x00<<0);	// pull-up/down disable
+	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0xFF<<0)) | (0xAA<<0);	// pull-up enable
 	// LED_R# - GPA[7] - Output(1), Pull-up/down disabled(0)
 	g_pGPIOReg->GPACON = (g_pGPIOReg->GPACON & ~(0xf<<28)) | (0x1<<28);
 	g_pGPIOReg->GPAPUD &= ~(0x3<<14);

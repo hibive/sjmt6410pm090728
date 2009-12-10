@@ -107,7 +107,8 @@ INT WINAPI PowerButtonThread(void)
 				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 				PROCESS_INFORMATION pi;
 
-				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_SHUTDOWN")), 0, 0);
+				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SHUTDOWN)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SHUTDOWN")), 0, 0);
 
 				ZeroMemory(&pi,sizeof(pi));
 				if (CreateProcess(lpszPathName,
@@ -137,6 +138,29 @@ INT WINAPI PowerButtonThread(void)
         RETAILMSG(PWR_ZONE_EVENT_HOOK, (_T("[PWR] Power Button Event [%d]\r\n"), nBtnCount));
 
         // In the Windows Mobile, "PowerPolicyNotify(PPN_POWERBUTTONPRESSED, 0);" can be used
+#ifdef	OMNIBOOK_VER
+        {
+			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+			PROCESS_INFORMATION pi;
+		
+			ZeroMemory(&pi,sizeof(pi));
+			if (CreateProcess(lpszPathName,
+							  _T("SLEEP"),	// pszCmdLine
+							  NULL, // psaProcess
+							  NULL, // psaThread
+							  FALSE,// fInheritHandle
+							  0,	// fdwCreate
+							  NULL, // pvEnvironment
+							  NULL, // pszCurDir
+							  NULL, // psiStartInfo
+							  &pi)) // pProcInfo
+			{
+				WaitForSingleObject(pi.hThread, 3000);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+			}
+		}
+#endif	OMNIBOOK_VER
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 
         Button_pwrbtn_enable_interrupt();            // UnMask EINT
@@ -223,7 +247,11 @@ AllocResources(void)
         return FALSE;
     }
 
+#ifdef	OMNIBOOK_VER
+	g_hEventPowerBtn = CreateEvent(NULL, FALSE, FALSE, _T("OMNIBOOK_EVENT_POWERBUTTON"));
+#else	//!OMNIBOOK_VER
     g_hEventPowerBtn = CreateEvent(NULL, FALSE, FALSE, NULL);
+#endif	OMNIBOOK_VER
     if(NULL == g_hEventPowerBtn)
     {
         RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateEvent() Power Button Failed \n\r"), _T(__FUNCTION__)));
