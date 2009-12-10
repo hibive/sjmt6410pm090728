@@ -181,11 +181,10 @@ static void S3C6410_WakeUpSource_Configure(void)
 	// Power Button EINT[9] (GPN[9] is Retention Port)
 	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
 	{
-		BOOL bIsUSB = !(pGPIOReg->GPNDAT & (0x1<<0));
 		pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
 		pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
-			| ((bIsUSB ? EINT_SIGNAL_RISE_EDGE : EINT_SIGNAL_FALL_EDGE)<<EINT0CON_EINT0);
-		pGPIOReg->EINT0FLTCON1 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
+			| (EINT_SIGNAL_FALL_EDGE<<EINT0CON_EINT0);
+		pGPIOReg->EINT0FLTCON0 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
 	}
 #else	//!OMNIBOOK_VER
     // Power Button EINT[11] (GPN[11] is Retention Port)

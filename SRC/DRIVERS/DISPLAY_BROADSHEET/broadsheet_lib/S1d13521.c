@@ -60,6 +60,11 @@ static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 static BOOL			g_bSleepDirtyRect = FALSE;
 static POWERSTATE	g_SleepPowerState = POWER_SLEEP;
 
+// Sleep Bitmap
+static BOOL			g_bSBSet = FALSE;
+static BOOL			g_bSBDirtyRect = FALSE;
+static DSPUPDSTATE	g_SBDspUpdState = DSPUPD_FULL;
+static WAVEFORMMODE	g_SBWaveformMode = WAVEFORM_GU;
 
 
 static WORD RegRead(WORD wReg);
@@ -771,7 +776,70 @@ static BOOL ImageUpdate(PIMAGERECT pir)
 	return bRet;
 }
 
-static BOOL DispImage(PDISPIMAGE pdi)
+static BOOL DispUpdate(PDISPUPDATE pdu)
+{
+	CMDARG CmdArg;
+	RECT rect;
+	AREA Area;
+
+	if (pdu->bWriteImage)
+	{
+		IMAGERECT ImgRect;
+
+		ImgRect.pBuffer = NULL;
+		ImgRect.pRect = pdu->pRect;
+		ImageWrite(&ImgRect);
+	}
+
+	if (NULL == pdu->pRect)
+	{
+		rect.left = 0;
+		rect.top = 0;
+		rect.right = S1D13521_ORI_WIDTH;
+		rect.bottom = S1D13521_ORI_HEIGHT;
+	}
+	else
+	{
+		rect.left = pdu->pRect->left;
+		rect.top = pdu->pRect->top;
+		rect.right = pdu->pRect->right;
+		rect.bottom = pdu->pRect->bottom;
+	}
+	rect2Area(&rect, &Area);
+
+	MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
+	// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
+	CmdArg.bCmd = (DSPUPD_FULL == pdu->duState) ? 0x34 : 0x36;
+	CmdArg.pArgv[0] = ((pdu->bBorder ? 1 : 0)<<14) | (pdu->wfMode<<8);
+	CmdArg.pArgv[1] = Area.x;
+	CmdArg.pArgv[2] = Area.y;
+	CmdArg.pArgv[3] = Area.w;
+	CmdArg.pArgv[4] = Area.h;
+	CmdArg.nArgc = 5;
+	Command(CmdArg);
+
+	MYMSG((_T("[S1D13521] WAIT_DSPE_TRG\r\n")));
+	CmdArg.bCmd = 0x28;
+	CmdArg.nArgc = 0;
+	Command(CmdArg);
+
+	MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+	CmdArg.bCmd = 0x29;
+	CmdArg.nArgc = 0;
+	Command(CmdArg);
+
+	if (DRVESC_DISP_UPDATE == g_dwDebugLevel)
+	{
+		MYERR((_T(" DispUpdate(%d, (%d,%d,%d,%d), %d, %d, %d)\r\n"),
+			pdu->bWriteImage,
+			rect.left, rect.top, rect.right, rect.bottom,
+			pdu->duState, pdu->bBorder, pdu->wfMode));
+	}
+
+	return TRUE;
+}
+
+static BOOL DispBitmap(PDISPBITMAP pdi)
 {
 	PBYTE pBuffer = pdi->pBuffer;
 	BITMAPFILEHEADER bfh;
@@ -779,11 +847,11 @@ static BOOL DispImage(PDISPIMAGE pdi)
 	RGBQUAD rgbq[256];
 	int i, j, offset, x, y;
 	CMDARG CmdArg;
-	RECT rect;
+	BOOL bRet;
 
-	if (DRVESC_DISP_IMAGE == g_dwDebugLevel)
+	if (DRVESC_DISP_BITMAP == g_dwDebugLevel)
 	{
-		MYERR((_T(" DispImage(0x%x, %d, %d, %d)\r\n"),
+		MYERR((_T(" DispBitmap(0x%x, %d, %d, %d)\r\n"),
 			(pdi->pBuffer ? pdi->pBuffer : 0),
 			pdi->nCount, pdi->x, pdi->y));
 	}
@@ -898,74 +966,19 @@ static BOOL DispImage(PDISPIMAGE pdi)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 
-	rect.left = pdi->x;
-	rect.top = pdi->y;
-	rect.right = pdi->x + bih.biWidth;
-	rect.bottom = pdi->y + bih.biHeight;
-	return UpdateWrite(&rect);
-}
-
-static BOOL DispUpdate(PDISPUPDATE pdu)
-{
-	CMDARG CmdArg;
-	RECT rect;
-	AREA Area;
-
-	if (pdu->bWriteImage)
-	{
-		IMAGERECT ImgRect;
-
-		ImgRect.pBuffer = NULL;
-		ImgRect.pRect = pdu->pRect;
-		ImageWrite(&ImgRect);
-	}
-
-	if (NULL == pdu->pRect)
-	{
-		rect.left = 0;
-		rect.top = 0;
-		rect.right = S1D13521_ORI_WIDTH;
-		rect.bottom = S1D13521_ORI_HEIGHT;
-	}
+	if (pdi->pUpdate)
+		bRet = DispUpdate(pdi->pUpdate);
 	else
 	{
-		rect.left = pdu->pRect->left;
-		rect.top = pdu->pRect->top;
-		rect.right = pdu->pRect->right;
-		rect.bottom = pdu->pRect->bottom;
-	}
-	rect2Area(&rect, &Area);
-
-	MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
-	// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
-	CmdArg.bCmd = (DSPUPD_FULL == pdu->duState) ? 0x34 : 0x36;
-	CmdArg.pArgv[0] = ((pdu->bBorder ? 1 : 0)<<14) | (pdu->wfMode<<8);
-	CmdArg.pArgv[1] = Area.x;
-	CmdArg.pArgv[2] = Area.y;
-	CmdArg.pArgv[3] = Area.w;
-	CmdArg.pArgv[4] = Area.h;
-	CmdArg.nArgc = 5;
-	Command(CmdArg);
-
-	MYMSG((_T("[S1D13521] WAIT_DSPE_TRG\r\n")));
-	CmdArg.bCmd = 0x28;
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
-
-	MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
-	CmdArg.bCmd = 0x29;
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
-
-	if (DRVESC_DISP_UPDATE == g_dwDebugLevel)
-	{
-		MYERR((_T(" DispUpdate(%d, (%d,%d,%d,%d), %d, %d, %d)\r\n"),
-			pdu->bWriteImage,
-			rect.left, rect.top, rect.right, rect.bottom,
-			pdu->duState, pdu->bBorder, pdu->wfMode));
+		RECT rect;
+		rect.left = pdi->x;
+		rect.top = pdi->y;
+		rect.right = pdi->x + bih.biWidth;
+		rect.bottom = pdi->y + bih.biHeight;
+		bRet = UpdateWrite(&rect);
 	}
 
-	return TRUE;
+	return bRet;
 }
 
 
@@ -1010,6 +1023,14 @@ void S1d13521PowerHandler(BOOL bOff)
 	{
 		g_bDirtyRect = g_bSleepDirtyRect;
 		g_PowerState = g_SleepPowerState;
+
+		if (g_bSBSet)
+		{
+			g_bDirtyRect = g_bSBDirtyRect;
+			g_DspUpdState = g_SBDspUpdState;
+			g_WaveformMode = g_SBWaveformMode;
+			g_bSBSet = FALSE;
+		}
 	}
 }
 
@@ -1055,6 +1076,12 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return g_PowerState;
 
 	case DRVESC_SYSTEM_SLEEP:
+		{
+			g_bSBSet = TRUE;
+			g_bSBDirtyRect = g_bDirtyRect;
+			g_SBDspUpdState = g_DspUpdState;
+			g_SBWaveformMode = g_WaveformMode;
+		}
 		return 0;
 	case DRVESC_SYSTEM_WAKEUP:
 		return 0;
@@ -1095,6 +1122,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	case DRVESC_GET_TEMPERATURE:
 		nRetVal = RegRead(0x0216);
 		break;
+
 	case DRVESC_WRITE_IMAGE:
 		if ((sizeof(IMAGERECT) == cjIn) && pvIn)
 			nRetVal = ImageWrite((PIMAGERECT)pvIn);
@@ -1107,14 +1135,16 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		if ((sizeof(IMAGERECT) == cjIn) && pvIn)
 			nRetVal = ImageUpdate((PIMAGERECT)pvIn);
 		break;
-	case DRVESC_DISP_IMAGE:
-		if ((sizeof(DISPIMAGE) == cjIn) && pvIn)
-			nRetVal = DispImage((PDISPIMAGE)pvIn);
+
+	case DRVESC_DISP_BITMAP:
+		if ((sizeof(DISPBITMAP) == cjIn) && pvIn)
+			nRetVal = DispBitmap((PDISPBITMAP)pvIn);
 		break;
 	case DRVESC_DISP_UPDATE:
 		if ((sizeof(DISPUPDATE) == cjIn) && pvIn)
 			nRetVal = DispUpdate((PDISPUPDATE)pvIn);
 		break;
+
 	}
 	if (psOld != g_PowerState)
 		SetPowerState(g_PowerState, psOld);

@@ -250,7 +250,7 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 
 	g_pGPIOReg->EINT0MASK |= (0x1<<4);	// Mask EINT4
 	g_pGPIOReg->GPNCON = (g_pGPIOReg->GPNCON & ~(0x3<<8)) | (0x2<<8);	// Ext. Interrupt
-	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0x3<<8)) | (0x0<<8);	// pull-up/down disable
+	g_pGPIOReg->GPNPUD = (g_pGPIOReg->GPNPUD & ~(0x3<<8)) | (0x2<<8);	// pull-up enable
 	g_pGPIOReg->EINT0CON0 = (g_pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT4))
 		| (EINT_SIGNAL_BOTH_EDGE<<EINT0CON_EINT4);
 	g_pGPIOReg->EINT0FLTCON0 = (g_pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_4)) | (0x1<<FLTEN_4);
@@ -273,7 +273,7 @@ static DWORD WINAPI PenDetThread(LPVOID lpParameter)
 
 		bPenDet = (g_pGPIOReg->GPNDAT & (0x1<<4));
 		bRet = TSP_IOControl(0, IOCTL_TSP_SET_ENABLE, NULL, bPenDet, NULL, 0, NULL);
-		MYMSG((_T("[TSP] IOCTL_TSP_SET_ENABLE(%d) = %d\n\r"), bPenDet, bRet));
+		MYMSG((_T("[TSP] IOCTL_TSP_SET_ENABLE(%d) = %d\r\n"), bPenDet, bRet));
 
 		g_pGPIOReg->EINT0MASK &= ~(0x1<<4);	// Unmask EINT4
 	}

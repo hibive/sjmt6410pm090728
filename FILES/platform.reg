@@ -1189,17 +1189,18 @@ ENDIF BSP_DISPLAY_BROADSHEET
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;Default	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
-IF OMNIBOOK_VER_DEMO
-	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
-ENDIF OMNIBOOK_VER_DEMO
 ;Default	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
 ;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
+IF OMNIBOOK_VER_DEMO
+	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
+ENDIF OMNIBOOK_VER_DEMO
 ENDIF BSP_IROMBOOT
 
 IF APPS_COMMAND
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
+;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
