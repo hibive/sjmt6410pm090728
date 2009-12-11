@@ -11,24 +11,16 @@ see the LICENSE.RTF on your install media or the root of your tools installation
 THE SAMPLE SOURCE CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 !endif
 
-!if "$(APP_STARTUP)" != "1"
-SKIPBUILD=1
-!endif
-
-TARGETNAME=App_Startup
+TARGETNAME=App_WZCTool
 TARGETTYPE=PROGRAM
-RELEASETYPE=PLATFORM
+RELEASETYPE=LOCAL
+EXEENTRY=mainWCRTStartup
 
-EXEENTRY=WinMain
-
-INCLUDES=\
-	$(_TARGETPLATROOT)\src\inc;
+CONDITIONAL_INCLUDES=stdio.h assert.h
 
 TARGETLIBS=\
-	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
-	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\ws2.lib\
-	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\iphlpapi.lib\
+	$(_PROJECTROOT)\cesysgen\sdk\lib\$(_CPUINDPATH)\coredll.lib\
+	$(_PROJECTROOT)\cesysgen\oak\lib\$(_CPUINDPATH)\wzcsapi.lib\
 
-SOURCES=\
-	Startup.cpp\
-
+SOURCES= \
+    	WZCTool.cpp\

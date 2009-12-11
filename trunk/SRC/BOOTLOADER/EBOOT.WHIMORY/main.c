@@ -142,39 +142,6 @@ void main(void)
     SpinForever();
 }
 
-#ifdef	OMNIBOOK_VER
-#define	DEC2HEXCHAR(x)	((9 < x) ? ((x%10)+'A') : (x+'0'))
-static void CvtMAC2UUID(PBOOT_CFG pBootCfg, BSP_ARGS *pArgs)
-{
-	UINT8 bValue, cnt=0;
-
-	pArgs->uuid[cnt++] = 'S';
-	pArgs->uuid[cnt++] = 'J';
-	pArgs->uuid[cnt++] = 'M';
-	pArgs->uuid[cnt++] = 'T';
-
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[0] & 0x00FF);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[0] >> 8);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[1] & 0x00FF);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[1] >> 8);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[2] & 0x00FF);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-	bValue = (UINT8)(pBootCfg->EdbgAddr.wMAC[2] >> 8);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue / 16);
-	pArgs->uuid[cnt++] = DEC2HEXCHAR(bValue % 16);
-}
-#endif	OMNIBOOK_VER
 
 static USHORT GetIPString(char *szDottedD)
 {
@@ -403,19 +370,10 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
     memset(szDottedD, '0', 24);
 
     EdbgOutputDebugString ( "\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
-#ifdef	OMNIBOOK_VER
-	EPDOutputString("\r\nEnter new MAC address in hexadecimal (hh.hh.hh.hh.hh.hh): ");
-	EPDOutputFlush();
-#endif	OMNIBOOK_VER
 
     while(!((InChar == 0x0d) || (InChar == 0x0a)))
     {
         InChar = OEMReadDebugByte();
-#ifdef	OMNIBOOK_VER
-		if (((USHORT)OEM_DEBUG_READ_NODATA == InChar))
-			InChar = (USHORT)GetKeypad2();
-		else
-#endif	OMNIBOOK_VER
         InChar = tolower(InChar);
         if (InChar != OEM_DEBUG_COM_ERROR && InChar != OEM_DEBUG_READ_NODATA)
         {
@@ -427,10 +385,6 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     szDottedD[cwNumChars++] = (char)InChar;
                     OEMWriteDebugByte((BYTE)InChar);
-#ifdef	OMNIBOOK_VER
-					EPDOutputChar((BYTE)InChar);
-					EPDOutputFlush();
-#endif	OMNIBOOK_VER
                 }
             }
             else if (InChar == 8)       // If it's a backspace, back up.
@@ -439,19 +393,12 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                 {
                     cwNumChars--;
                     OEMWriteDebugByte((BYTE)InChar);
-#ifdef	OMNIBOOK_VER
-					EPDOutputChar((BYTE)InChar);
-					EPDOutputFlush();
-#endif	OMNIBOOK_VER
                 }
             }
         }
     }
 
     EdbgOutputDebugString ( "\r\n");
-#ifdef	OMNIBOOK_VER
-	EPDOutputString("\r\n");
-#endif	OMNIBOOK_VER
 
     // If it's a carriage return with an empty string, don't change anything.
     //
@@ -464,24 +411,11 @@ static void SetCS8900MACAddress(PBOOT_CFG pBootCfg)
                   pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
                   pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
                   pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
-#ifdef	OMNIBOOK_VER
-		CvtMAC2UUID(pBootCfg, pBSPArgs);
-		EPDOutputString("INFO: MAC address set to: %B:%B:%B:%B:%B:%B\r\n",
-				pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, pBootCfg->EdbgAddr.wMAC[0] >> 8,
-				pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, pBootCfg->EdbgAddr.wMAC[1] >> 8,
-				pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, pBootCfg->EdbgAddr.wMAC[2] >> 8);
-#endif	OMNIBOOK_VER
     }
     else
     {
         EdbgOutputDebugString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
-#ifdef	OMNIBOOK_VER
-		EPDOutputString("WARNING: SetCS8900MACAddress: Invalid MAC address.\r\n");
-#endif	OMNIBOOK_VER
     }
-#ifdef	OMNIBOOK_VER
-	EPDOutputFlush();
-#endif	OMNIBOOK_VER
 }
 
 
@@ -567,10 +501,6 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 
 #ifdef	OMNIBOOK_VER
 		EPDOutputString("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
-		EPDOutputString("7) Program CS8900 MAC address (%B:%B:%B:%B:%B:%B)\r\n",
-							g_pBootCfg->EdbgAddr.wMAC[0] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[0] >> 8,
-							g_pBootCfg->EdbgAddr.wMAC[1] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[1] >> 8,
-							g_pBootCfg->EdbgAddr.wMAC[2] & 0x00FF, g_pBootCfg->EdbgAddr.wMAC[2] >> 8);
 		EPDOutputString("H) Hive Clean on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_HIVECLEAN) ? "True" : "*False");
 		EPDOutputString("P) Format Partition on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_FORMATPARTITION) ? "True" : "*False");
 		EPDOutputString("C) Format FTL (Erase FTL Area + FTL Format)\r\n");
@@ -612,8 +542,6 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				EKEY_DATA KeyData = GetKeypad();
 				switch (KeyData)
 				{
-				case KEY_7:
-					KeySelect = '7';	break;
 				case KEY_H:
 					KeySelect = 'H';	break;
 				case KEY_P:
@@ -1140,11 +1068,6 @@ BOOL OEMPlatformInit(void)
 		// use default settings
 		TOC_Init(DEFAULT_IMAGE_DESCRIPTOR, (IMAGE_TYPE_RAMIMAGE), 0, 0, 0);
 	}
-#ifdef	OMNIBOOK_VER
-	CvtMAC2UUID(g_pBootCfg, (BSP_ARGS *)pBSPArgs);
-	EdbgOutputDebugString("pBSPArgs->uuid : %s\r\n", pBSPArgs->uuid);
-	EdbgOutputDebugString("pBSPArgs->deviceId : %s\r\n", pBSPArgs->deviceId);
-#endif	OMNIBOOK_VER
 
 	// Display boot message - user can halt the autoboot by pressing any key on the serial terminal emulator.
 	BootDelay = g_pBootCfg->BootDelay;

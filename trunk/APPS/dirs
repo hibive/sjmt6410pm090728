@@ -16,3 +16,4 @@ DIRS=\
 	Startup\
 	Command\
 	SipSymbol\
+	WZCTool\

@@ -234,7 +234,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		if (hEvent)
 		{
 			UCHAR i2c_Val = i2c_ReadRegister(0x00);
-			MYERR((_T("[ETC] %d = i2c_ReadRegister(0x00)\r\n"), i2c_Val));
+			MYMSG((_T("[ETC] %d = i2c_ReadRegister(0x00)\r\n"), i2c_Val));
 
 			if ((BOOL)nInBufSize)
 			{
@@ -269,6 +269,27 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<1)) | (0x0<<1);
 	case IOCTL_GET_POWER_WCDMA:
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
+		break;
+
+
+	case IOCTL_SET_BOARD_UUID:
+		if (pInBuf && 16 == nInBufSize)	// g_pBspArgs->uuid[16];
+		{
+			PVOID pMarshalledInBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_SET_BOARD_UUID for IN buf.\r\n")));
+				return FALSE;
+			}
+
+			memcpy((void *)&g_pBspArgs->uuid[0], pMarshalledInBuf, 16);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_SET_BOARD_UUID for IN buf.\r\n")));
+				return FALSE;
+			}
+		}
 		break;
 	}
 	ReleaseMutex(m_MutexEtc);

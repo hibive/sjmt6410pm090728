@@ -1200,6 +1200,8 @@ ENDIF BSP_IROMBOOT
 
 IF APPS_COMMAND
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
+;Default	"BmpStartup"=""
+;Default	"BmpStartupTime"=dword:00000bb8	; 3000 msec
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"

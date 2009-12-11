@@ -113,7 +113,6 @@ static BOOL OALIoCtlHalGetHWEntropy(
 			cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]));
 		rc = TRUE;
 	}
-
 #else	//!OMNIBOOK_VER
     UniqueID = (UINT8 *)OALArgsQuery(OAL_ARGS_QUERY_UUID);
 
