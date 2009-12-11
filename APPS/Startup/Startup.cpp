@@ -4,16 +4,29 @@
 
 #include <windows.h>
 #include "s1d13521.h"
+#include <winsock2.h>
+#include <iptypes.h>
+#include "iphlpapi.h"
+#include "etc.h"
 
 
-#define OMNIBOOK_REG_KEY		_T("Software\\Omnibook")
+#define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
 
-#define STARTUP_REG_STRING		_T("AppStartup")
-#define DEFAULT_STARTUP			_T("\\Omnibook Store\\Omnibook_MainApp.exe")
-#define UPDATE_REG_STRING		_T("AppUpdate")
-#define DEFAULT_UPDATE			_T("\\Storage Card\\Omnibook_UpdateApp.exe")
-#define SIPSYMBOL_REG_STRING	_T("AppSipSymbol")
-#define DEFAULT_SIPSYMBOL		_T("\\Windows\\Omnibook_SipSymbol.exe")
+#define APP_STARTUP_REG_STRING		_T("AppStartup")
+#define APP_STARTUP_REG_DEFAULT		_T("\\Omnibook Store\\Omnibook_MainApp.exe")
+
+#define APP_UPDATE_REG_STRING		_T("AppUpdate")
+#define APP_UPDATE_REG_DEFAULT		_T("\\Storage Card\\Omnibook_UpdateApp.exe")
+
+#define APP_SIPSYMBOL_REG_STRING	_T("AppSipSymbol")
+#define APP_SIPSYMBOL_REG_DEFAULT	_T("\\Windows\\Omnibook_SipSymbol.exe")
+
+#define BMP_STARTUPTIME_REG_STRING	_T("BmpStartupTime")
+#define BMP_STARTUPTIME_REG_DEFAULT	3000	// mSec
+
+#define	WIFI_CARDNAME_TCHAR			_T("SDIO86861")
+#define	WIFI_CARDNAME_CHAR			"SDIO86861"
+#define	WIFI_CARDNAME_LEN			9
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -55,6 +68,47 @@ static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DW
 
 	return bRet;
 }
+
+static BOOL RegOpenCreateDword(LPCTSTR lpSubKey, LPCTSTR lpName, LPDWORD lpData, BOOL bCreate)
+{
+	HKEY hKey;
+	DWORD dwValue, dwType = REG_DWORD, dwCnt = sizeof(DWORD);
+	BOOL bRet = TRUE;
+
+	if (ERROR_SUCCESS != RegCreateKeyEx(HKEY_LOCAL_MACHINE,
+		lpSubKey,
+		0,
+		NULL,
+		0,	// REG_OPTION_NON_VOLATILE
+		0,
+		0,
+		&hKey,
+		&dwValue))
+	{
+		return FALSE;
+	}
+
+	if (FALSE == bCreate && REG_CREATED_NEW_KEY == dwValue)
+	{
+		bRet = FALSE;
+	}
+	else if (REG_OPENED_EXISTING_KEY == dwValue)
+	{
+		if (ERROR_SUCCESS == RegQueryValueEx(hKey, lpName, 0, &dwType, (BYTE *)lpData, &dwCnt))
+			RETAILMSG(0, (_T("%d\r\n"), *lpData));
+		else
+			bRet = FALSE;
+	}
+	else
+	{
+		bRet = FALSE;
+	}
+
+	RegCloseKey(hKey);
+
+	return bRet;
+}
+
 
 static BOOL IsProgram(LPCWSTR lpszImageName)
 {
@@ -98,18 +152,190 @@ static BOOL RunProgram(LPCWSTR lpszImageName)
 	return bResult;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance,
-				   HINSTANCE hPrevInstance,
-				   LPTSTR lpCmdLine,
-				   int nCmdShow)
+static LPTSTR FormatNICAddrString(BYTE *Address, DWORD AddressLength)
 {
+	LPTSTR pszRet, pszTmp;
+
+	pszTmp = pszRet = (LPTSTR)LocalAlloc(LPTR, AddressLength * 2 * sizeof(TCHAR) + sizeof(TCHAR));
+	if (pszRet)
+	{
+		for (DWORD i=0; i<AddressLength; i++)
+			pszTmp += wsprintf(pszTmp, TEXT("%02x"), Address[i]);
+	}
+
+	return pszRet;
+}
+
+static BOOL CheckWifiMacAddress(void)
+{
+	BOOL bRet;
+	HANDLE	hEtc;
+	WSADATA WsaData;
+
+	hEtc = CreateFile(ETC_DRIVER_NAME,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL, OPEN_EXISTING, 0, 0);
+	if (INVALID_HANDLE_VALUE == hEtc)
+	{
+		RETAILMSG(1, (_T("ERROR : INVALID_HANDLE_VALUE == CreateFile(%s)\r\n"), ETC_DRIVER_NAME));
+		bRet = FALSE;
+		goto goto_Cleanup;
+	}
+
+	DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, TRUE, NULL, 0, NULL, NULL);
+	if (0 != WSAStartup(MAKEWORD(1, 1), &WsaData))
+	{
+		RETAILMSG(1, (_T("ERROR : WSAStartup failed (error %ld)\r\n"), GetLastError()));
+		bRet = FALSE;
+		goto goto_Cleanup;
+	}
+
+	{
+		PIP_ADAPTER_INFO pAdapterInfo = NULL, pOriginalPtr;
+		ULONG ulSizeAdapterInfo = 0;
+		DWORD dwReturnvalueGetAdapterInfo, i;
+		TCHAR szAdapterName[MAX_ADAPTER_NAME_LENGTH + 4 + 1];
+
+		for (i=0; i<30; i++)
+		{
+			dwReturnvalueGetAdapterInfo = GetAdaptersInfo(pAdapterInfo, &ulSizeAdapterInfo);
+			if (ERROR_NO_DATA == dwReturnvalueGetAdapterInfo)
+			{
+				RETAILMSG(0, (_T("ERROR : ERROR_NO_DATA == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
+				Sleep(100);
+			}
+			else if (ERROR_BUFFER_OVERFLOW == dwReturnvalueGetAdapterInfo)
+			{
+				RETAILMSG(0, (_T("ERROR : ERROR_BUFFER_OVERFLOW == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
+				if (!(pAdapterInfo = (PIP_ADAPTER_INFO)malloc(ulSizeAdapterInfo)))
+				{
+					RETAILMSG(1, (_T("ERROR : Insufficient Memory\r\n")));
+					goto goto_Cleanup;
+				}
+			}
+			else if (ERROR_SUCCESS == dwReturnvalueGetAdapterInfo)
+			{
+				RETAILMSG(1, (_T("ERROR : ERROR_SUCCESS == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
+				break;
+			}
+			else
+			{
+				RETAILMSG(1, (_T("ERROR : GetAdaptersInfo failed (error %ld)\r\n"), dwReturnvalueGetAdapterInfo));
+				goto goto_Cleanup;
+			}
+		}
+
+		pOriginalPtr = pAdapterInfo;
+		while (NULL != pAdapterInfo)
+		{
+			i = MultiByteToWideChar(CP_ACP, 0, pAdapterInfo->AdapterName, strlen(pAdapterInfo->AdapterName)+1,
+				szAdapterName, MAX_ADAPTER_NAME_LENGTH + 4 + 1);
+			szAdapterName[i] = NULL;
+			RETAILMSG(1, (_T("\t Adapter Name ...... : %s\r\n"), szAdapterName));
+			if (0 == strncmp(pAdapterInfo->AdapterName, WIFI_CARDNAME_CHAR, WIFI_CARDNAME_LEN))
+			{
+				LPTSTR pszNICAddr = FormatNICAddrString(pAdapterInfo->Address, pAdapterInfo->AddressLength);
+				if (pszNICAddr)
+				{
+					RETAILMSG(1, (_T("\t Address............ : %s\r\n"), pszNICAddr));
+					LocalFree(pszNICAddr);
+				}
+
+				UINT8 szUUID[16] = {'S','J','M','T',};
+				char *pTmp = (char *)&szUUID[4];
+				for (i=0; i<pAdapterInfo->AddressLength; i++)
+					pTmp += sprintf(pTmp, "%02x", pAdapterInfo->Address[i]);
+				DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, 16, NULL, 0, NULL, NULL);
+			}
+
+			pAdapterInfo = pAdapterInfo->Next;
+			RETAILMSG(1, (_T("\r\n")));
+		}
+		if (pOriginalPtr)  
+			free(pOriginalPtr);
+	}
+
+	
+	WSACleanup();
+	bRet = TRUE;
+
+goto_Cleanup:
+	if (INVALID_HANDLE_VALUE != hEtc)
+	{
+		DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, FALSE, NULL, 0, NULL, NULL);
+		CloseHandle(hEtc);
+	}
+
+	return bRet;
+}
+
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+{
+	DWORD dwStart = 0;
 	TCHAR szProgram[MAX_PATH] = {0,};
 
-	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), STARTUP_REG_STRING));
-		_tcscpy(szProgram, DEFAULT_STARTUP);
+		LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+		PROCESS_INFORMATION pi;
+
+		ZeroMemory(&pi,sizeof(pi));
+		if (CreateProcess(lpszPathName,
+						  _T("STARTUP"),	// pszCmdLine
+						  NULL,	// psaProcess
+						  NULL,	// psaThread
+						  FALSE,// fInheritHandle
+						  0,	// fdwCreate
+						  NULL,	// pvEnvironment
+						  NULL,	// pszCurDir
+						  NULL,	// psiStartInfo
+						  &pi))	// pProcInfo
+		{
+			WaitForSingleObject(pi.hThread, 3000);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			dwStart = GetTickCount();
+		}
 	}
+
+	if (FALSE == CheckWifiMacAddress())
+	{
+		RETAILMSG(1, (_T("ERROR : CheckWifiMacAddress()\r\n")));
+	}
+	
+	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
+	{
+		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_STARTUP_REG_STRING));
+		_tcscpy(szProgram, APP_STARTUP_REG_DEFAULT);
+	}
+
+	if (0 != dwStart)
+	{
+		DWORD dwMSec = 0, dwTotal;
+		HWND hWnd;
+
+		if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwMSec, FALSE))
+		{
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateDword() : %s\r\n"), BMP_STARTUPTIME_REG_STRING));
+			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
+		}
+		if (BMP_STARTUPTIME_REG_DEFAULT > dwMSec)
+			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
+		
+		while (1)
+		{
+			Sleep(100);
+			dwTotal = GetTickCount() - dwStart;
+			hWnd = FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR);
+			if (NULL == hWnd && (dwMSec < dwTotal))
+			{
+				RETAILMSG(1, (_T("BMP_STARTUPTIME : %d\r\n"), dwTotal));
+				break;
+			}
+		}
+	}
+
 	if (IsProgram(szProgram))
 	{
 		RunProgram(szProgram);
@@ -117,10 +343,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 	else
 	{
-		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
 		{
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), UPDATE_REG_STRING));
-			_tcscpy(szProgram, DEFAULT_UPDATE);
+			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_UPDATE_REG_STRING));
+			_tcscpy(szProgram, APP_UPDATE_REG_DEFAULT);
 		}
 		if (IsProgram(szProgram))
 		{
@@ -131,15 +357,24 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			HDC hDC = GetDC(HWND_DESKTOP);
 			ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
+			{
+				DISPUPDATE du;
+				du.bWriteImage = TRUE;
+				du.pRect = NULL;
+				du.duState = DSPUPD_FULL;
+				du.bBorder = FALSE;
+				du.wfMode = WAVEFORM_GC;
+				ExtEscape(hDC, DRVESC_DISP_UPDATE, sizeof(du), (LPCSTR)&du, 0, NULL);
+			}
 			ReleaseDC(HWND_DESKTOP, hDC);
 			RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
 		}
 	}
 
-	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
+	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), SIPSYMBOL_REG_STRING));
-		_tcscpy(szProgram, DEFAULT_SIPSYMBOL);
+		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_SIPSYMBOL_REG_STRING));
+		_tcscpy(szProgram, APP_SIPSYMBOL_REG_DEFAULT);
 	}
 	if (IsProgram(szProgram))
 	{
