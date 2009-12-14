@@ -172,7 +172,7 @@ static LPTSTR FormatNICAddrString(BYTE *Address, DWORD AddressLength)
 static BOOL CheckWifiMacAddress(void)
 {
 	BOOL bRet;
-	HANDLE	hEtc;
+	HANDLE hEtc;
 	WSADATA WsaData;
 
 	hEtc = CreateFile(ETC_DRIVER_NAME,
@@ -202,13 +202,13 @@ static BOOL CheckWifiMacAddress(void)
 		DWORD dwReturnvalueGetAdapterInfo, i;
 		TCHAR szAdapterName[MAX_ADAPTER_NAME_LENGTH + 4 + 1];
 
-		for (i=0; i<50; i++)
+		for (i=0; i<30; i++)
 		{
 			dwReturnvalueGetAdapterInfo = GetAdaptersInfo(pAdapterInfo, &ulSizeAdapterInfo);
 			if (ERROR_NO_DATA == dwReturnvalueGetAdapterInfo)
 			{
 				RETAILMSG(0, (_T("ERROR : ERROR_NO_DATA == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
-				Sleep(50);
+				Sleep(100);
 			}
 			else if (ERROR_BUFFER_OVERFLOW == dwReturnvalueGetAdapterInfo)
 			{
@@ -261,7 +261,6 @@ static BOOL CheckWifiMacAddress(void)
 			free(pOriginalPtr);
 	}
 
-	
 	WSACleanup();
 	bRet = TRUE;
 

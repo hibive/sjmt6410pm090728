@@ -142,13 +142,6 @@ PowerMonitorThread(void)
             // Notified State Transition
             //-----------------------
             case PBT_TRANSITION:
-#ifdef	OMNIBOOK_VER
-				if (POWER_STATE_SUSPEND & pB->Flags)
-				{
-					RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SUSPEND)\r\n")));
-					PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SUSPEND")), 0, 0);
-				}
-#endif	OMNIBOOK_VER
 
                 RETAILMSG(PWC_ZONE_TEMP, (_T("[PWRCON:INF] Notified [PBT_TRANSITION : %s (0x%08x)]\n"), pB->SystemPowerState, pB->Flags));
                 break;
@@ -219,22 +212,6 @@ PowerMonitorThread(void)
                             RETAILMSG(PWC_ZONE_ERROR, (_T("[PWRCON:ERR] WakeUp Source = 0x%08x\n"), dwWakeSrc));
                             break;
                         }
-
-#ifdef	OMNIBOOK_VER
-						{
-							WCHAR szBuffer[128] = {0,};	// ERROR_INSUFFICIENT_BUFFER
-							DWORD dwFlags = 0;
-							if (ERROR_SUCCESS == GetSystemPowerState(szBuffer, 128, &dwFlags))
-							{
-								if (POWER_STATE_ON & dwFlags)
-								{
-									RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_RESUME)\r\n")));
-									PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_RESUME")), 0, 0);
-								}
-							}
-						}
-#endif	OMNIBOOK_VER
-
                     }
                     else
                     {

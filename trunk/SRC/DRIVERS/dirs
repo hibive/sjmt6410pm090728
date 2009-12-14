@@ -32,6 +32,7 @@ DIRS =    \
 # @CESYSGEN IF CE_MODULES_USBFN 
     OTG             \
 # @CESYSGEN ENDIF CE_MODULES_USBFN
+	Pm              \
     PowerButton     \
     PowerControl    \
 # @CESYSGEN IF CE_MODULES_SERIAL    

@@ -138,29 +138,6 @@ INT WINAPI PowerButtonThread(void)
         RETAILMSG(PWR_ZONE_EVENT_HOOK, (_T("[PWR] Power Button Event [%d]\r\n"), nBtnCount));
 
         // In the Windows Mobile, "PowerPolicyNotify(PPN_POWERBUTTONPRESSED, 0);" can be used
-#ifdef	OMNIBOOK_VER
-        {
-			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-			PROCESS_INFORMATION pi;
-		
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("SLEEP"),	// pszCmdLine
-							  NULL, // psaProcess
-							  NULL, // psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL, // pvEnvironment
-							  NULL, // pszCurDir
-							  NULL, // psiStartInfo
-							  &pi)) // pProcInfo
-			{
-				WaitForSingleObject(pi.hThread, 3000);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-		}
-#endif	OMNIBOOK_VER
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 
         Button_pwrbtn_enable_interrupt();            // UnMask EINT
