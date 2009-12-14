@@ -1207,5 +1207,8 @@ IF APPS_COMMAND
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
 
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+;Default	"CfgSkipReadMac"=dword:0
+
 ENDIF OMNIBOOK_VER
 

@@ -192,7 +192,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		TCHAR szShutdown[MAX_PATH] = {0,};
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
 		{
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr(%s), Default(%s)\r\n"),
+			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
 				BMP_SHUTDOWN_REG_STRING, BMP_SHUTDOWN_REG_DEFAULT));
 			_tcscpy_s(szShutdown, _countof(szShutdown), BMP_SHUTDOWN_REG_DEFAULT);
 		}
@@ -206,7 +206,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		TCHAR szLowbattery[MAX_PATH] = {0,};
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
 		{
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr(%s), Default(%s)\r\n"),
+			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
 				BMP_LOWBATTERY_REG_STRING, BMP_LOWBATTERY_REG_DEFAULT));
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), BMP_LOWBATTERY_REG_DEFAULT);
 		}
