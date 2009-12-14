@@ -24,6 +24,9 @@
 #define BMP_STARTUPTIME_REG_STRING	_T("BmpStartupTime")
 #define BMP_STARTUPTIME_REG_DEFAULT	3000	// mSec
 
+#define CFG_SKIPREADMAC_REG_STRING	_T("CfgSkipReadMac")
+#define CFG_SKIPREADMAC_REG_DEFAULT	0
+
 #define	WIFI_CARDNAME_TCHAR			_T("SDIO86861")
 #define	WIFI_CARDNAME_CHAR			"SDIO86861"
 #define	WIFI_CARDNAME_LEN			9
@@ -184,6 +187,8 @@ static BOOL CheckWifiMacAddress(void)
 	}
 
 	DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, TRUE, NULL, 0, NULL, NULL);
+	Sleep(100);
+
 	if (0 != WSAStartup(MAKEWORD(1, 1), &WsaData))
 	{
 		RETAILMSG(1, (_T("ERROR : WSAStartup failed (error %ld)\r\n"), GetLastError()));
@@ -197,13 +202,13 @@ static BOOL CheckWifiMacAddress(void)
 		DWORD dwReturnvalueGetAdapterInfo, i;
 		TCHAR szAdapterName[MAX_ADAPTER_NAME_LENGTH + 4 + 1];
 
-		for (i=0; i<30; i++)
+		for (i=0; i<50; i++)
 		{
 			dwReturnvalueGetAdapterInfo = GetAdaptersInfo(pAdapterInfo, &ulSizeAdapterInfo);
 			if (ERROR_NO_DATA == dwReturnvalueGetAdapterInfo)
 			{
 				RETAILMSG(0, (_T("ERROR : ERROR_NO_DATA == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
-				Sleep(100);
+				Sleep(50);
 			}
 			else if (ERROR_BUFFER_OVERFLOW == dwReturnvalueGetAdapterInfo)
 			{
@@ -216,7 +221,7 @@ static BOOL CheckWifiMacAddress(void)
 			}
 			else if (ERROR_SUCCESS == dwReturnvalueGetAdapterInfo)
 			{
-				RETAILMSG(1, (_T("ERROR : ERROR_SUCCESS == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
+				RETAILMSG(1, (_T("ERROR_SUCCESS == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
 				break;
 			}
 			else
@@ -273,7 +278,7 @@ goto_Cleanup:
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	DWORD dwStart = 0;
+	DWORD dwStart = 0, dwSkipReadMac = 0;
 	TCHAR szProgram[MAX_PATH] = {0,};
 
 	{
@@ -299,25 +304,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		}
 	}
 
-	if (FALSE == CheckWifiMacAddress())
+	if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, CFG_SKIPREADMAC_REG_STRING, &dwSkipReadMac, FALSE))
 	{
-		RETAILMSG(1, (_T("ERROR : CheckWifiMacAddress()\r\n")));
+		RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
+			CFG_SKIPREADMAC_REG_STRING, CFG_SKIPREADMAC_REG_DEFAULT));
+		dwSkipReadMac = CFG_SKIPREADMAC_REG_DEFAULT;
 	}
-	
-	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
+	if (0 == dwSkipReadMac)
 	{
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_STARTUP_REG_STRING));
-		_tcscpy(szProgram, APP_STARTUP_REG_DEFAULT);
+		HWND hWnd;
+
+		if (FALSE == CheckWifiMacAddress())
+		{
+			RETAILMSG(1, (_T("ERROR : CheckWifiMacAddress()\r\n")));
+		}
+
+		do {
+			Sleep(100);
+			hWnd = FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR);
+		} while (hWnd);
 	}
 
 	if (0 != dwStart)
 	{
 		DWORD dwMSec = 0, dwTotal;
-		HWND hWnd;
 
 		if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwMSec, FALSE))
 		{
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateDword() : %s\r\n"), BMP_STARTUPTIME_REG_STRING));
+			RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
+				BMP_STARTUPTIME_REG_STRING, BMP_STARTUPTIME_REG_DEFAULT));
 			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
 		}
 		if (BMP_STARTUPTIME_REG_DEFAULT > dwMSec)
@@ -327,8 +342,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		{
 			Sleep(100);
 			dwTotal = GetTickCount() - dwStart;
-			hWnd = FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR);
-			if (NULL == hWnd && (dwMSec < dwTotal))
+			if (dwMSec < dwTotal)
 			{
 				RETAILMSG(1, (_T("BMP_STARTUPTIME : %d\r\n"), dwTotal));
 				break;
@@ -336,6 +350,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		}
 	}
 
+	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
+	{
+		RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
+			APP_STARTUP_REG_STRING, APP_STARTUP_REG_DEFAULT));
+		_tcscpy(szProgram, APP_STARTUP_REG_DEFAULT);
+	}
 	if (IsProgram(szProgram))
 	{
 		RunProgram(szProgram);
@@ -345,7 +365,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	{
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
 		{
-			RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_UPDATE_REG_STRING));
+			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
+				APP_UPDATE_REG_STRING, APP_UPDATE_REG_DEFAULT));
 			_tcscpy(szProgram, APP_UPDATE_REG_DEFAULT);
 		}
 		if (IsProgram(szProgram))
@@ -373,7 +394,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 
 	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
-		RETAILMSG(1, (_T("ERROR : RegOpenCreateStr() : %s\r\n"), APP_SIPSYMBOL_REG_STRING));
+		RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
+			APP_SIPSYMBOL_REG_STRING, APP_SIPSYMBOL_REG_DEFAULT));
 		_tcscpy(szProgram, APP_SIPSYMBOL_REG_DEFAULT);
 	}
 	if (IsProgram(szProgram))
