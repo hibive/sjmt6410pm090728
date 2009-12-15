@@ -1171,7 +1171,6 @@ ENDIF BSP_DISPLAY_BROADSHEET
 	"Start Page"="http://www.google.com"
 	"Search Page"="http://www.google.com"
 
-
 [HKEY_LOCAL_MACHINE\Software\Microsoft\Shell\AutoHide]
 	@="1"
 
@@ -1186,13 +1185,24 @@ ENDIF BSP_DISPLAY_BROADSHEET
 [HKEY_LOCAL_MACHINE\SYSTEM\GWE]
 	"Animate"=dword:0
 
+[HKEY_LOCAL_MACHINE\Snd\Event]
+	".DefaultSounds"=-	; erase previous default
+; Scheme descriptions	
+	".DefaultSounds"=multi_sz:"Asterisk","","critical","default","","exclam",
+			"infbeg","infend","infintr","","","","question",
+			"Infbeg","Infend","Infintr","","","","",""
+		;	"Infbeg","Infend","Infintr","startup","","","",""
+
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;Default	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
-;Default	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
-;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 IF OMNIBOOK_VER_DEMO
 	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
+ENDIF OMNIBOOK_VER_DEMO
+;Default	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
+;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
+
+IF OMNIBOOK_VER_DEMO
 [HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
 	"Favorites"="\\PocketMory\\Favorites"
 ENDIF OMNIBOOK_VER_DEMO
@@ -1209,6 +1219,9 @@ ENDIF APPS_COMMAND
 
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;Default	"CfgSkipReadMac"=dword:0
+IF OMNIBOOK_VER_DEMO
+	"CfgSkipReadMac"=dword:1
+ENDIF OMNIBOOK_VER_DEMO
 
 ENDIF OMNIBOOK_VER
 

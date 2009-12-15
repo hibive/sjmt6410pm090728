@@ -37,7 +37,9 @@ typedef struct
     DWORD                nfsblk;                    // for NAND Lock Tight
 #ifdef	OMNIBOOK_VER
 	BYTE	bBoardRevision;
+
 	BOOL	bSDMMCCH2CardDetect;
+
 	WORD	BS_wRevsionCode;
 	WORD	BS_wProductCode;
 	WORD	CMD_wType;	// (little-endian, 0x0000 or 'bs' -> 0x6273)
@@ -54,6 +56,8 @@ typedef struct
 	BYTE	WFM_bWaveformType;		// (0x0B=TE, 0x0E=WE; other values undefined)
 	BYTE	WFM_bFPLSize;			// (0x32=5", 0x3C=6", 0x50=8", 0x61=9.7")
 	BYTE	WFM_bMFGCode;			// (0x01=PVI, 0x02=LGD)
+
+	// ...
 #else	//!OMNIBOOK_VER
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.
     DWORD                 g_SDCardState;            //For USB MSF , check SD Card insert & remove.

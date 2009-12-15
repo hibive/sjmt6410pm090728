@@ -29,6 +29,11 @@ char *hex2char(unsigned int val);
 #define rGPBCON		(*(volatile unsigned *)(GPIO_BASE+0x20))
 #define rGPBDAT		(*(volatile unsigned *)(GPIO_BASE+0x24))
 #define rGPBPUD		(*(volatile unsigned *)(GPIO_BASE+0x28))
+#ifdef	OMNIBOOK_VER
+#define rGPCCON		(*(volatile unsigned *)(GPIO_BASE+0x40))
+#define rGPCDAT		(*(volatile unsigned *)(GPIO_BASE+0x44))
+#define rGPCPUD		(*(volatile unsigned *)(GPIO_BASE+0x48))
+#endif	OMNIBOOK_VER
 #define rGPNCON		(*(volatile unsigned *)(GPIO_BASE+0x830))
 #define rGPNDAT		(*(volatile unsigned *)(GPIO_BASE+0x834))
 #define rGPNPUD		(*(volatile unsigned *)(GPIO_BASE+0x838))
