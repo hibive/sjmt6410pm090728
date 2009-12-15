@@ -173,6 +173,7 @@ static BOOL CheckWifiMacAddress(void)
 {
 	BOOL bRet;
 	HANDLE hEtc;
+	int nRetry = 0;
 	WSADATA WsaData;
 
 	hEtc = CreateFile(ETC_DRIVER_NAME,
@@ -186,6 +187,7 @@ static BOOL CheckWifiMacAddress(void)
 		goto goto_Cleanup;
 	}
 
+goto_Retry:
 	DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, TRUE, NULL, 0, NULL, NULL);
 	Sleep(100);
 
@@ -202,12 +204,12 @@ static BOOL CheckWifiMacAddress(void)
 		DWORD dwReturnvalueGetAdapterInfo, i;
 		TCHAR szAdapterName[MAX_ADAPTER_NAME_LENGTH + 4 + 1];
 
-		for (i=0; i<30; i++)
+		for (i=0; i<20; i++)
 		{
 			dwReturnvalueGetAdapterInfo = GetAdaptersInfo(pAdapterInfo, &ulSizeAdapterInfo);
 			if (ERROR_NO_DATA == dwReturnvalueGetAdapterInfo)
 			{
-				RETAILMSG(0, (_T("ERROR : ERROR_NO_DATA == dwReturnvalueGetAdapterInfo %d, %d\r\n"), i, ulSizeAdapterInfo));
+				RETAILMSG(0, (_T("Loop : ERROR_NO_DATA == dwReturnvalueGetAdapterInfo %d\r\n"), i));
 				Sleep(100);
 			}
 			else if (ERROR_BUFFER_OVERFLOW == dwReturnvalueGetAdapterInfo)
@@ -229,6 +231,20 @@ static BOOL CheckWifiMacAddress(void)
 				RETAILMSG(1, (_T("ERROR : GetAdaptersInfo failed (error %ld)\r\n"), dwReturnvalueGetAdapterInfo));
 				goto goto_Cleanup;
 			}
+		}
+		if (NULL == pAdapterInfo)
+		{
+			nRetry++;
+			if (3 < nRetry)
+			{
+				RETAILMSG(1, (_T("ERROR : GetAdaptersInfo failed (error ERROR_NO_DATA)\r\n")));
+				goto goto_Cleanup;
+			}
+
+			DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, FALSE, NULL, 0, NULL, NULL);
+			Sleep(100);
+			RETAILMSG(1, (_T("ERROR : GetAdaptersInfo failed (goto_Retry %d)\r\n"), nRetry));
+			goto goto_Retry;
 		}
 
 		pOriginalPtr = pAdapterInfo;
@@ -311,22 +327,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	}
 	if (0 == dwSkipReadMac)
 	{
-		HWND hWnd;
+		BOOL bLoop = TRUE;
+		DWORD dwMSec = 0, dwTotal;
 
 		if (FALSE == CheckWifiMacAddress())
 		{
 			RETAILMSG(1, (_T("ERROR : CheckWifiMacAddress()\r\n")));
 		}
-
-		do {
-			Sleep(100);
-			hWnd = FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR);
-		} while (hWnd);
-	}
-
-	if (0 != dwStart)
-	{
-		DWORD dwMSec = 0, dwTotal;
 
 		if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwMSec, FALSE))
 		{
@@ -336,15 +343,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		}
 		if (BMP_STARTUPTIME_REG_DEFAULT > dwMSec)
 			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
-		
-		while (1)
+
+		while (bLoop)
 		{
 			Sleep(100);
 			dwTotal = GetTickCount() - dwStart;
 			if (dwMSec < dwTotal)
 			{
-				RETAILMSG(1, (_T("BMP_STARTUPTIME : %d\r\n"), dwTotal));
-				break;
+				if (NULL == FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR))
+				{
+					RETAILMSG(1, (_T("BMP_STARTUPTIME : %d\r\n"), dwTotal));
+					bLoop = FALSE;
+				}
 			}
 		}
 	}
@@ -414,6 +424,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		CloseHandle(hEvent);
 		RETAILMSG(0, (_T("SetEvent(PowerManager/ReloadActivityTimeouts)\r\n")));
 	}
+
+	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
 	return 0;
 }
