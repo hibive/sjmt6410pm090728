@@ -27,6 +27,8 @@
 #define CFG_SKIPREADMAC_REG_STRING	_T("CfgSkipReadMac")
 #define CFG_SKIPREADMAC_REG_DEFAULT	0
 
+#define LOG_LOWBATTERY_FILENAME		_T("\\PocketMory\\Lowbattery.log")
+
 #define	WIFI_CARDNAME_TCHAR			_T("SDIO86861")
 #define	WIFI_CARDNAME_CHAR			"SDIO86861"
 #define	WIFI_CARDNAME_LEN			9
@@ -131,13 +133,13 @@ static BOOL IsProgram(LPCWSTR lpszImageName)
 	return bResult;
 }
 
-static BOOL RunProgram(LPCWSTR lpszImageName)
+static BOOL RunProgram(LPCWSTR lpszImageName, LPCWSTR lpszCmdLine, DWORD dwWait)
 {
 	PROCESS_INFORMATION pi = {0,};
 	BOOL bResult = FALSE;
 
 	bResult = CreateProcessW(lpszImageName,
-		NULL,	// Command line.
+		lpszCmdLine,// Command line.
 		NULL,	// Process handle not inheritable.
 		NULL,	// Thread handle not inheritable.
 		FALSE,	// Set handle inheritance to FALSE.
@@ -148,25 +150,13 @@ static BOOL RunProgram(LPCWSTR lpszImageName)
 		&pi);	// Pointer to PROCESS_INFORMATION structure.
 	if (bResult)
 	{
+		if (dwWait)
+			WaitForSingleObject(pi.hThread, dwWait);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	}
 
 	return bResult;
-}
-
-static LPTSTR FormatNICAddrString(BYTE *Address, DWORD AddressLength)
-{
-	LPTSTR pszRet, pszTmp;
-
-	pszTmp = pszRet = (LPTSTR)LocalAlloc(LPTR, AddressLength * 2 * sizeof(TCHAR) + sizeof(TCHAR));
-	if (pszRet)
-	{
-		for (DWORD i=0; i<AddressLength; i++)
-			pszTmp += wsprintf(pszTmp, TEXT("%02x"), Address[i]);
-	}
-
-	return pszRet;
 }
 
 static BOOL CheckWifiMacAddress(void)
@@ -189,8 +179,6 @@ static BOOL CheckWifiMacAddress(void)
 
 goto_Retry:
 	DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, TRUE, NULL, 0, NULL, NULL);
-	Sleep(100);
-
 	if (0 != WSAStartup(MAKEWORD(1, 1), &WsaData))
 	{
 		RETAILMSG(1, (_T("ERROR : WSAStartup failed (error %ld)\r\n"), GetLastError()));
@@ -256,17 +244,15 @@ goto_Retry:
 			RETAILMSG(1, (_T("\t Adapter Name ...... : %s\r\n"), szAdapterName));
 			if (0 == strncmp(pAdapterInfo->AdapterName, WIFI_CARDNAME_CHAR, WIFI_CARDNAME_LEN))
 			{
-				LPTSTR pszNICAddr = FormatNICAddrString(pAdapterInfo->Address, pAdapterInfo->AddressLength);
-				if (pszNICAddr)
-				{
-					RETAILMSG(1, (_T("\t Address............ : %s\r\n"), pszNICAddr));
-					LocalFree(pszNICAddr);
-				}
-
 				UINT8 szUUID[16] = {'S','J','M','T',};
 				char *pTmp = (char *)&szUUID[4];
+				RETAILMSG(1, (_T("\t Address............ : ")));
 				for (i=0; i<pAdapterInfo->AddressLength; i++)
+				{
 					pTmp += sprintf(pTmp, "%02x", pAdapterInfo->Address[i]);
+					RETAILMSG(1, (_T("%02x"), pAdapterInfo->Address[i]));
+				}
+				RETAILMSG(1, (_T("\r\n")));
 				DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, 16, NULL, 0, NULL, NULL);
 			}
 
@@ -290,34 +276,45 @@ goto_Cleanup:
 	return bRet;
 }
 
+static void DirtyRectUpdate(HDC hDC)
+{
+	ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
+	{
+		DISPUPDATE du;
+		du.bWriteImage = TRUE;
+		du.pRect = NULL;
+		du.duState = DSPUPD_FULL;
+		du.bBorder = FALSE;
+		du.wfMode = WAVEFORM_GC;
+		ExtEscape(hDC, DRVESC_DISP_UPDATE, sizeof(du), (LPCSTR)&du, 0, NULL);
+	}
+}
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	DWORD dwStart = 0, dwSkipReadMac = 0;
-	TCHAR szProgram[MAX_PATH] = {0,};
+	DWORD dwSkipReadMac=0, dwStartupTime=0, dwStart=0, dwTotal, i;
+	TCHAR szProgram[MAX_PATH]={0,};
+	BOOL bLoop=TRUE, bDispUpdate=FALSE;
 
+	if (IsProgram(LOG_LOWBATTERY_FILENAME))
 	{
-		LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-		PROCESS_INFORMATION pi;
-
-		ZeroMemory(&pi,sizeof(pi));
-		if (CreateProcess(lpszPathName,
-						  _T("STARTUP"),	// pszCmdLine
-						  NULL,	// psaProcess
-						  NULL,	// psaThread
-						  FALSE,// fInheritHandle
-						  0,	// fdwCreate
-						  NULL,	// pvEnvironment
-						  NULL,	// pszCurDir
-						  NULL,	// psiStartInfo
-						  &pi))	// pProcInfo
+		SYSTEM_POWER_STATUS_EX2 sps = {0,};
+		GetSystemPowerStatusEx2(&sps, sizeof(sps), TRUE);
+		if (AC_LINE_ONLINE == sps.ACLineStatus)
 		{
-			WaitForSingleObject(pi.hThread, 3000);
-			CloseHandle(pi.hThread);
-			CloseHandle(pi.hProcess);
-			dwStart = GetTickCount();
+			RETAILMSG(1, (_T("LOG : DeleteFile(%s)\r\n"), LOG_LOWBATTERY_FILENAME));
+			DeleteFile(LOG_LOWBATTERY_FILENAME);
+		}
+		else
+		{
+			RunProgram(_T("\\Windows\\Omnibook_Command.exe"), _T("LOWBATTERY"), 3000);
+			return 0;
 		}
 	}
+
+	if (RunProgram(_T("\\Windows\\Omnibook_Command.exe"), _T("STARTUP"), 3000))
+		dwStart = GetTickCount();
 
 	if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, CFG_SKIPREADMAC_REG_STRING, &dwSkipReadMac, FALSE))
 	{
@@ -326,38 +323,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		dwSkipReadMac = CFG_SKIPREADMAC_REG_DEFAULT;
 	}
 	if (0 == dwSkipReadMac)
+		CheckWifiMacAddress();
+
+	if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwStartupTime, FALSE))
 	{
-		BOOL bLoop = TRUE;
-		DWORD dwMSec = 0, dwTotal;
-
-		if (FALSE == CheckWifiMacAddress())
-		{
-			RETAILMSG(1, (_T("ERROR : CheckWifiMacAddress()\r\n")));
-		}
-
-		if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwMSec, FALSE))
-		{
-			RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
-				BMP_STARTUPTIME_REG_STRING, BMP_STARTUPTIME_REG_DEFAULT));
-			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
-		}
-		if (BMP_STARTUPTIME_REG_DEFAULT > dwMSec)
-			dwMSec = BMP_STARTUPTIME_REG_DEFAULT;
-
-		while (bLoop)
-		{
-			Sleep(100);
-			dwTotal = GetTickCount() - dwStart;
-			if (dwMSec < dwTotal)
-			{
-				if (NULL == FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR))
-				{
-					RETAILMSG(1, (_T("BMP_STARTUPTIME : %d\r\n"), dwTotal));
-					bLoop = FALSE;
-				}
-			}
-		}
+		RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
+			BMP_STARTUPTIME_REG_STRING, BMP_STARTUPTIME_REG_DEFAULT));
+		dwStartupTime = BMP_STARTUPTIME_REG_DEFAULT;
 	}
+	if (BMP_STARTUPTIME_REG_DEFAULT > dwStartupTime)
+		dwStartupTime = BMP_STARTUPTIME_REG_DEFAULT;
+	for (i=0, bLoop=TRUE; (TRUE==bLoop && i<50); i++)
+	{
+		dwTotal = GetTickCount() - dwStart;
+		if (dwStartupTime < dwTotal)
+		{
+			if (NULL == FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR))
+			{
+				RETAILMSG(1, (_T("\t BMP_STARTUPTIME : %d\r\n"), dwTotal));
+				bLoop = FALSE;
+			}
+			else
+				Sleep(100);
+		}
+		else
+			Sleep(100);
+	}
+	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
 	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
@@ -367,10 +359,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	}
 	if (IsProgram(szProgram))
 	{
-		RunProgram(szProgram);
-		RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
+		if (RunProgram(szProgram, NULL, 0))
+		{
+			RETAILMSG(1, (_T("RunProgram(%s)\r\n"), szProgram));
+			bDispUpdate = TRUE;
+		}
+		else
+		{
+			RETAILMSG(1, (_T("ERROR : RunProgram(%s)\r\n"), szProgram));
+		}
 	}
-	else
+
+	if (FALSE == bDispUpdate)
 	{
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
 		{
@@ -380,26 +380,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		}
 		if (IsProgram(szProgram))
 		{
-			RunProgram(szProgram);
-			RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
+			if (RunProgram(szProgram, NULL, 0))
+			{
+				RETAILMSG(1, (_T("RunProgram(%s)\r\n"), szProgram));
+				bDispUpdate = TRUE;
+			}
+			else
+			{
+				RETAILMSG(1, (_T("ERROR : RunProgram(%s)\r\n"), szProgram));
+			}
 		}
 		else
 		{
-			HDC hDC = GetDC(HWND_DESKTOP);
-			ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
-			{
-				DISPUPDATE du;
-				du.bWriteImage = TRUE;
-				du.pRect = NULL;
-				du.duState = DSPUPD_FULL;
-				du.bBorder = FALSE;
-				du.wfMode = WAVEFORM_GC;
-				ExtEscape(hDC, DRVESC_DISP_UPDATE, sizeof(du), (LPCSTR)&du, 0, NULL);
-			}
-			ReleaseDC(HWND_DESKTOP, hDC);
 			RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
 		}
 	}
+
+	HDC hDC = GetDC(HWND_DESKTOP);
+	if (TRUE == bDispUpdate)
+	{
+		BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
+		for (i=0; (FALSE==bDirtyRect && i<5); i++)
+		{
+			Sleep(1000);
+			bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
+		}
+		if (FALSE == bDirtyRect)
+		{
+			RETAILMSG(1, (_T("ERROR : FALSE == bDirtyRect\r\n")));
+			bDispUpdate = FALSE;
+		}
+	}
+	if (FALSE == bDispUpdate)
+		DirtyRectUpdate(hDC);
+	ReleaseDC(HWND_DESKTOP, hDC);
 
 	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
@@ -409,7 +423,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	}
 	if (IsProgram(szProgram))
 	{
-		RunProgram(szProgram);
+		RunProgram(szProgram, NULL, 0);
 		RETAILMSG(1, (_T("RunProgram : %s\r\n"), szProgram));
 	}
 	else
@@ -424,8 +438,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		CloseHandle(hEvent);
 		RETAILMSG(0, (_T("SetEvent(PowerManager/ReloadActivityTimeouts)\r\n")));
 	}
-
-	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
 	return 0;
 }

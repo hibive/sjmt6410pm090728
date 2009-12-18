@@ -20,6 +20,8 @@
 
 #define BMP_SLEEP_REG_STRING		_T("BmpSleep")
 
+#define LOG_LOWBATTERY_FILENAME		_T("\\PocketMory\\Lowbattery.log")
+
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
 {
@@ -212,6 +214,18 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		}
 		bRet = dispShutdown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
+		{
+			FILE *stream;
+			if (0 == _tfopen_s(&stream, LOG_LOWBATTERY_FILENAME, _T("a+")))
+			{
+				SYSTEMTIME st = {0,};
+				GetLocalTime(&st);
+				fprintf_s(stream, "%04d-%02d-%02d %02d:%02d:%02d\r\n", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+				fclose(stream);
+				RETAILMSG(1, (_T("LOG : %s(%04d-%02d-%02d %02d:%02d:%02d)\r\n"),
+					LOG_LOWBATTERY_FILENAME, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond));
+			}
+		}
 		RegFlushKey(HKEY_LOCAL_MACHINE);
 		RegFlushKey(HKEY_CURRENT_USER);
 	}

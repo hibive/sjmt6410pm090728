@@ -307,6 +307,7 @@ void EPDOutputString(const char *fmt, ...)
 		{
 			for (in=0; in<MAX_TEXT_LINE-1; in++)
 				memcpy(g_szTextBuf[in], g_szTextBuf[in+1], MAX_TEXT_WIDTH);
+			memset(g_szTextBuf[in], 0, MAX_TEXT_WIDTH);
 			g_bTextLine = MAX_TEXT_LINE - 1;
 		}
 	}

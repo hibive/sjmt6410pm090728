@@ -320,12 +320,11 @@ HardwareContext::PowerUp()
 
     IIS_initialize_interface();
 
+#ifndef	OMNIBOOK_VER
     InitIISCodec();
-
-#ifdef	OMNIBOOK_VER
-	CodecPowerControl();
-#endif	OMNIBOOK_VER
 	CodecMuteControl(DMA_CH_OUT|DMA_CH_IN, TRUE);
+	CodecPowerControl();
+#endif	//!OMNIBOOK_VER
 
     WAV_MSG((_T("[WAV] --PowerUp()\n\r")));
 }
@@ -335,8 +334,10 @@ void HardwareContext::PowerDown()
 {
     WAV_MSG((_T("[WAV] ++PowerDown()\n\r")));
 
+#ifndef	OMNIBOOK_VER
     CodecMuteControl(DMA_CH_OUT|DMA_CH_IN, TRUE);
     CodecPowerControl();
+#endif	//!OMNIBOOK_VER
 
     // Disable Clock for IIS CH0
 #ifdef	OMNIBOOK_VER
@@ -1663,43 +1664,36 @@ BOOL
 HardwareContext::CodecPowerControl()
 {
 #ifdef	OMNIBOOK_VER
-	USHORT usData25, usData47;
-
-	if (m_bInputDMARunning || m_bOutputDMARunning)
-	{
-		usData25 = ReadCodecRegister(25);
-		usData47 = ReadCodecRegister(47);
-	}
+	USHORT usData25 = ReadCodecRegister(25);
 
 	if (m_bInputDMARunning & m_bOutputDMARunning)
 	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC On\n\r")));
 		WriteCodecRegister(25, (((usData25 & ~(0x7<<6)) | (0x3<<6)) | 0x2A));
 		WriteCodecRegister(26, 0x1F8);
-		WriteCodecRegister(47, (usData47 | 0x020 | 0x00C));
 		WriteCodecRegister(49, 0x0F7);
 	}
 	else if (m_bInputDMARunning)
 	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC On\n\r")));
 		WriteCodecRegister(25, (((usData25 & ~(0x7<<6)) | (0x3<<6)) | 0x2A));
-		WriteCodecRegister(47, usData47 | 0x020);
 	}
 	else if (m_bOutputDMARunning)
 	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() DAC On\n\r")));
 		WriteCodecRegister(25, ((usData25 & ~(0x7<<6)) | (0x3<<6)));
 		WriteCodecRegister(26, 0x1F8);
-		WriteCodecRegister(47, usData47 | 0x00C);
 		WriteCodecRegister(49, 0x0F7);
 	}
 	else
 	{
 		WAV_MSG((_T("[WAV] CodecPowerControl() : CodecPowerControl() ADC & DAC Off\n\r")));
-		WriteCodecRegister(49, 0x037);
-		WriteCodecRegister(25, 0x100);
-		WriteCodecRegister(26, 0x000);
-		WriteCodecRegister(47, 0x000);
+		if (0x100 == usData25)
+			return TRUE;
+		WriteCodecRegister(26, 0x078);	// L/R DAC off, L/R OUT1 and SPK on
+		WriteCodecRegister(49, 0x037);	// Class D Speaker off
+		WriteCodecRegister(25, 0x100);	// Enable Vmid(low-power standby), Disable Vref
+		WriteCodecRegister(26, 0x000);	// Disable L/ROUT1, SPKL/R, DACL/R remain disabled
 	}
 #else	//!OMNIBOOK_VER
     if( m_bInputDMARunning & m_bOutputDMARunning )
@@ -1737,9 +1731,15 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
 #ifdef	OMNIBOOK_VER
 		USHORT usData = ReadCodecRegister(5);
 		if (bMute)
-			WriteCodecRegister(5, usData |  (1<<3));
+		{
+			if ((0<<3) == ((1<<3) & usData))
+				WriteCodecRegister(5, usData |  (1<<3));
+		}
 		else
-			WriteCodecRegister(5, usData & ~(1<<3));
+		{
+			if ((1<<3) == ((1<<3) & usData))
+				WriteCodecRegister(5, usData & ~(1<<3));
+		}
 #else	//!OMNIBOOK_VER
         if(bMute)
         {
@@ -1754,11 +1754,17 @@ HardwareContext::CodecMuteControl(DWORD channel, BOOL bMute)
     if(channel & DMA_CH_IN) 
     {
 #ifdef	OMNIBOOK_VER
-		USHORT usData0 = ReadCodecRegister(0);
+		USHORT usData = ReadCodecRegister(0);
 		if (bMute)
-			WriteCodecRegister(0, usData0 |  (1<<7));
+		{
+			if ((0<<7) == ((1<<7) & usData))
+				WriteCodecRegister(0, usData |  (1<<7));
+		}
 		else
-			WriteCodecRegister(0, usData0 & ~(1<<7));
+		{
+			if ((1<<7) == ((1<<7) & usData))
+				WriteCodecRegister(0, usData & ~(1<<7));
+		}
 #else	//!OMNIBOOK_VER
         if(bMute)
         {

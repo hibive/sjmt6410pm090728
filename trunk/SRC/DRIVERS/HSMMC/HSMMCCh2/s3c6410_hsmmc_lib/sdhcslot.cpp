@@ -20,6 +20,10 @@
 #include "SDHCSlot.h"
 
 static volatile BSP_ARGS *v_gBspArgs;
+#ifdef	OMNIBOOK_VER
+static HANDLE g_hEventSDMMCCH2ERR = NULL;
+#endif	OMNIBOOK_VER
+
 #define CARD_INSERTED 1
 #define CARD_REMOVED 2
 
@@ -110,6 +114,13 @@ CSDHCSlotBase::CSDHCSlotBase(
 CSDHCSlotBase::~CSDHCSlotBase(
         )
 {
+#ifdef	OMNIBOOK_VER
+	if (g_hEventSDMMCCH2ERR)
+	{
+		CloseHandle(g_hEventSDMMCCH2ERR);
+		g_hEventSDMMCCH2ERR = NULL;
+	}
+#endif	OMNIBOOK_VER
     if (m_SlotDma)
         delete m_SlotDma;
 }
@@ -1444,6 +1455,12 @@ CSDHCSlotBase::HandleErrors(
                 case 1 : RETAILMSG(TRUE, (TEXT("If the card is not a MMC, CMD 1 does not work in reason.\n")));
                     break;
                 case 5 : RETAILMSG(TRUE, (TEXT("If the card is not a SDIO, CMD 5 does not work in reason.\n")));
+#ifdef	OMNIBOOK_VER
+				if (NULL == g_hEventSDMMCCH2ERR)
+					g_hEventSDMMCCH2ERR = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("OMNIBOOK_EVENT_SDMMCCH2ERR"));
+				if (g_hEventSDMMCCH2ERR)
+					SetEvent(g_hEventSDMMCCH2ERR);
+#endif	OMNIBOOK_VER
                     break;
                 case 8 : RETAILMSG(TRUE, (TEXT("If the card is not SD SPEC 2.0, CMD 8 does not work in reason.\n")));
                     break;
