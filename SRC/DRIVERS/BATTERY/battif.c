@@ -84,17 +84,12 @@ static int getADC(void)
 
 static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 {
-	DWORD dwRet;
 	int nAvgLevel, nLevel, i=0, nPercent, nLEDCount=0;
 	BOOL fAcOn, fUsbOn, fChgDone, fCharging;
 	BYTE fBatteryState = 0;
 
-	while (1)
+	do
 	{
-		dwRet = WaitForSingleObject(g_hEventExit, 1000);
-		if (WAIT_OBJECT_0 == dwRet)
-			break;
-
 		lockBattery();
 
 		g_anBattLevels[g_nBattIndex++] = nLevel = getADC();
@@ -136,36 +131,36 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 			if (50 <= nPercent)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
 			else if (5 <= nPercent)
-			{
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_LOW;
-				if (10 > nPercent)
-				{
-					LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-					PROCESS_INFORMATION pi;
-
-					ZeroMemory(&pi,sizeof(pi));
-					if (CreateProcess(lpszPathName,
-									  _T("LOWBATTERY"),	// pszCmdLine
-									  NULL,	// psaProcess
-									  NULL,	// psaThread
-									  FALSE,// fInheritHandle
-									  0,	// fdwCreate
-									  NULL,	// pvEnvironment
-									  NULL,	// pszCurDir
-									  NULL,	// psiStartInfo
-									  &pi))	// pProcInfo
-					{
-						WaitForSingleObject(pi.hThread, 3000);
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-					}
-					SetSystemPowerState(NULL, POWER_STATE_CRITICAL, POWER_FORCE);
-					KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
-				}
-			}
 			else
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_CRITICAL;
 #endif	BATT_LOG_TEST
+
+			if ((10 > nPercent) || (BATTERY_FLAG_CRITICAL == g_PowerStatus.BatteryFlag))
+			{
+				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+				PROCESS_INFORMATION pi;
+
+				ZeroMemory(&pi,sizeof(pi));
+				if (CreateProcess(lpszPathName,
+								  _T("LOWBATTERY"),	// pszCmdLine
+								  NULL,	// psaProcess
+								  NULL,	// psaThread
+								  FALSE,// fInheritHandle
+								  0,	// fdwCreate
+								  NULL,	// pvEnvironment
+								  NULL,	// pszCurDir
+								  NULL,	// psiStartInfo
+								  &pi))	// pProcInfo
+				{
+					WaitForSingleObject(pi.hThread, 3000);
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+
+				SetSystemPowerState(NULL, POWER_STATE_OFF/*POWER_STATE_CRITICAL*/, POWER_FORCE);
+				KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
+			}
 		}
 		g_PowerStatus.BatteryLifePercent    = nPercent;
 		g_PowerStatus.BatteryVoltage        = nLevel;
@@ -196,7 +191,7 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		nLEDCount++;
 
 		unlockBattery();
-	}
+	} while (WAIT_OBJECT_0 != WaitForSingleObject(g_hEventExit, 1000));
 
 	return 0;
 }
@@ -207,6 +202,30 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 
 	SETFNAME(_T("BatteryPDDInitialize"));
 	UNREFERENCED_PARAMETER(pszRegistryContext);
+
+	g_PowerStatus.ACLineStatus              = AC_LINE_OFFLINE;
+	g_PowerStatus.BatteryFlag               = BATTERY_FLAG_HIGH;
+	g_PowerStatus.BatteryLifePercent        = 100;
+	g_PowerStatus.Reserved1                 = 0;
+	g_PowerStatus.BatteryLifeTime           = BATTERY_LIFE_UNKNOWN;
+	g_PowerStatus.BatteryFullLifeTime       = BATTERY_LIFE_UNKNOWN;
+	g_PowerStatus.Reserved2                 = 0;
+	g_PowerStatus.BackupBatteryFlag         = BATTERY_FLAG_UNKNOWN;
+	g_PowerStatus.BackupBatteryLifePercent  = BATTERY_PERCENTAGE_UNKNOWN;
+	g_PowerStatus.Reserved3                 = 0;
+	g_PowerStatus.BackupBatteryLifeTime     = BATTERY_LIFE_UNKNOWN;
+	g_PowerStatus.BackupBatteryFullLifeTime = BATTERY_LIFE_UNKNOWN;
+	g_PowerStatus.BatteryVoltage            = 0;
+	g_PowerStatus.BatteryCurrent            = 0;
+	g_PowerStatus.BatteryAverageCurrent     = 0;
+	g_PowerStatus.BatteryAverageInterval    = 0;
+	g_PowerStatus.BatterymAHourConsumed     = 0;
+	g_PowerStatus.BatteryTemperature        = 0;
+	g_PowerStatus.BackupBatteryVoltage      = 0;
+	g_PowerStatus.BatteryChemistry          = BATTERY_CHEMISTRY_LIPOLY;
+
+	memset(g_anBattLevels, -1, sizeof(g_anBattLevels));
+	g_nBattIndex = 0;
 
 	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
 	g_pGPIOReg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
@@ -250,30 +269,6 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 		MYERR((_T("[BAT_ERR] NULL == g_hThreadGetADC\n\r")));
 		goto goto_err;
 	}
-
-	g_PowerStatus.ACLineStatus              = AC_LINE_OFFLINE;
-	g_PowerStatus.BatteryFlag               = BATTERY_FLAG_HIGH;
-	g_PowerStatus.BatteryLifePercent        = 100;
-	g_PowerStatus.Reserved1                 = 0;
-	g_PowerStatus.BatteryLifeTime           = BATTERY_LIFE_UNKNOWN;
-	g_PowerStatus.BatteryFullLifeTime       = BATTERY_LIFE_UNKNOWN;
-	g_PowerStatus.Reserved2                 = 0;
-	g_PowerStatus.BackupBatteryFlag         = BATTERY_FLAG_UNKNOWN;
-	g_PowerStatus.BackupBatteryLifePercent  = BATTERY_PERCENTAGE_UNKNOWN;
-	g_PowerStatus.Reserved3                 = 0;
-	g_PowerStatus.BackupBatteryLifeTime     = BATTERY_LIFE_UNKNOWN;
-	g_PowerStatus.BackupBatteryFullLifeTime = BATTERY_LIFE_UNKNOWN;
-	g_PowerStatus.BatteryVoltage            = 0;
-	g_PowerStatus.BatteryCurrent            = 0;
-	g_PowerStatus.BatteryAverageCurrent     = 0;
-	g_PowerStatus.BatteryAverageInterval    = 0;
-	g_PowerStatus.BatterymAHourConsumed     = 0;
-	g_PowerStatus.BatteryTemperature        = 0;
-	g_PowerStatus.BackupBatteryVoltage      = 0;
-	g_PowerStatus.BatteryChemistry          = BATTERY_CHEMISTRY_LIPOLY;
-
-	memset(g_anBattLevels, -1, sizeof(g_anBattLevels));
-	g_nBattIndex = 0;
 
 	return TRUE;
 goto_err:

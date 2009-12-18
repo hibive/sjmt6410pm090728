@@ -9,11 +9,16 @@ this source code. For a copy of the EULA, please see the LICENSE.RTF on your
 install media.
 !endif
 
-DIRS=   \
-    Eboot.Whimory	\
-    NBL1.LSB	\
-    NBL2
-!if 0	# For FMD
-#    EBOOT \
-#    STEPLDR \
+DIRS=\
+	EBOOT.FatFS\
+	Eboot.Blcommon\
+	Eboot.Whimory\
+	NBL1.LSB\
+	NBL2\
+
+!if 0
+# For FMD
+#	EBOOT\
+#	STEPLDR\
 !endif
+

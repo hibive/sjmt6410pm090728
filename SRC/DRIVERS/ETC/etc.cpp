@@ -13,8 +13,10 @@
 volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
 volatile BSP_ARGS *g_pBspArgs = NULL;
-static HANDLE m_MutexEtc = NULL;
+static HANDLE g_hMutex = NULL;
 static HANDLE g_hFileI2C = INVALID_HANDLE_VALUE;
+static HANDLE g_hEventSDMMCCH2CD = NULL;
+static HANDLE g_hEventSDMMCCH2ERR = NULL;
 
 
 
@@ -157,16 +159,23 @@ DWORD ETC_Init(DWORD dwContext)
 		goto goto_err;
 	}
 
-	m_MutexEtc = CreateMutex(NULL, FALSE, NULL);
-	if (NULL == m_MutexEtc)
+	g_hMutex = CreateMutex(NULL, FALSE, NULL);
+	if (NULL == g_hMutex)
 	{
-		MYERR((_T("[ETC] NULL == m_MutexEtc\r\n")));
+		MYERR((_T("[ETC] NULL == g_hMutex\r\n")));
 		goto goto_err;
 	}
 
 	if (FALSE == i2c_Initialize())
 	{
 		MYERR((_T("[ETC] FALSE == i2c_Initialize()\r\n")));
+		goto goto_err;
+	}
+
+	g_hEventSDMMCCH2ERR = CreateEvent(NULL, FALSE, FALSE, _T("OMNIBOOK_EVENT_SDMMCCH2ERR"));
+	if (NULL == g_hEventSDMMCCH2ERR)
+	{
+		MYERR((_T("[ETC] NULL == g_hEventSDMMCCH2ERR\r\n")));
 		goto goto_err;
 	}
 
@@ -181,10 +190,22 @@ BOOL ETC_Deinit(DWORD InitHandle)
 {
 	i2c_Deinitialize();
 
-	if (m_MutexEtc)
+	if (g_hEventSDMMCCH2ERR)
 	{
-		CloseHandle(m_MutexEtc);
-		m_MutexEtc = NULL;
+		CloseHandle(g_hEventSDMMCCH2ERR);
+		g_hEventSDMMCCH2ERR = NULL;
+	}
+
+	if (g_hEventSDMMCCH2CD)
+	{
+		CloseHandle(g_hEventSDMMCCH2CD);
+		g_hEventSDMMCCH2CD = NULL;
+	}
+
+	if (g_hMutex)
+	{
+		CloseHandle(g_hMutex);
+		g_hMutex = NULL;
 	}
 
 	if (g_pBspArgs)
@@ -223,25 +244,42 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
     PBYTE pOutBuf, DWORD nOutBufSize, PDWORD pBytesReturned)
 {
 	BOOL bRet = FALSE;
-	HANDLE hEvent = NULL;
 
-	if (WAIT_OBJECT_0 != WaitForSingleObject(m_MutexEtc, INFINITE))
+	if (WAIT_OBJECT_0 != WaitForSingleObject(g_hMutex, INFINITE))
 		MYERR((_T("[ETC] WAIT_OBJECT_0 != WaitForSingleObject\r\n")));
 	switch (dwIoControlCode)
 	{
 	case IOCTL_SET_POWER_WLAN:
-		hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("SDMMCCH2CardDetect_Event"));
-		if (hEvent)
+		if (NULL == g_hEventSDMMCCH2CD)
+			g_hEventSDMMCCH2CD = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("OMNIBOOK_EVENT_SDMMCCH2CD"));
+		if (g_hEventSDMMCCH2CD)
 		{
 			UCHAR i2c_Val = i2c_ReadRegister(0x00);
 			MYMSG((_T("[ETC] %d = i2c_ReadRegister(0x00)\r\n"), i2c_Val));
 
 			if ((BOOL)nInBufSize)
 			{
-				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x1<<0);
+				for (int i=0; i<30; i++)
+				{
+					DWORD dwTime = GetTickCount(), dwRet;
 
-				g_pBspArgs->bSDMMCCH2CardDetect = TRUE;
-				SetEvent(hEvent);
+					g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x1<<0);
+					g_pBspArgs->bSDMMCCH2CardDetect = TRUE;
+					SetEvent(g_hEventSDMMCCH2CD);
+
+					dwRet = WaitForSingleObject(g_hEventSDMMCCH2ERR, 500);
+					if (WAIT_TIMEOUT== dwRet)
+						break;
+					else //if (WAIT_OBJECT_0 == dwRet)
+					{
+						MYERR((_T("[ETC] g_hEventSDMMCCH2ERR(%d, %d)\r\n"), i, GetTickCount()-dwTime));
+
+						g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x0<<0);
+						g_pBspArgs->bSDMMCCH2CardDetect = FALSE;
+						SetEvent(g_hEventSDMMCCH2CD);
+						Sleep(0);
+					}
+				}
 
 				i2c_Val |= (1<<2);
 				i2c_WriteRegister(0x00, i2c_Val);
@@ -252,11 +290,10 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				i2c_WriteRegister(0x00, i2c_Val);
 
 				g_pBspArgs->bSDMMCCH2CardDetect = FALSE;
-				SetEvent(hEvent);
+				SetEvent(g_hEventSDMMCCH2CD);
 
 				g_pGPIOReg->GPEDAT = (g_pGPIOReg->GPEDAT & ~(0x1<<0)) | (0x0<<0);
 			}
-			CloseHandle(hEvent);
 		}
 	case IOCTL_GET_POWER_WLAN:
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<0));
@@ -292,7 +329,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		}
 		break;
 	}
-	ReleaseMutex(m_MutexEtc);
+	ReleaseMutex(g_hMutex);
 
 	return bRet;
 }

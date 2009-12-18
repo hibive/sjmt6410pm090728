@@ -107,6 +107,8 @@ unsigned int WM8580_Codec_Init_Table[][2] =
 	{ 24, 0x060 },	// HPSWEN Enable, HPSWPOL High
 	{  6, 0x00E },	// DACSMM, DACMR, DACSLOPE
 
+	{ 47, 0x02C },	// LMIC, LOMIX, ROMIX Enable
+
 	{ 34, 0x100 },	// Left DAC to left output mixer enabled (LD2LO), 0dB
 	{ 37, 0x100 },	// Right DAC to right output mixer enabled (RD2RO), 0dB
 	{  2, 0x170 },	// LHP Vol = 0dB, volume update enabled
@@ -115,6 +117,7 @@ unsigned int WM8580_Codec_Init_Table[][2] =
 	{ 41, 0x179 },	// RSPK Vol = 0dB, volume update enabled
 
 	{ 32, 0x128 },	// LINPUT1 to PGA(LMN1), Connect left input PGA to left input boost(LMIC2B)
+	{ 33, 0x000 },	// RINPUT1 to PGA(RMN1), Not connect
 	{  0, 0x13F },	// Unmute left input PGA(LINMUTE), Left Input PGA Vol 0dB, Volume Update
 	{ 21, 0x1C3 },	// Left ADC Vol 0dB, Volume Update
 #else	//!OMNIBOOK_VER

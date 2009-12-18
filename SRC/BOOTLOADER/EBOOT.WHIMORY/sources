@@ -57,7 +57,8 @@ TARGETLIBS= \
 	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_kitl.lib				\
 	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_log.lib				\
 	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_blnk.lib				\
-	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_blcommon.lib			\
+#	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_blcommon.lib			\
+	$(_TARGETPLATROOT)\lib\$(_CPUINDPATH)\s3c6410_blcommon.lib	\
 	$(_PLATCOMMONLIB)\$(_CPUINDPATH)\oal_blmemory_arm.lib       \
 	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\eboot.lib			\
 	$(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\cs8900dbg.lib		\

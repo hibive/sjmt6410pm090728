@@ -153,7 +153,7 @@ HWND InitInstance(HINSTANCE hInstance, LPWSTR lpCmdLine, int nCmdShow)
 	// Create main window.
 	hWnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW,
 		CLASS_NAME,
-		TEXT("HelloCE"),
+		_T("SipSymbol"),
 		WS_POPUP,
 		600-CANDXSIZE, 800-CANDYSIZE, CANDXSIZE, CANDYSIZE,
 		NULL,
