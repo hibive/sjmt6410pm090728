@@ -20,24 +20,26 @@ DLLENTRY=_DllEntryCRTStartup
 DEFFILE=$(_PUBLICROOT)\common\oak\inc\pm.def
 
 SOURCELIBS=\
-    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_default_pdd_lib.lib \
-    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_mdd_lib.lib \
-    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_pdd_common_lib.lib
+    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_default_pdd_lib.lib\
+    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_mdd_lib.lib\
+    $(_PUBLICROOT)\common\oak\lib\$(_CPUINDPATH)\pm_pdd_common_lib.lib\
 
 TARGETLIBS=\
-    $(_SYSGENSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib
+    $(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
+    $(_COMMONOAKROOT)\lib\$(_CPUINDPATH)\ceddk.lib\
 
 SOURCES=\
-	pminit.cpp \
-	pmpnp.cpp \
-	pmdevice.cpp \
-	pmrequire.cpp \
-	pmrelation.cpp \
-	pmnotify.cpp \
-	pmresume.cpp \
-	pmutils.cpp \
-	pmsysstate.cpp \
-	pmtimer.cpp \
-	pmsystem.cpp \
-	pmstream.cpp \
+	pminit.cpp\
+	pmpnp.cpp\
+	pmdevice.cpp\
+	pmrequire.cpp\
+	pmrelation.cpp\
+	pmnotify.cpp\
+	pmresume.cpp\
+	pmutils.cpp\
+	pmsysstate.cpp\
+	pmtimer.cpp\
+	pmsystem.cpp\
+	pmstream.cpp\
 	pmdisplay.cpp\
+

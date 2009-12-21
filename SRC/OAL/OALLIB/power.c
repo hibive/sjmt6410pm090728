@@ -146,6 +146,9 @@ static void S3C6410_WakeUpSource_Configure(void)
 #ifdef    SLEEP_AGING_TEST
     volatile S3C6410_RTC_REG *pRTCReg;
 #endif
+#ifdef	OMNIBOOK_VER
+	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+#endif	OMNIBOOK_VER
 
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
     pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
@@ -173,19 +176,31 @@ static void S3C6410_WakeUpSource_Configure(void)
                             |(0<<8)        // Keypad        (Enabled)
 #endif
                             |(1<<7);        // Battery Fault    (Disabled)
+#ifdef	OMNIBOOK_VER
+	if (pArgs->bBatteryFault)
+	{
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<10)) | (1<<10);	// RTC ALARM (Disabled)
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<8)) | (1<<8);		// Keypad (Disabled)
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<7)) | (0<<7);		// Battery Fault (Disabled)
+	}
+	if (pSysConReg->PWR_CFG & (1<<7))	// Battery Fault Enabled
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<3)) | (1<<3);		// generate interrupt
+#endif	OMNIBOOK_VER
 
     //-----------------
     // External Interrupt
     //-----------------
 #ifdef	OMNIBOOK_VER
-	// Power Button EINT[9] (GPN[9] is Retention Port)
-	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
+	if (FALSE == pArgs->bBatteryFault)
 	{
-		pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
-		pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
-			| (EINT_SIGNAL_FALL_EDGE<<EINT0CON_EINT0);
-		pGPIOReg->EINT0FLTCON0 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
+		// Power Button EINT[9] (GPN[9] is Retention Port)
+		pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
 	}
+	// USB Connector EINT[0] (GPN[0] is Retention Port)
+	pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<0)) | (0x2<<0);	// GPN[0] as EINT[0]
+	pGPIOReg->EINT0CON0 = (pGPIOReg->EINT0CON0 & ~(EINT0CON0_BITMASK<<EINT0CON_EINT0))
+		| (EINT_SIGNAL_FALL_EDGE<<EINT0CON_EINT0);
+	pGPIOReg->EINT0FLTCON0 = (pGPIOReg->EINT0FLTCON0 & ~(0x1<<FLTSEL_0)) | (0x1<<FLTEN_0);
 #else	//!OMNIBOOK_VER
     // Power Button EINT[11] (GPN[11] is Retention Port)
     pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<22)) | (0x2<<22);    // GPN[11] as EINT[11]
@@ -193,7 +208,8 @@ static void S3C6410_WakeUpSource_Configure(void)
 
     pSysConReg->EINT_MASK = 0x0FFFFFFF;        // Mask All EINT Wake Up Source at Sleep
 #ifdef	OMNIBOOK_VER
-	pSysConReg->EINT_MASK &= ~(1<<9);	// Enable EINT[9] as Wake Up Source at Sleep
+	if (FALSE == pArgs->bBatteryFault)
+		pSysConReg->EINT_MASK &= ~(1<<9);	// Enable EINT[9] as Wake Up Source at Sleep
 	pSysConReg->EINT_MASK &= ~(1<<0);	// Enable EINT[0] as Wake Up Source at Sleep
 #else	//!OMNIBOOK_VER
     pSysConReg->EINT_MASK &= ~(1<<11);        // Enable EINT[11] as Wake Up Source at Sleep
@@ -219,6 +235,9 @@ static void S3C6410_WakeUpSource_Detect(void)
 #ifdef    SLEEP_AGING_TEST
     volatile S3C6410_RTC_REG *pRTCReg;
 #endif
+#ifdef	OMNIBOOK_VER
+	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+#endif	OMNIBOOK_VER
 
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
     pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
@@ -289,6 +308,15 @@ static void S3C6410_WakeUpSource_Detect(void)
         OALMSG(OAL_ERROR, (L"[OEM:ERR] OEMPowerOff() : SYSWAKE_UNKNOWN , WAKEUP_STAT = 0x%08x", g_LastWakeupStatus));
         break;
     }
+
+#ifdef	OMNIBOOK_VER
+	if (g_LastWakeupStatus & 0x40)
+	{
+		// Clearing Battery Fault interrupt bit
+		pSysConReg->OTHERS = (pSysConReg->OTHERS & ~(1<<12)) | (1<<12);
+	}
+	pArgs->bBatteryFault = FALSE;
+#endif	OMNIBOOK_VER
 
     // Clear All Wake Up Status bits
     pSysConReg->WAKEUP_STAT = 0xfff;

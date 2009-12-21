@@ -16,6 +16,11 @@
 // managing device power.
 //
 
+#ifdef	OMNIBOOK_VER
+#include <bsp.h>
+#include "Pmplatform.h"
+static HANDLE g_hEventBatFlt = NULL;
+#endif	OMNIBOOK_VER
 #include <pmimpl.h>
 #include "PmSysReg.h"
 // This routine enumerates device power restrictions in the registry
@@ -386,8 +391,25 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 		}
 		else if (0 == _tcsncmp(_T("resuming"), szStateName, 8))
 		{
-			RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_RESUME)\r\n")));
-			PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_RESUME")), 0, 0);
+			DWORD dwWakeSrc = SYSWAKE_UNKNOWN;
+			DWORD dwBytesRet = 0;
+
+			KernelIoControl(IOCTL_HAL_GET_WAKE_SOURCE, NULL, 0, &dwWakeSrc, sizeof(dwWakeSrc), &dwBytesRet);
+			if (OEMWAKE_BATTERY_FAULT == dwWakeSrc)
+			{
+				if (NULL == g_hEventBatFlt)
+					g_hEventBatFlt = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("OMNIBOOK_EVENT_BATTERYFAULT"));
+				if (g_hEventBatFlt)
+				{
+					RETAILMSG(1, (_T("\tSetEvent(OMNIBOOK_EVENT_BATTERYFAULT)\r\n")));
+					SetEvent(g_hEventBatFlt);
+				}
+			}
+			else
+			{
+				RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_RESUME)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_RESUME")), 0, 0);
+			}
 		}
 		else
 		{

@@ -27,8 +27,6 @@
 #define CFG_SKIPREADMAC_REG_STRING	_T("CfgSkipReadMac")
 #define CFG_SKIPREADMAC_REG_DEFAULT	0
 
-#define LOG_LOWBATTERY_FILENAME		_T("\\PocketMory\\Lowbattery.log")
-
 #define	WIFI_CARDNAME_TCHAR			_T("SDIO86861")
 #define	WIFI_CARDNAME_CHAR			"SDIO86861"
 #define	WIFI_CARDNAME_LEN			9
@@ -296,22 +294,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	DWORD dwSkipReadMac=0, dwStartupTime=0, dwStart=0, dwTotal, i;
 	TCHAR szProgram[MAX_PATH]={0,};
 	BOOL bLoop=TRUE, bDispUpdate=FALSE;
-
-	if (IsProgram(LOG_LOWBATTERY_FILENAME))
-	{
-		SYSTEM_POWER_STATUS_EX2 sps = {0,};
-		GetSystemPowerStatusEx2(&sps, sizeof(sps), TRUE);
-		if (AC_LINE_ONLINE == sps.ACLineStatus)
-		{
-			RETAILMSG(1, (_T("LOG : DeleteFile(%s)\r\n"), LOG_LOWBATTERY_FILENAME));
-			DeleteFile(LOG_LOWBATTERY_FILENAME);
-		}
-		else
-		{
-			RunProgram(_T("\\Windows\\Omnibook_Command.exe"), _T("LOWBATTERY"), 3000);
-			return 0;
-		}
-	}
 
 	if (RunProgram(_T("\\Windows\\Omnibook_Command.exe"), _T("STARTUP"), 3000))
 		dwStart = GetTickCount();

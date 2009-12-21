@@ -12,7 +12,7 @@
 #define BATT_LEVEL_CNT	5
 #define ADC_SAMPLE_NUM	8
 #define ADC_LEVEL_MAX	2800
-#define ADC_LEVEL_MIN	2300
+#define ADC_LEVEL_MIN	2400
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
@@ -103,12 +103,10 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		if (i)
 			nAvgLevel /= i;
 		if (ADC_LEVEL_MAX < nAvgLevel)
-			nPercent = ADC_LEVEL_MAX;
+			nAvgLevel = ADC_LEVEL_MAX;
 		else if (ADC_LEVEL_MIN > nAvgLevel)
-			nPercent = ADC_LEVEL_MIN;
-		else
-			nPercent = nAvgLevel;
-		nPercent = (int)(((nPercent-ADC_LEVEL_MIN) * 100.0) / (ADC_LEVEL_MAX-ADC_LEVEL_MIN));
+			nAvgLevel = ADC_LEVEL_MIN;
+		nPercent = (int)(((nAvgLevel-ADC_LEVEL_MIN) * 100.0) / (ADC_LEVEL_MAX-ADC_LEVEL_MIN));
 
 		fBatteryState = (g_pGPIOReg->GPNDAT & 0x0F);
 		fAcOn = !((1<<0) & fBatteryState);
@@ -128,39 +126,14 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 #ifdef	BATT_LOG_TEST
 			g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
 #else	//!BATT_LOG_TEST
-			if (50 <= nPercent)
+			g_PowerStatus.BatteryFlag = (60 <= nPercent) ? BATTERY_FLAG_HIGH : BATTERY_FLAG_LOW;
+			/*if (60 <= nPercent)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_HIGH;
-			else if (5 <= nPercent)
+			else if (20 <= nPercent)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_LOW;
 			else
-				g_PowerStatus.BatteryFlag = BATTERY_FLAG_CRITICAL;
+				g_PowerStatus.BatteryFlag = BATTERY_FLAG_CRITICAL;*/
 #endif	BATT_LOG_TEST
-
-			if ((10 > nPercent) || (BATTERY_FLAG_CRITICAL == g_PowerStatus.BatteryFlag))
-			{
-				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-				PROCESS_INFORMATION pi;
-
-				ZeroMemory(&pi,sizeof(pi));
-				if (CreateProcess(lpszPathName,
-								  _T("LOWBATTERY"),	// pszCmdLine
-								  NULL,	// psaProcess
-								  NULL,	// psaThread
-								  FALSE,// fInheritHandle
-								  0,	// fdwCreate
-								  NULL,	// pvEnvironment
-								  NULL,	// pszCurDir
-								  NULL,	// psiStartInfo
-								  &pi))	// pProcInfo
-				{
-					WaitForSingleObject(pi.hThread, 3000);
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
-				}
-
-				SetSystemPowerState(NULL, POWER_STATE_OFF/*POWER_STATE_CRITICAL*/, POWER_FORCE);
-				KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
-			}
 		}
 		g_PowerStatus.BatteryLifePercent    = nPercent;
 		g_PowerStatus.BatteryVoltage        = nLevel;
