@@ -543,6 +543,11 @@ static BOOL OALIoCtlHalOmnibookShutdown(
 
 	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalEBook2Shutdown()\r\n")));
 
+	//-----------------------------
+	// Wait till NAND Erase/Write operation is finished
+	//-----------------------------
+	VFL_Sync();
+
 	pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 	pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(1<<3)) | (0<<3);
 

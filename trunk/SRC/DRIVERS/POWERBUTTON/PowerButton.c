@@ -46,6 +46,13 @@ static HANDLE g_hEventResetBtn = NULL;
 static HANDLE g_hThreadPowerBtn = NULL;
 static HANDLE g_hThreadResetBtn = NULL;
 static BOOL g_bExitThread = FALSE;
+#ifdef	OMNIBOOK_VER
+static volatile S3C6410_SYSCON_REG *g_pSYSCONReg = NULL;
+static volatile BSP_ARGS *g_pArgs = NULL;
+static DWORD g_dwSysIntrBatFlt = SYSINTR_UNDEFINED;
+static HANDLE g_hEventBatFlt = NULL;
+static HANDLE g_hThreadBatFlt = NULL;
+#endif	OMNIBOOK_VER
 
 DBGPARAM dpCurSettings =                                \
 {                                                       \
@@ -63,6 +70,55 @@ DBGPARAM dpCurSettings =                                \
     },                                                  \
     (PWRBTN_ZONES)                               \
 };
+
+#ifdef	OMNIBOOK_VER
+INT WINAPI BatteryFaultThread(void)
+{
+	DWORD dwWakeSrc, dwBytesRet;
+
+	while(!g_bExitThread)
+	{
+		WaitForSingleObject(g_hEventBatFlt, INFINITE);
+		if (g_bExitThread)
+			break;
+
+		// Clearing Battery Fault interrupt bit
+		g_pSYSCONReg->OTHERS = (g_pSYSCONReg->OTHERS & ~(1<<12)) | (1<<12);
+		InterruptDone(g_dwSysIntrBatFlt);
+
+		dwWakeSrc = SYSWAKE_UNKNOWN;
+		dwBytesRet = 0;
+		KernelIoControl(IOCTL_HAL_GET_WAKE_SOURCE, NULL, 0, &dwWakeSrc, sizeof(dwWakeSrc), &dwBytesRet);
+		RETAILMSG(1, (_T("\tBattery Fault Thread(WAKE_SOURCE = 0x%08X)\r\n"), dwWakeSrc));
+		if (OEMWAKE_EINT0 != dwWakeSrc)
+		{
+			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+			PROCESS_INFORMATION pi;
+
+			ZeroMemory(&pi,sizeof(pi));
+			if (CreateProcess(lpszPathName,
+							  _T("LOWBATTERY"),	// pszCmdLine
+							  NULL,	// psaProcess
+							  NULL,	// psaThread
+							  FALSE,// fInheritHandle
+							  0,	// fdwCreate
+							  NULL,	// pvEnvironment
+							  NULL,	// pszCurDir
+							  NULL,	// psiStartInfo
+							  &pi))	// pProcInfo
+			{
+				WaitForSingleObject(pi.hThread, 3000);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+			}
+			g_pArgs->bBatteryFault = TRUE;
+			SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
+		}
+	}
+
+	return 0;
+}
+#endif	OMNIBOOK_VER
 
 INT WINAPI PowerButtonThread(void)
 {
@@ -270,6 +326,50 @@ AllocResources(void)
     }
 #endif	//!OMNIBOOK_VER
 
+#ifdef	OMNIBOOK_VER
+	ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_SYSCON;
+	g_pSYSCONReg = (volatile S3C6410_SYSCON_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_SYSCON_REG), FALSE);
+	if (g_pSYSCONReg == NULL)
+	{
+		RETAILMSG(PWR_ZONE_ERROR,(_T("[PWR:ERR] %s() : g_pSYSCONReg MmMapIoSpace() Failed \n\r"), _T(__FUNCTION__)));
+        return FALSE;
+	}
+	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
+	g_pArgs = (volatile S3C6410_SYSCON_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
+	if (g_pArgs == NULL)
+	{
+		RETAILMSG(PWR_ZONE_ERROR,(_T("[PWR:ERR] %s() : g_pArgs MmMapIoSpace() Failed \n\r"), _T(__FUNCTION__)));
+        return FALSE;
+	}
+
+	//--------------------
+	// Battery Fault Interrupt
+	//--------------------
+	dwIRQ = IRQ_BATF;
+	g_dwSysIntrBatFlt = SYSINTR_UNDEFINED;
+	g_hEventBatFlt = NULL;
+
+	if (!KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &dwIRQ, sizeof(DWORD), &g_dwSysIntrBatFlt, sizeof(DWORD), NULL))
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : IOCTL_HAL_REQUEST_SYSINTR Battery Fault Failed \n\r"), _T(__FUNCTION__)));
+		g_dwSysIntrBatFlt = SYSINTR_UNDEFINED;
+		return FALSE;
+	}
+
+	g_hEventBatFlt = CreateEvent(NULL, FALSE, FALSE, _T("OMNIBOOK_EVENT_BATTERYFAULT"));
+	if(NULL == g_hEventBatFlt)
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateEvent() Battery Fault Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+
+	if (!(InterruptInitialize(g_dwSysIntrBatFlt, g_hEventBatFlt, 0, 0)))
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : InterruptInitialize() Battery Fault Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+#endif	OMNIBOOK_VER
+
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
 
     return TRUE;
@@ -323,6 +423,27 @@ ReleaseResources(void)
 
     g_hEventPowerBtn = NULL;
     g_hEventResetBtn = NULL;
+
+#ifdef	OMNIBOOK_VER
+	if (g_pSYSCONReg)
+	{
+		MmUnmapIoSpace((PVOID)g_pSYSCONReg, sizeof(S3C6410_SYSCON_REG));
+		g_pSYSCONReg = NULL;
+	}
+	if (g_pArgs)
+	{
+		MmUnmapIoSpace((PVOID)g_pArgs, sizeof(BSP_ARGS));
+		g_pArgs = NULL;
+	}
+	if (g_dwSysIntrBatFlt != SYSINTR_UNDEFINED)
+		InterruptDisable(g_dwSysIntrBatFlt);
+	if (g_hEventBatFlt != NULL)
+		CloseHandle(g_hEventBatFlt);
+	if (g_dwSysIntrBatFlt != SYSINTR_UNDEFINED)
+		KernelIoControl(IOCTL_HAL_RELEASE_SYSINTR, &g_dwSysIntrBatFlt, sizeof(DWORD), NULL, 0, NULL);
+	g_dwSysIntrBatFlt = SYSINTR_UNDEFINED;
+	g_hEventBatFlt = NULL;
+#endif	OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
 }
@@ -383,6 +504,7 @@ PWR_PowerUp(DWORD pContext)
     Button_rstbtn_enable_interrupt();
 #ifdef	OMNIBOOK_VER
 	Button_pwrbtn_enable_interrupt();	// UnMask EINT
+	InterruptMask(g_dwSysIntrBatFlt, FALSE);
 #endif	OMNIBOOK_VER
     return TRUE;
 }
@@ -397,6 +519,9 @@ PWR_PowerDown(DWORD pContext)
     Button_pwrbtn_clear_interrupt_pending();
     Button_rstbtn_disable_interrupt();
     Button_rstbtn_clear_interrupt_pending();
+#ifdef	OMNIBOOK_VER
+	InterruptMask(g_dwSysIntrBatFlt, TRUE);
+#endif	OMNIBOOK_VER
 
     return TRUE;
 }
@@ -432,6 +557,16 @@ BOOL PWR_Deinit(DWORD pContext)
         CloseHandle(g_hThreadResetBtn);
         g_hThreadResetBtn = NULL;
     }
+
+#ifdef	OMNIBOOK_VER
+	if (g_hThreadBatFlt)
+	{
+		SetEvent(g_hEventBatFlt);
+		WaitForSingleObject(g_hThreadBatFlt, INFINITE);
+		CloseHandle(g_hThreadBatFlt);
+		g_hThreadBatFlt = NULL;
+	}
+#endif	OMNIBOOK_VER
 
     ReleaseResources();
 
@@ -475,6 +610,17 @@ PWR_Init(DWORD dwContext)
     }
 #endif	//!OMNIBOOK_VER
     
+#ifdef	OMNIBOOK_VER
+	// Create Battery Fault Thread
+	g_hThreadBatFlt = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) BatteryFaultThread, NULL, 0, NULL);
+	if (g_hThreadBatFlt == NULL)
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateThread() Battery Fault Failed \n\r"), _T(__FUNCTION__)));
+		goto CleanUp;
+	}
+	CeSetThreadPriority(g_hThreadBatFlt, 90);
+#endif	OMNIBOOK_VER
+
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
 
     return TRUE;
