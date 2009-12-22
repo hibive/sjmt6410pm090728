@@ -10,7 +10,6 @@ install media.
 !endif
 
 DIRS=\
-	EBOOT.FatFS\
 	Eboot.Blcommon\
 	Eboot.Whimory\
 	NBL1.LSB\

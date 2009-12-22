@@ -9,11 +9,6 @@ void Port_Init(void)
 	// GPA[7:6] for LED
 	rGPACON = (rGPACON & ~(0xff<<24)) | (0x11<<24);	// GPA[7:6] set to output
 	rGPAPUD = (rGPAPUD & ~(0xf<<12));				// Pull Up/Down Disable
-
-	// GPC[3] for PWRHOLD
-	rGPCCON = (rGPCCON & ~(0xF<<12)) | (0x1<<12);	// Output
-	rGPCPUD = (rGPCPUD & ~(0x3<<6)) | (0x0<<6);		// Pull-up/down disable
-	rGPCDAT = (rGPCDAT & ~(0xF<<0)) | (0x1<<3);		// PWRHOLD On
 #else	//!OMNIBOOK_VER
 	// GPN[15:12] for LED
     rGPNCON = (rGPNCON & ~(0xff<<24))|(0x55<<24); // GPN[15:12] as output

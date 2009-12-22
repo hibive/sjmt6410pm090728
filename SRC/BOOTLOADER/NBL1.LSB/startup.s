@@ -52,6 +52,12 @@
 
     STARTUPTEXT
 
+	IF :DEF: OMNIBOOK_VER
+GPCCON        EQU    (S3C6410_BASE_REG_PA_GPIO + 0x040)
+GPCDAT        EQU    (S3C6410_BASE_REG_PA_GPIO + 0x044)
+GPCPUD        EQU    (S3C6410_BASE_REG_PA_GPIO + 0x048)
+	ENDIF	;OMNIBOOK_VER
+
 ;------------------------------------------------------------------------------
 ;
 ;    StartUp Entry
@@ -155,6 +161,26 @@ ResetHandler
 ;    Set Operation Mode to Sync Mode or Async Mode
 ;----------------------------------------------------------
         LED_ON 0x1
+	IF :DEF: OMNIBOOK_VER
+        ldr          r10, =GPCPUD
+        ldr          r11, [r10]
+        bic          r11, r11, #0x0000C000	; Pull-Up-Down Disable
+        str          r11, [r10]
+
+        ldr          r10, =GPCDAT
+        ldr          r11, [r10]
+        bic          r11, r11, #0x08
+        ldr          r12, =0x01
+        mov          r12, r12, lsl #3	; [3]
+        orr          r11, r11, r12
+        str          r11, [r10]
+
+        ldr          r10, =GPCCON
+        ldr          r11, [r10]
+        bic          r11, r11, #0x0000F000
+        orr          r11, r11, #0x00001000     ; GPC[3] Output .
+        str          r11, [r10]
+	ENDIF	;OMNIBOOK_VER
 
     [ (SYNCMODE)
         IF    :DEF: _IROMBOOT_
