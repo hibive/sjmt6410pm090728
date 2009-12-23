@@ -18,7 +18,7 @@ void EPDOutputString(const char *fmt, ...);
 void EPDOutputChar(const unsigned char ch);
 void EPDOutputFlush(void);
 
-int EPDSerialFlashWrite(void);
+int EPDSerialFlashWrite(void *pBlob);	// LPBLOB
 
 #endif  _DISPLAY_EPD_H_
 

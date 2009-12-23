@@ -60,7 +60,7 @@ extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char
 
 // +++ sdmmc settings +++
 extern BOOL InitializeSDMMC(void);
-extern BOOL ChooseImageFromSDMMC(void);
+extern BOOL ChooseImageFromSDMMC(BYTE bSelect);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
 #endif	OMNIBOOK_VER
@@ -434,6 +434,25 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
     UINT32 nSyncRet;
 
 #ifdef	OMNIBOOK_VER
+	EdbgOutputDebugString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
+	EdbgOutputDebugString("\t[Board] Revision(%B)\r\n", pBSPArgs->bBoardRevision);
+	EdbgOutputDebugString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
+	EdbgOutputDebugString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n", S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
+	EdbgOutputDebugString("\t[Disp] Revision(%B), Product(%B)\r\n", pBSPArgs->BS_wRevsionCode, pBSPArgs->BS_wProductCode);
+	EdbgOutputDebugString("\t[Disp] %B : Command Type\r\n", pBSPArgs->CMD_wType);
+	EdbgOutputDebugString("\t[Disp] %B.%B : Command Version\r\n", pBSPArgs->CMD_bMajor, pBSPArgs->CMD_bMinor);
+	EdbgOutputDebugString("\t[Disp] %X : Waveform File Size\r\n", pBSPArgs->WFM_dwFileSize);
+	EdbgOutputDebugString("\t[Disp] %X : Waveform Serial Number\r\n", pBSPArgs->WFM_dwSerialNumber);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform Run Type\r\n", pBSPArgs->WFM_bRunType);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform FPL Platform\r\n", pBSPArgs->WFM_bFPLPlatform);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform FPL Lot\r\n", pBSPArgs->WFM_wFPLLot);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform Mode Version\r\n", pBSPArgs->WFM_bModeVersion);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform Version\r\n", pBSPArgs->WFM_bWaveformVersion);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform Subversion\r\n", pBSPArgs->WFM_bWaveformSubVersion);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform Type\r\n", pBSPArgs->WFM_bWaveformType);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform FPL Size\r\n", pBSPArgs->WFM_bFPLSize);
+	EdbgOutputDebugString("\t[Disp] %B : Waveform MFG Code\r\n", pBSPArgs->WFM_bMFGCode);
+
 	EPDOutputString("< Build Date : %s %s >\r\n", __DATE__, __TIME__);
 	EPDOutputString("\t[Board] Revision(%B)\r\n", pBSPArgs->bBoardRevision);
 	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
@@ -503,11 +522,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("\r\nEthernet Boot Loader Configuration:\r\n\r\n");
 		EPDOutputString("H) Hive Clean on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_HIVECLEAN) ? "True" : "*False");
 		EPDOutputString("P) Format Partition on Boot-time : [%s]\r\n", (pBootCfg->ConfigFlags & BOOT_OPTION_FORMATPARTITION) ? "True" : "*False");
+		EPDOutputString("B) Format VFL (Format FIL + VFL Format)\r\n");
 		EPDOutputString("C) Format FTL (Erase FTL Area + FTL Format)\r\n");
 		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
-		EPDOutputString("X) Epson Instruction byte code update\r\n");
+		EPDOutputString("X) Epson Instruction byte code update(Default)\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
 #endif	OMNIBOOK_VER
@@ -546,6 +566,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 					KeySelect = 'H';	break;
 				case KEY_P:
 					KeySelect = 'P';	break;
+				case KEY_B:
+					KeySelect = 'B';	break;
 				case KEY_C:
 					KeySelect = 'C';	break;
 				case KEY_L:
@@ -661,6 +683,33 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		{
 			OALMSG(TRUE, (TEXT(" ++Format VFL (Format FIL + VFL Format)\r\n")));
 
+#ifdef	OMNIBOOK_VER
+			if (FTL_Close() == FTL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[WMR    ] WMR_Format_VFL() : FTL_Close() Success\r\n")));
+			}
+			else
+			{
+				OALMSG(TRUE, (TEXT("[WMR:ERR] WMR_Format_VFL() : FTL_Close() Failure\r\n")));
+				break;
+			}
+
+			if (VFL_Close() == VFL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[WMR    ] WMR_Format_VFL() : VFL_Close() Success\r\n")));
+			}
+			else
+			{
+				OALMSG(TRUE, (TEXT("[WMR:ERR] WMR_Format_VFL() : VFL_Close() Failure\r\n")));
+				break;
+			}
+
+			if (WMR_Format_VFL() == FALSE32)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] WMR_Format_VFL() Failure\r\n")));
+				break;
+			}
+#else	//OMNIBOOK_VER
 			if (VFL_Close() != VFL_SUCCESS)
 			{
 				OALMSG(TRUE, (TEXT("[ERR] VFL_Close() Failure\r\n")));
@@ -678,6 +727,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				OALMSG(TRUE, (TEXT("[ERR] VFL_Open() Failure\r\n")));
 				break;
 			}
+#endif	OMNIBOOK_VER
 
 			OALMSG(TRUE, (TEXT(" --Format VFL (Format FIL + VFL Format)\r\n")));
 		}
@@ -918,7 +968,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #ifdef	DISPLAY_BROADSHEET
 		case 'X':	// BroadSheet(Epson) Instruction byte code update
 		case 'x':
-			if (EPDSerialFlashWrite())
+			if (EPDSerialFlashWrite(NULL))
 			{
 				EdbgOutputDebugString("Successfully Written\r\n");
 				SpinForever();
@@ -1382,7 +1432,7 @@ DWORD OEMPreDownload(void)
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
-		if (FALSE == ChooseImageFromSDMMC())
+		if (FALSE == ChooseImageFromSDMMC(0))
 		{
 			OALMSG(OAL_ERROR, (L"ERROR: ChooseImageFromSDMMC call failed\r\n"));;
 			SpinForever();
@@ -1553,7 +1603,6 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 					}
 	        		TOC_Print();
 #endif	// by hmseo - 061123
-
 				}
 		        OALMSG(TRUE, (TEXT("INFO: Eboot image stored to Smart Media.  Please Reboot.  Halting...\r\n")));
 #ifdef	OMNIBOOK_VER
@@ -1588,7 +1637,6 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 					dwLaunchAddr= g_pTOC->id[g_dwTocEntry].dwJumpAddress;
 					EdbgOutputDebugString("INFO: using TOC[%d] dwJumpAddress: 0x%x\r\n", g_dwTocEntry, dwLaunchAddr);
 				}
-
                 break;
         }
     }

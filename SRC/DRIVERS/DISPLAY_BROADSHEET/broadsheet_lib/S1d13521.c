@@ -44,6 +44,9 @@ typedef struct {
 } AREA, *PAREA;
 
 
+#ifdef	FOR_EBOOT
+static BOOL	g_bSkipWaitHrdy = FALSE;
+#endif	FOR_EBOOT
 
 DWORD	g_dwDebugLevel = 0;
 
@@ -370,6 +373,10 @@ static BOOL WaitHrdy(int nDebug)
 {
 	volatile int i;
 
+#ifdef	FOR_EBOOT
+	if (g_bSkipWaitHrdy)
+		return FALSE;
+#endif	FOR_EBOOT
 	for (i=0; i<S1D13521_HRDY_TIMEOUT; i++)
 	{
 		if ((g_pGPIOPReg->GPNDAT & (1<<8)))
@@ -385,6 +392,9 @@ static BOOL WaitHrdy(int nDebug)
 	if (S1D13521_HRDY_TIMEOUT == i)
 	{
 		MYERR((_T("WaitHrdy(%d)\r\n"), nDebug));
+#ifdef	FOR_EBOOT
+		g_bSkipWaitHrdy = TRUE;
+#endif	FOR_EBOOT
 		return FALSE;
 	}
 
@@ -429,7 +439,7 @@ static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
 
 static BOOL Command(CMDARG CmdArg)
 {
-	BOOL bRet;
+	BOOL bRet = FALSE;
 
 	bRet = WaitHrdy(1);
 	OUTREG16(&g_pS1D13521Reg->CMD, CmdArg.bCmd);
@@ -453,7 +463,7 @@ static BOOL Command(CMDARG CmdArg)
 
 static WORD DataRead(void)
 {
-	WORD wData;
+	WORD wData = 0;
 
 	WaitHrdy(3);
 	wData = INREG16(&g_pS1D13521Reg->DATA);
@@ -469,7 +479,7 @@ static WORD DataRead(void)
 static BOOL BurstWrite(BLOB *pBlob)
 {
 	int i;
-	WORD wData;
+	WORD wData = 0;
 
 	for (i=0; i<(int)pBlob->cbSize; i+=2)
 	{
@@ -487,7 +497,7 @@ static BOOL BurstWrite(BLOB *pBlob)
 
 static WORD RegRead(WORD wReg)
 {
-	WORD wData;
+	WORD wData = 0;
 
 	WaitHrdy(4);
 	OUTREG16(&g_pS1D13521Reg->CMD, 0x10);
@@ -503,7 +513,7 @@ static WORD RegRead(WORD wReg)
 }
 static WORD RegRead2(WORD wReg, BOOL bWaitHrdy)
 {
-	WORD wData;
+	WORD wData = 0;
 
 	if (bWaitHrdy)
 		WaitHrdy(4);
@@ -521,7 +531,7 @@ static WORD RegRead2(WORD wReg, BOOL bWaitHrdy)
 
 static BOOL RegWrite(WORD wReg, WORD wData)
 {
-	BOOL bRet;
+	BOOL bRet = FALSE;
 
 	bRet = WaitHrdy(5);
 	OUTREG16(&g_pS1D13521Reg->CMD, 0x11);

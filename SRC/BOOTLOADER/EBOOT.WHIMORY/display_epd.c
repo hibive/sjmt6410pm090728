@@ -79,7 +79,7 @@ void EPDInitialize(void)
 
 	{
 		volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-		BYTE Buf[FLASH_PAGE_SIZE];
+		BYTE Buf[FLASH_PAGE_SIZE] = {0,};
 		int idx;
 
 		pArgs->BS_wRevsionCode = RegRead(0x0000);
@@ -413,14 +413,24 @@ void EPDOutputFlush(void)
 	S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&g_imgRectText, 0, NULL);
 }
 
-int EPDSerialFlashWrite(void)
+int EPDSerialFlashWrite(void *pBlob)
 {
 	BLOB sfmd;
 	int nRet;
 
-	sfmd.cbSize = sizeof(Instruction_Byte_Code) / sizeof(Instruction_Byte_Code[0]);
-	sfmd.pBlobData = (PBYTE)Instruction_Byte_Code;
+	if (NULL == pBlob)
+	{
+		sfmd.cbSize = sizeof(Instruction_Byte_Code) / sizeof(Instruction_Byte_Code[0]);
+		sfmd.pBlobData = (PBYTE)Instruction_Byte_Code;
+	}
+	else
+	{
+		LPBLOB lpBlob = (LPBLOB)pBlob;
+		sfmd.cbSize = lpBlob->cbSize;
+		sfmd.pBlobData = lpBlob->pBlobData;
+	}
 	nRet = (int)S1d13521DrvEscape(DRVESC_WRITE_SFM, sizeof(BLOB), (PVOID)&sfmd, 0, NULL);
+
 	return nRet;
 }
 

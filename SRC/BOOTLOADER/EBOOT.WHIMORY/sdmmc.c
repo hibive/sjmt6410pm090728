@@ -13,6 +13,14 @@
 #include <bsp.h>
 #include "loader.h"
 
+#include <WMRTypes.h>
+#include <VFLBuffer.h>
+#include <FTL.h>
+#include <VFL.h>
+#include <FIL.h>
+#include <config.h>
+#include <WMR_Utils.h>
+
 #include <HSMMCDrv.h>
 #include "sdmmc_fat32.h"
 #include "keypad.h"
@@ -22,95 +30,43 @@
 #define IMAGE_NB0		0
 #define IMAGE_BIN		1
 #define IMAGE_LST		2
+#define IMAGE_WBF		3
 
+#define BL_HDRSIG_SIZE	7
 
-static UINT32 makeManifestImage(UINT32 dwImageType, MultiBINInfo *pMultiBIN, UINT8 *pBuffer);
-static BOOL parsingChainListFile(const char *sFileName, MultiBINInfo *pMultiBIN);
-static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName);
 
 volatile UINT32	readPtIndex;
 volatile UINT8	*g_pDownPt;
+
+extern const PTOC g_pTOC;
+extern DWORD g_dwTocEntry;
+static BOOL g_fOEMNotified = FALSE;
+static BYTE g_hdr[BL_HDRSIG_SIZE];
+static DownloadManifest g_DownloadManifest;
+static BYTE g_downloadFilesRemaining = 1;
+static DWORD g_dwROMOffset;
+
+
+static BOOL fatFileExist(const char *sFileName);
+static UINT32 fatFileRead(const char *sFileName, UINT8 *pStartBuf);
+static UINT32 makeManifestImage(UINT32 dwImageType, MultiBINInfo *pMultiBIN, UINT8 *pBuffer);
+static BOOL parsingChainListFile(const char *sFileName, MultiBINInfo *pMultiBIN);
+static UINT32 parsingImageFromSD(UINT32 dwImageType, const char *sFileName);
+
+static void HALT(DWORD dwReason);
+static BOOL verifyChecksum(DWORD cbRecord, LPBYTE pbRecord, DWORD dwChksum);
+static BL_IMAGE_TYPE getImageType(void);
+static BOOL checkImageManifest(void);
+static BOOL isKernelRegion(DWORD dwRegionStart, DWORD dwRegionLength);
+static BOOL downloadBin(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr);
+static BOOL downloadNB0(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr);
+static BOOL downloadImage(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr);
+static void writeImage(void);
 
 
 BOOL InitializeSDMMC(void)
 {
 	return SDHC_INIT();
-}
-
-BOOL ChooseImageFromSDMMC(void)
-{
-	BYTE KeySelect = 0;
-	const char file_name[][12] = {
-		"BLOCK0  NB0",	// 0 : block0img.nb0 or stepldr.nb0("STEPLDR NB0")
-		"EBOOT   BIN",	// 1
-		"NK      BIN",	// 2
-		"CHAIN   LST",	// 3 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
-	}, *pSelFile;
-	BOOL bRet = FALSE;
-
-	EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
-	EdbgOutputDebugString("1) BLOCK0.NB0\r\n");
-	EdbgOutputDebugString("2) EBOOT.BIN\r\n");
-	EdbgOutputDebugString("3) NK.BIN\r\n");
-	EdbgOutputDebugString("4) CHAIN.LST\r\n");
-	EdbgOutputDebugString("5) Power Off ...\r\n");
-	EdbgOutputDebugString("\r\nEnter your selection: ");
-#ifdef	OMNIBOOK_VER
-	EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
-	EPDOutputString("1) BLOCK0.NB0\r\n");
-	EPDOutputString("2) EBOOT.BIN\r\n");
-	EPDOutputString("3) NK.BIN\r\n");
-	EPDOutputString("4) CHAIN.LST\r\n");
-	EPDOutputString("5) Power Off ...\r\n");
-	EPDOutputString("\r\nEnter your selection: ");
-	EPDOutputFlush();
-#endif	OMNIBOOK_VER
-
-	while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
-	{
-		KeySelect = OEMReadDebugByte();
-		if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
-			KeySelect = GetKeypad2();
-	}
-
-	EdbgOutputDebugString("%c\r\n", KeySelect);
-#ifdef	OMNIBOOK_VER
-	EPDOutputString("%c\r\n", KeySelect);
-	EPDOutputFlush();
-#endif	OMNIBOOK_VER
-
-	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-
-	switch (KeySelect)
-	{
-	case '1':	// BLOCK0.NB0
-		pSelFile = file_name[0];
-		bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
-		break;
-	case '2':	// EBOOT.BIN
-		pSelFile = file_name[1];
-		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
-		break;
-	case '3':	// NK.BIN
-		pSelFile = file_name[2];
-		bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
-		break;
-	case '4':	// CHAIN.LST
-		pSelFile = file_name[3];
-		bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
-		break;
-	case '5':
-		return FALSE;
-	}
-
-	EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
-#ifdef	OMNIBOOK_VER
-	EPDOutputString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
-	EPDOutputFlush();
-#endif	OMNIBOOK_VER
-
-	return bRet;
 }
 
 #pragma optimize ("",off)
@@ -137,8 +93,177 @@ BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData)
 }
 #pragma optimize ("",on)
 
+BOOL ChooseImageFromSDMMC(BYTE bSelect)
+{
+	const char file_name[][12] = {
+		"BLOCK0  NB0",	// 0 : block0img.nb0 or stepldr.nb0("STEPLDR NB0")
+		"EBOOT   BIN",	// 1
+		"NK      BIN",	// 2
+		"CHAIN   LST",	// 3 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
+		"EPSONBS WBF",	// 4
+	}, *pSelFile;
+	BYTE KeySelect = bSelect;
+	BOOL bRet = TRUE;
 
-static UINT32 FATFileRead(const char *sFileName, UINT8 *pStartBuf)
+	if (0 == KeySelect)
+	{
+		EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
+		EdbgOutputDebugString("1) BLOCK0.NB0\r\n");
+		EdbgOutputDebugString("2) EBOOT.BIN\r\n");
+		EdbgOutputDebugString("3) NK.BIN\r\n");
+		EdbgOutputDebugString("4) CHAIN.LST\r\n");
+		EdbgOutputDebugString("5) EPSONBS.WBF\r\n");
+		EdbgOutputDebugString("6) Power Off ...\r\n");
+		EdbgOutputDebugString("\r\nEnter your selection: ");
+
+		EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
+		EPDOutputString("1) BLOCK0.NB0\r\n");
+		EPDOutputString("2) EBOOT.BIN\r\n");
+		EPDOutputString("3) NK.BIN\r\n");
+		EPDOutputString("4) CHAIN.LST\r\n");
+		EPDOutputString("5) EPSONBS.WBF\r\n");
+		EPDOutputString("6) Power Off ...\r\n");
+		EPDOutputString("\r\nEnter your selection: ");
+		EPDOutputFlush();
+
+		while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
+		{
+			KeySelect = OEMReadDebugByte();
+			if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
+				KeySelect = GetKeypad2();
+		}
+	}
+
+	EdbgOutputDebugString("%c\r\n", KeySelect);
+
+	EPDOutputString("%c\r\n", KeySelect);
+	EPDOutputFlush();
+
+	g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+	readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+	switch (KeySelect)
+	{
+	case '1':	// BLOCK0.NB0
+		pSelFile = file_name[0];
+		bRet &= fatFileExist(pSelFile);
+		if (bRet)
+			bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
+		break;
+	case '2':	// EBOOT.BIN
+		pSelFile = file_name[1];
+		bRet &= fatFileExist(pSelFile);
+		if (bRet)
+			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+		break;
+	case '3':	// NK.BIN
+		pSelFile = file_name[2];
+		bRet &= fatFileExist(pSelFile);
+		if (bRet)
+			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+		break;
+	case '4':	// CHAIN.LST
+		pSelFile = file_name[3];
+		bRet &= fatFileExist(pSelFile);
+		if (bRet)
+			bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
+		break;
+	case '5':	// EPSONBS.WBF
+		pSelFile = file_name[4];
+		bRet &= fatFileExist(pSelFile);
+		if (bRet)
+		{
+			BLOB blob = {0,};
+			blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
+			blob.pBlobData = (PBYTE)readPtIndex;
+			bRet = EPDSerialFlashWrite((void *)&blob);
+
+			EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
+
+			EPDOutputString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
+			EPDOutputFlush();
+
+			HALT(0);
+		}
+		return FALSE;
+
+	case '9':	// Format All -> EpsonBS.wbf -> Block0.nb0 -> Eboot.bin
+		if (fatFileExist(file_name[0]) && fatFileExist(file_name[1]) && fatFileExist(file_name[4]))
+		{
+			/*VFL_Close();
+			WMR_Format_FIL();
+
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+			pSelFile = file_name[4];
+			{
+				BLOB blob = {0,};
+				blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
+				blob.pBlobData = (PBYTE)readPtIndex;
+				bRet = EPDSerialFlashWrite((void *)&blob);
+				OALMSG(TRUE, (TEXT("INFO: Step loader image stored to Smart Media\r\n")));
+			}
+
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+			pSelFile = file_name[0];
+			if (parsingImageFromSD(IMAGE_NB0, pSelFile))
+			{
+				writeImage();
+				OALMSG(TRUE, (TEXT("INFO: Step loader image stored to Smart Media\r\n")));
+			}
+
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+			pSelFile = file_name[1];
+			if (parsingImageFromSD(IMAGE_BIN, pSelFile))
+			{
+				writeImage();
+				OALMSG(TRUE, (TEXT("INFO: Eboot image stored to Smart Media\r\n")));
+			}
+
+			HALT(0);*/
+		}
+		return FALSE;
+
+	default:
+		return FALSE;
+	}
+
+	EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
+
+	EPDOutputString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
+	EPDOutputFlush();
+
+	return bRet;
+}
+
+
+static BOOL fatFileExist(const char *sFileName)
+{
+	FAT32_FAT_DESCRIPTOR fat_mmc;
+	FAT32_DIR_DESCRIPTOR dir_desc;
+	uint8_t dir_buffer[11+1] = {0,};
+	uint32_t i, next_cluster;
+
+	fat32_get_descriptor(&fat_mmc, 0);
+	for (i=0; i<FAT32_FILES_PER_DIR_MAX; i++)
+	{
+		if (fat32_get_dir(&fat_mmc, dir_buffer , "", i) == -2)
+			break;
+		dir_buffer[11] = 0;
+
+		memset((void *)&dir_desc , 0x00, sizeof(dir_desc));
+		next_cluster = fat32_find_file(&fat_mmc, "", dir_buffer, &dir_desc);
+		if (FAT32_ATTR_DIRECTORY & dir_desc.attribute)
+			continue;
+		if (dir_desc.size && !strncmp(dir_desc.short_name, sFileName, 11))
+			return TRUE;
+	}
+
+	EdbgOutputDebugString("ERROR: %s File not found\r\n", sFileName);
+	return TRUE;
+}
+static UINT32 fatFileRead(const char *sFileName, UINT8 *pStartBuf)
 {
 	FAT32_FAT_DESCRIPTOR fat_mmc;
 	FAT32_DIR_DESCRIPTOR dir_desc;
@@ -156,7 +281,9 @@ static UINT32 FATFileRead(const char *sFileName, UINT8 *pStartBuf)
 
 		memset((void *)&dir_desc , 0x00, sizeof(dir_desc));
 		next_cluster = fat32_find_file(&fat_mmc, "", dir_buffer, &dir_desc);
-		if (!strncmp(dir_desc.short_name, sFileName, 11))
+		if (FAT32_ATTR_DIRECTORY & dir_desc.attribute)
+			continue;
+		if (dir_desc.size && !strncmp(dir_desc.short_name, sFileName, 11))
 		{
 			sector_offset = 0;
 			while (next_cluster < 0x0ffffff8)
@@ -188,8 +315,6 @@ static UINT32 FATFileRead(const char *sFileName, UINT8 *pStartBuf)
 	EdbgOutputDebugString("ERROR: %s File not found\r\n", sFileName);
 	return (UINT32)-1;
 }
-
-
 // read magic number(7) : "N000FF\x0A" == BL_IMAGE_TYPE_MANIFEST
 // read packet checksum(4)
 // read region number(4)
@@ -208,7 +333,7 @@ static UINT32 makeManifestImage(UINT32 dwImageType, MultiBINInfo *pMultiBIN, UIN
 	{
 		pCurRegion = &pMultiBIN->Region[i];
 
-		dwFileSize = FATFileRead(pCurRegion->szFileName, pFileData);
+		dwFileSize = fatFileRead(pCurRegion->szFileName, pFileData);
 		if ((UINT32)-1 == dwFileSize)
 			return (UINT32)-1;
 
@@ -242,7 +367,6 @@ static UINT32 makeManifestImage(UINT32 dwImageType, MultiBINInfo *pMultiBIN, UIN
 
 	return (UINT32)(pFileData - pBuffer);
 }
-
 #define MAX_LST_SIZE	512
 static BOOL parsingChainListFile(const char *sFileName, MultiBINInfo *pMultiBIN)
 {
@@ -251,7 +375,7 @@ static BOOL parsingChainListFile(const char *sFileName, MultiBINInfo *pMultiBIN)
 	UINT8 *pPtr;
 
 	memset((void *)szLstBuf, 0, MAX_LST_SIZE);
-	dwFileSize = FATFileRead(sFileName, (UINT8 *)szLstBuf);
+	dwFileSize = fatFileRead(sFileName, (UINT8 *)szLstBuf);
 	if ((UINT32)-1 == dwFileSize || MAX_LST_SIZE < dwFileSize)
 		return FALSE;
 
@@ -285,11 +409,10 @@ static BOOL parsingChainListFile(const char *sFileName, MultiBINInfo *pMultiBIN)
 
 	return TRUE;
 }
-
-static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
+static UINT32 parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 {
 	MultiBINInfo MultiBin;
-	UINT32 dwImageSize;
+	UINT32 dwImageSize = 0;
 
 	switch (dwImageType)
 	{
@@ -304,7 +427,7 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		break;
 
 	case IMAGE_BIN:
-		dwImageSize = FATFileRead(sFileName, (UINT8 *)g_pDownPt);
+		dwImageSize = fatFileRead(sFileName, (UINT8 *)g_pDownPt);
 		if ((UINT32)-1 == dwImageSize)
 			return FALSE;
 		g_pDownPt += dwImageSize;
@@ -320,11 +443,404 @@ static BOOL parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 		g_pDownPt += dwImageSize;
 		break;
 
+	case IMAGE_WBF:
+		dwImageSize = fatFileRead(sFileName, (UINT8 *)g_pDownPt);
+		if ((UINT32)-1 == dwImageSize)
+			return FALSE;
+		g_pDownPt += dwImageSize;
+		break;
+
 	default:
+		return dwImageSize;
+	}
+
+	return dwImageSize;
+}
+
+static void HALT(DWORD dwReason)
+{
+	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+
+	if (dwReason)
+	{
+		EdbgOutputDebugString("ERROR: HALT(%d)\r\n", dwReason);
+
+		EPDOutputString("ERROR: HALT(%d)\r\n", dwReason);
+		EPDOutputFlush();
+	}
+	pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);	// GPC[3] PWRHOLD
+	while (1);
+}
+static BOOL verifyChecksum(DWORD cbRecord, LPBYTE pbRecord, DWORD dwChksum)
+{
+	// Check the CRC
+	DWORD dwCRC = 0;
+	DWORD i;
+
+	for (i=0; i<cbRecord; i++)
+		dwCRC += *pbRecord ++;
+	if (dwCRC != dwChksum)
+		EdbgOutputDebugString("ERROR: Checksum failure (expected=0x%x  computed=0x%x)\r\n", dwChksum, dwCRC);
+
+	return (dwCRC == dwChksum);
+}
+
+static BL_IMAGE_TYPE getImageType(void)
+{
+	BL_IMAGE_TYPE rval = BL_IMAGE_TYPE_UNKNOWN;
+
+	// read the 7 byte "magic number"
+	if (!OEMReadData(BL_HDRSIG_SIZE, g_hdr))
+	{
+		EdbgOutputDebugString("\r\nERROR: Unable to read image signature.\r\n");
+		return BL_IMAGE_TYPE_NOT_FOUND;
+	}
+
+	// The N000FF packet indicates a manifest, which is constructed by Platform 
+	// Builder when we're downloading multiple .bin files or an .nb0 file.
+	if (!memcmp (g_hdr, "N000FF\x0A", BL_HDRSIG_SIZE))
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_MANIFEST\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_MANIFEST;
+	}
+	else if (!memcmp (g_hdr, "X000FF\x0A", BL_HDRSIG_SIZE))
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_MULTIXIP\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_MULTIXIP;
+	}
+	else if (!memcmp (g_hdr, "B000FF\x0A", BL_HDRSIG_SIZE))
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_BIN\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_BIN;
+	}
+	else if (!memcmp (g_hdr, "S000FF\x0A", BL_HDRSIG_SIZE))
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_SIGNED_BIN\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_SIGNED_BIN;
+	}
+	else if (!memcmp (g_hdr, "R000FF\x0A", BL_HDRSIG_SIZE))
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_SIGNED_NB0\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_SIGNED_NB0;
+	}
+	else
+	{
+		EdbgOutputDebugString("\r\nBL_IMAGE_TYPE_UNKNOWN\r\n\r\n");
+		rval =  BL_IMAGE_TYPE_UNKNOWN;
+	}
+
+	return rval;  
+}
+static BOOL checkImageManifest(void)
+{
+	DWORD dwRecChk;
+
+	// read the packet checksum.
+	if (!OEMReadData(sizeof(DWORD), (LPBYTE) &dwRecChk))
+	{
+		EdbgOutputDebugString("\r\nERROR: Unable to read download manifest checksum.\r\n");
+		HALT(BLERR_MAGIC);
 		return FALSE;
 	}
 
-	//EdbgOutputDebugString("\r\n\tjhlee build date(%s) time(%s)\r\n", __DATE__, __TIME__);
+	// read region descriptions (start address and length).
+	if (!OEMReadData(sizeof(DWORD), (LPBYTE) &g_DownloadManifest.dwNumRegions) ||
+		!OEMReadData((g_DownloadManifest.dwNumRegions * sizeof(RegionInfo)), (LPBYTE) &g_DownloadManifest.Region[0]))
+	{
+		EdbgOutputDebugString("\r\nERROR: Unable to read download manifest information.\r\n");
+		HALT(BLERR_MAGIC);
+		return FALSE;
+	}
+
+	// verify the packet checksum.
+	if (!verifyChecksum((g_DownloadManifest.dwNumRegions * sizeof(RegionInfo)), (LPBYTE)&g_DownloadManifest.Region[0], dwRecChk))
+	{
+		EdbgOutputDebugString("\r\nERROR: Download manifest packet failed checksum verification.\r\n");
+		HALT(BLERR_CHECKSUM);
+		return FALSE;
+	}
+
 	return TRUE;
+}
+static BOOL isKernelRegion(DWORD dwRegionStart, DWORD dwRegionLength)
+{
+	DWORD dwCacheAddress = 0;
+	ROMHDR *pROMHeader;
+	DWORD dwNumModules = 0;
+	TOCentry *plTOC;
+
+	if (dwRegionStart == 0 || dwRegionLength == 0)
+		return(FALSE);
+
+	if (*(LPDWORD) OEMMapMemAddr(dwRegionStart, dwRegionStart + ROM_SIGNATURE_OFFSET) != ROM_SIGNATURE)
+		return (FALSE);
+
+	// A pointer to the ROMHDR structure lives just past the ROM_SIGNATURE (which is a longword value).  Note that
+	// this pointer is remapped since it might be a flash address (image destined for flash), but is actually cached
+	// in RAM.
+	dwCacheAddress = *(LPDWORD) OEMMapMemAddr(dwRegionStart, dwRegionStart + ROM_SIGNATURE_OFFSET + sizeof(ULONG));
+	pROMHeader     = (ROMHDR *) OEMMapMemAddr(dwRegionStart, dwCacheAddress + g_dwROMOffset);
+
+	// Make sure sure are some modules in the table of contents.
+	if ((dwNumModules = pROMHeader->nummods) == 0)
+		return (FALSE);
+
+	// Locate the table of contents and search for the kernel executable and the TOC immediately follows the ROMHDR.
+	plTOC = (TOCentry *)(pROMHeader + 1);
+
+	while (dwNumModules--) {
+		LPBYTE pFileName = OEMMapMemAddr(dwRegionStart, (DWORD)plTOC->lpszFileName + g_dwROMOffset);
+		if (!strcmp(pFileName, "nk.exe")) {
+			return TRUE;
+		}
+		++plTOC;
+	}
+	return FALSE;
+}
+static BOOL downloadBin(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr)
+{
+	RegionInfo *pCurDownloadFile;
+	LPBYTE      lpDest = NULL;
+	DWORD       dwImageStart, dwImageLength, dwRecAddr, dwRecLen, dwRecChk;
+	DWORD       dwRecNum = 0;
+
+	if (!OEMReadData(sizeof(DWORD), (LPBYTE)&dwImageStart)
+		|| !OEMReadData(sizeof(DWORD), (LPBYTE)&dwImageLength))
+	{
+		EdbgOutputDebugString("Unable to read image start/length\r\n");
+		HALT(BLERR_MAGIC);
+	}
+
+	// If Platform Builder didn't provide a manifest (i.e., we're only 
+	// downloading a single .bin file), manufacture a manifest so we
+	// can notify the OEM.
+	if (!g_DownloadManifest.dwNumRegions)
+	{
+		g_DownloadManifest.dwNumRegions             = 1;
+		g_DownloadManifest.Region[0].dwRegionStart  = dwImageStart;
+		g_DownloadManifest.Region[0].dwRegionLength = dwImageLength;
+	}
+
+	// Provide the download manifest to the OEM.
+	if (!g_fOEMNotified && g_pOEMMultiBINNotify)
+	{
+		g_pOEMMultiBINNotify((PDownloadManifest)&g_DownloadManifest);
+		g_fOEMNotified = TRUE;
+	}
+
+	// Locate the current download manifest entry (current download file).
+	pCurDownloadFile = &g_DownloadManifest.Region[g_DownloadManifest.dwNumRegions - g_downloadFilesRemaining];
+
+	// give the OEM a chance to verify memory
+	if (!OEMVerifyMemory(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionLength))
+	{
+		EdbgOutputDebugString("!OEMVERIFYMEMORY: Invalid image\r\n");
+		HALT(BLERR_OEMVERIFY);
+	}
+
+	//------------------------------------------------------------------------
+	//  Download .bin records
+	//------------------------------------------------------------------------
+	while ( OEMReadData(sizeof(DWORD), (LPBYTE)&dwRecAddr) &&
+			OEMReadData(sizeof(DWORD), (LPBYTE)&dwRecLen)  &&
+			OEMReadData(sizeof(DWORD), (LPBYTE)&dwRecChk) )
+	{
+		// last record of .bin file uses sentinel values for address and checksum.
+		if (!dwRecAddr && !dwRecChk)
+			break;
+
+		// map the record address (FLASH data is cached, for example)
+		lpDest = OEMMapMemAddr(pCurDownloadFile->dwRegionStart, dwRecAddr);
+
+		// read data block
+		if (!OEMReadData(dwRecLen, lpDest))
+		{
+			EdbgOutputDebugString("****** Data record %d corrupted, ABORT!!! ******\r\n", dwRecNum);
+			HALT(BLERR_CORRUPTED_DATA);
+		}
+
+		if (!verifyChecksum(dwRecLen, lpDest, dwRecChk))
+		{
+			EdbgOutputDebugString("****** Checksum failure on record %d, ABORT!!! ******\r\n", dwRecNum);
+			HALT(BLERR_CHECKSUM);
+		}
+
+		// Look for ROMHDR to compute ROM offset.  NOTE: romimage guarantees that the record containing
+		// the TOC signature and pointer will always come before the record that contains the ROMHDR contents.
+		if (dwRecLen == sizeof(ROMHDR) && (*(LPDWORD)OEMMapMemAddr(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionStart + ROM_SIGNATURE_OFFSET) == ROM_SIGNATURE))
+		{
+			DWORD dwTempOffset = (dwRecAddr - *(LPDWORD)OEMMapMemAddr(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionStart + ROM_SIGNATURE_OFFSET + sizeof(ULONG)));
+			ROMHDR *pROMHdr = (ROMHDR *)lpDest;
+
+			// Check to make sure this record really contains the ROMHDR.
+			if ((pROMHdr->physfirst == (pCurDownloadFile->dwRegionStart - dwTempOffset)) &&
+				(pROMHdr->physlast  == (pCurDownloadFile->dwRegionStart - dwTempOffset + pCurDownloadFile->dwRegionLength)) &&
+				(DWORD)(HIWORD(pROMHdr->dllfirst << 16) <= pROMHdr->dlllast) &&
+				(DWORD)(LOWORD(pROMHdr->dllfirst << 16) <= pROMHdr->dlllast))
+			{
+				g_dwROMOffset = dwTempOffset;
+				EdbgOutputDebugString("rom_offset=0x%x.\r\n", g_dwROMOffset);
+			}
+		}
+
+		// verify partial checksum
+		OEMShowProgress(dwRecNum++);
+	}  // while ( records remaining )
+    
+
+	//------------------------------------------------------------------------
+	//  Determine the image entry point
+	//------------------------------------------------------------------------
+
+	// Does this .bin file contain a TOC?
+	if (*(LPDWORD)OEMMapMemAddr(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionStart + ROM_SIGNATURE_OFFSET) == ROM_SIGNATURE)
+	{
+		// Contain the kernel?
+		if (isKernelRegion(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionLength))
+		{
+			*pdwImageStart  = pCurDownloadFile->dwRegionStart;
+			*pdwImageLength = pCurDownloadFile->dwRegionLength;
+			*pdwLaunchAddr  = dwRecLen;
+		}
+	}
+	// No TOC - not made by romimage.  
+	else if (g_DownloadManifest.dwNumRegions == 1)
+	{
+		*pdwImageStart  = pCurDownloadFile->dwRegionStart;
+		*pdwImageLength = pCurDownloadFile->dwRegionLength;
+		*pdwLaunchAddr  = dwRecLen;
+	}
+	else
+	{
+		// If we're downloading more than one .bin file, it's probably 
+		// chain.bin which doesn't have a TOC (and which isn't
+		// going to be downloaded on its own) and we should ignore it.
+	}
+
+	EdbgOutputDebugString("ImageStart = 0x%x, ImageLength = 0x%x, LaunchAddr = 0x%x\r\n",
+		*pdwImageStart, *pdwImageLength, *pdwLaunchAddr);
+
+	return TRUE;
+}
+static BOOL downloadNB0(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr)
+{
+	RegionInfo *pCurDownloadFile;
+	LPBYTE      lpDest = NULL;
+
+	// Provide the download manifest to the OEM.  This gives the OEM the
+	// opportunity to provide start addresses for the .nb0 files (which 
+	// don't contain placement information like .bin files do).
+	if (!g_fOEMNotified && g_pOEMMultiBINNotify)
+	{
+		g_pOEMMultiBINNotify((PDownloadManifest)&g_DownloadManifest);
+		g_fOEMNotified = TRUE;
+	}
+
+	// Locate the current download manifest entry (current download file).
+	pCurDownloadFile = &g_DownloadManifest.Region[g_DownloadManifest.dwNumRegions - g_downloadFilesRemaining];
+
+	// give the OEM a chance to verify memory
+	if (!OEMVerifyMemory(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionLength))
+	{
+		EdbgOutputDebugString("!OEMVERIFYMEMORY: Invalid image\r\n");
+		HALT(BLERR_OEMVERIFY);
+	}
+
+	//------------------------------------------------------------------------
+	//  Download the file
+	//
+	//  If we're downloading an UNSIGNED .nb0 file, we've already read the 
+	//  start of the file in GetImageType().
+	//  Copy what we've read so far to the destination, then finish downloading.
+	//------------------------------------------------------------------------
+	lpDest = OEMMapMemAddr(pCurDownloadFile->dwRegionStart, pCurDownloadFile->dwRegionStart);
+	memcpy(lpDest, g_hdr, BL_HDRSIG_SIZE);
+	lpDest += BL_HDRSIG_SIZE;
+	if (!OEMReadData((pCurDownloadFile->dwRegionLength - BL_HDRSIG_SIZE), lpDest))
+	{
+		EdbgOutputDebugString("ERROR: failed when reading raw binary file.\r\n");
+		HALT(BLERR_CORRUPTED_DATA);
+	}
+
+	//------------------------------------------------------------------------
+	//  Determine the image entry point
+	//------------------------------------------------------------------------
+	*pdwImageStart  = pCurDownloadFile->dwRegionStart;
+	*pdwLaunchAddr  = pCurDownloadFile->dwRegionStart;
+	*pdwImageLength = pCurDownloadFile->dwRegionLength;
+
+	EdbgOutputDebugString("ImageStart = 0x%x, ImageLength = 0x%x, LaunchAddr = 0x%x\r\n",
+		*pdwImageStart, *pdwImageLength, *pdwLaunchAddr);
+
+	return TRUE;
+}
+static BOOL downloadImage(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr)
+{
+	BOOL  rval = TRUE;
+	DWORD dwImageType;
+
+	*pdwImageStart = *pdwImageLength = *pdwLaunchAddr = 0;
+	g_downloadFilesRemaining = 1;
+	g_fOEMNotified = FALSE;
+	memset(&g_DownloadManifest, 0x00, sizeof(DownloadManifest));
+
+	// Download each region (multiple can be sent)
+	do
+	{
+		dwImageType = getImageType();
+		switch (dwImageType) 
+		{
+		case BL_IMAGE_TYPE_MANIFEST:
+			// Platform Builder sends a manifest to indicate the following 
+			// data consists of multiple .bin files /OR/ one .nb0 file.
+			if (!checkImageManifest()) {
+				HALT(BLERR_MAGIC);
+			}
+
+			// Continue with download of next file
+			// +1 to account for the manifest
+			g_downloadFilesRemaining = (BYTE)(g_DownloadManifest.dwNumRegions + 1);
+			continue;
+
+		case BL_IMAGE_TYPE_BIN:
+			rval &= downloadBin(pdwImageStart, pdwImageLength, pdwLaunchAddr);
+			break;
+
+		case BL_IMAGE_TYPE_UNKNOWN:
+			// Assume files without a "type" header (e.g. raw data) are unsigned .nb0
+			rval &= downloadNB0(pdwImageStart, pdwImageLength, pdwLaunchAddr);
+			break;
+
+		default:
+			// should never get here
+			return (FALSE);
+		}
+	}
+	while (--g_downloadFilesRemaining);
+
+	return rval;
+}
+static void writeImage(void)
+{
+	DWORD dwImageStart = 0, dwImageLength = 0, dwLaunchAddr = 0, dwpToc = 0;
+	if (!downloadImage(&dwImageStart, &dwImageLength, &dwLaunchAddr))
+	{
+		// error already reported in DownloadImage
+		HALT(-900);
+	}
+	// Check for pTOC signature ("CECE") here, after image in place
+	if (*(LPDWORD)OEMMapMemAddr(dwImageStart, dwImageStart + ROM_SIGNATURE_OFFSET) == ROM_SIGNATURE)
+	{
+		dwpToc = *(LPDWORD)OEMMapMemAddr(dwImageStart, dwImageStart + ROM_SIGNATURE_OFFSET + sizeof(ULONG));
+		// need to map the content again since the pointer is going to be in a fixup address
+		dwpToc = (DWORD)OEMMapMemAddr(dwImageStart, dwpToc + g_dwROMOffset);
+		EdbgOutputDebugString("ROMHDR at Address %Xh\r\n", dwImageStart + ROM_SIGNATURE_OFFSET + sizeof(DWORD)); // right after signature
+	}
+
+	if (!WriteRawImageToBootMedia(dwImageStart, dwImageLength, dwLaunchAddr))
+	{
+		OALMSG(OAL_ERROR, (TEXT("ERROR: OEMLaunch: Failed to store image to Smart Media.\r\n")));
+		HALT(-901);
+	}
 }
 
