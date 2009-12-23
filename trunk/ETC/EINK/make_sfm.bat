@@ -19,4 +19,4 @@ copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_Q11_60_TE1601_BTC.wbf /b Cmd0
 @ REM < New_Instruction + 08_Gray >
 copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_B067_60_VD1301_BTC.wbf /b Cmd0047c0fi250fo5d0300s00cd8d02_V110_B067_60_VD1301_BTC.wbf
 
-copy Cmd0047c0fi250fo5d0300s00cd8d02_V110_B067_60_VD1301_BTC.wbf default.wbf
+copy Cmd0047c0fi250fo5d0300s00cd8d02_V110_B067_60_VD1301_BTC.wbf EpsonBS.wbf
