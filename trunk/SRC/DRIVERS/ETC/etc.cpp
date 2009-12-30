@@ -268,7 +268,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 					SetEvent(g_hEventSDMMCCH2CD);
 
 					dwRet = WaitForSingleObject(g_hEventSDMMCCH2ERR, 500);
-					if (WAIT_TIMEOUT== dwRet)
+					if (WAIT_TIMEOUT == dwRet)
 						break;
 					else //if (WAIT_OBJECT_0 == dwRet)
 					{
@@ -308,6 +308,47 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
 		break;
 
+	case IOCTL_GET_BOARD_REVISIOIN:
+		bRet = g_pBspArgs->bBoardRevision;
+		break;
+	case IOCTL_GET_BOOTLOADER_BUILD_DATETIME:
+		if (pOutBuf && 32 == nOutBufSize)	// g_pBspArgs->szBootloaderBuildDateTime[32];
+		{
+			PVOID pMarshalledOutBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_GET_BOOTLOADER_BUILD_DATETIME for OUT buf.\r\n")));
+				return FALSE;
+			}
+
+			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->szBootloaderBuildDateTime[0], 32);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_GET_BOOTLOADER_BUILD_DATETIME for OUT buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
+	case IOCTL_GET_WINCE_BUILD_DATETIME:
+		if (pOutBuf && 32 == nOutBufSize)	// g_pBspArgs->szWinCEBuildDateTime[32];
+		{
+			PVOID pMarshalledOutBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_GET_WINCE_BUILD_DATETIME for OUT buf.\r\n")));
+				return FALSE;
+			}
+
+			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->szWinCEBuildDateTime[0], 32);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_GET_WINCE_BUILD_DATETIME for OUT buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
 
 	case IOCTL_SET_BOARD_UUID:
 		if (pInBuf && 16 == nInBufSize)	// g_pBspArgs->uuid[16];

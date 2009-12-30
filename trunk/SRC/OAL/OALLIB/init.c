@@ -188,6 +188,9 @@ void OEMInit()
         // Notify to filesys.exe that we want a clean boot.
         NKForceCleanBoot();
     }
+#ifdef	OMNIBOOK_VER
+	strcpy(((BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START)->szWinCEBuildDateTime, __TIMESTAMP__);
+#endif	OMNIBOOK_VER
 
     // Initialize Interrupts
     //

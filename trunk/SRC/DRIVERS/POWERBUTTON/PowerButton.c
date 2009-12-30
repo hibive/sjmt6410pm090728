@@ -74,8 +74,6 @@ DBGPARAM dpCurSettings =                                \
 #ifdef	OMNIBOOK_VER
 INT WINAPI BatteryFaultThread(void)
 {
-	DWORD dwWakeSrc, dwBytesRet;
-
 	while(!g_bExitThread)
 	{
 		WaitForSingleObject(g_hEventBatFlt, INFINITE);
@@ -86,11 +84,16 @@ INT WINAPI BatteryFaultThread(void)
 		g_pSYSCONReg->OTHERS = (g_pSYSCONReg->OTHERS & ~(1<<12)) | (1<<12);
 		InterruptDone(g_dwSysIntrBatFlt);
 
-		dwWakeSrc = SYSWAKE_UNKNOWN;
-		dwBytesRet = 0;
-		KernelIoControl(IOCTL_HAL_GET_WAKE_SOURCE, NULL, 0, &dwWakeSrc, sizeof(dwWakeSrc), &dwBytesRet);
-		RETAILMSG(1, (_T("\tBattery Fault Thread(WAKE_SOURCE = 0x%08X)\r\n"), dwWakeSrc));
-		if (OEMWAKE_EINT0 != dwWakeSrc)
+		RETAILMSG(1, (_T("\t g_pArgs->dwBatteryFault(%x)\r\n"), g_pArgs->dwBatteryFault));
+
+		if (0 == g_pArgs->dwBatteryFault)
+			g_pArgs->dwBatteryFault = 1;
+		else if (0x41 == g_pArgs->dwBatteryFault)	// Eint0 | Battery Fault
+			g_pArgs->dwBatteryFault = 1;
+		else //if (0x1 == g_pArgs->dwBatteryFault)	// Eint0
+			g_pArgs->dwBatteryFault = 0;
+
+		if (g_pArgs->dwBatteryFault)
 		{
 			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 			PROCESS_INFORMATION pi;
@@ -111,7 +114,6 @@ INT WINAPI BatteryFaultThread(void)
 				CloseHandle(pi.hThread);
 				CloseHandle(pi.hProcess);
 			}
-			g_pArgs->bBatteryFault = TRUE;
 			SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 		}
 	}

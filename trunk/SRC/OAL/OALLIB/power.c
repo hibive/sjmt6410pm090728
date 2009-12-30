@@ -177,7 +177,7 @@ static void S3C6410_WakeUpSource_Configure(void)
 #endif
                             |(1<<7);        // Battery Fault    (Disabled)
 #ifdef	OMNIBOOK_VER
-	if (pArgs->bBatteryFault)
+	if (pArgs->dwBatteryFault)
 	{
 		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<10)) | (1<<10);	// RTC ALARM (Disabled)
 		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<8)) | (1<<8);		// Keypad (Disabled)
@@ -191,7 +191,7 @@ static void S3C6410_WakeUpSource_Configure(void)
     // External Interrupt
     //-----------------
 #ifdef	OMNIBOOK_VER
-	if (FALSE == pArgs->bBatteryFault)
+	if (0 == pArgs->dwBatteryFault)
 	{
 		// Power Button EINT[9] (GPN[9] is Retention Port)
 		pGPIOReg->GPNCON = (pGPIOReg->GPNCON & ~(0x3<<18)) | (0x2<<18);	// GPN[9] as EINT[9]
@@ -208,7 +208,7 @@ static void S3C6410_WakeUpSource_Configure(void)
 
     pSysConReg->EINT_MASK = 0x0FFFFFFF;        // Mask All EINT Wake Up Source at Sleep
 #ifdef	OMNIBOOK_VER
-	if (FALSE == pArgs->bBatteryFault)
+	if (0 == pArgs->dwBatteryFault)
 		pSysConReg->EINT_MASK &= ~(1<<9);	// Enable EINT[9] as Wake Up Source at Sleep
 	pSysConReg->EINT_MASK &= ~(1<<0);	// Enable EINT[0] as Wake Up Source at Sleep
 #else	//!OMNIBOOK_VER
@@ -251,6 +251,7 @@ static void S3C6410_WakeUpSource_Detect(void)
     {
     case 0x1:    // External Interrupt
 #ifdef	OMNIBOOK_VER
+	case 0x41:	// BATFLT | External Interrupt
 		if (pGPIOReg->EINT0PEND&(1<<9))			// Power Button : EINT[9]
 		{
 			g_oalWakeSource = SYSWAKE_POWER_BUTTON;	// OEMWAKE_EINT9;
@@ -315,7 +316,9 @@ static void S3C6410_WakeUpSource_Detect(void)
 		// Clearing Battery Fault interrupt bit
 		pSysConReg->OTHERS = (pSysConReg->OTHERS & ~(1<<12)) | (1<<12);
 	}
-	pArgs->bBatteryFault = FALSE;
+
+	if (pArgs->dwBatteryFault)
+		pArgs->dwBatteryFault = g_LastWakeupStatus;
 #endif	OMNIBOOK_VER
 
     // Clear All Wake Up Status bits

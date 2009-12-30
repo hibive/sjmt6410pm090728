@@ -102,10 +102,14 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 		"CHAIN   LST",	// 3 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
 		"EPSONBS WBF",	// 4
 	}, *pSelFile;
-	BYTE KeySelect = bSelect;
+	BYTE KeySelect = 0;
 	BOOL bRet = TRUE;
 
-	if (0 == KeySelect)
+	if (1 == bSelect)		// Bootloader Update
+		KeySelect = '6';
+	else if (2 == bSelect)	// OS Update
+		KeySelect = '3';
+	else
 	{
 		EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
 		EdbgOutputDebugString("1) BLOCK0.NB0\r\n");
@@ -113,7 +117,7 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 		EdbgOutputDebugString("3) NK.BIN\r\n");
 		EdbgOutputDebugString("4) CHAIN.LST\r\n");
 		EdbgOutputDebugString("5) EPSONBS.WBF\r\n");
-		EdbgOutputDebugString("6) Power Off ...\r\n");
+		EdbgOutputDebugString("6) Nand Format And Bootloader Update\r\n");
 		EdbgOutputDebugString("\r\nEnter your selection: ");
 
 		EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
@@ -122,11 +126,11 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 		EPDOutputString("3) NK.BIN\r\n");
 		EPDOutputString("4) CHAIN.LST\r\n");
 		EPDOutputString("5) EPSONBS.WBF\r\n");
-		EPDOutputString("6) Power Off ...\r\n");
+		EPDOutputString("6) Nand Format And Bootloader Update\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
 
-		while (!(((KeySelect >= '1') && (KeySelect <= '5'))))
+		while (!(((KeySelect >= '1') && (KeySelect <= '6'))))
 		{
 			KeySelect = OEMReadDebugByte();
 			if ((BYTE)OEM_DEBUG_READ_NODATA == KeySelect)
@@ -145,32 +149,27 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 	{
 	case '1':	// BLOCK0.NB0
 		pSelFile = file_name[0];
-		bRet &= fatFileExist(pSelFile);
-		if (bRet)
+		if (fatFileExist(pSelFile))
 			bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
 		break;
 	case '2':	// EBOOT.BIN
 		pSelFile = file_name[1];
-		bRet &= fatFileExist(pSelFile);
-		if (bRet)
+		if (fatFileExist(pSelFile))
 			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
 	case '3':	// NK.BIN
 		pSelFile = file_name[2];
-		bRet &= fatFileExist(pSelFile);
-		if (bRet)
+		if (fatFileExist(pSelFile))
 			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
 		break;
 	case '4':	// CHAIN.LST
 		pSelFile = file_name[3];
-		bRet &= fatFileExist(pSelFile);
-		if (bRet)
+		if (fatFileExist(pSelFile))
 			bRet = parsingImageFromSD(IMAGE_LST, pSelFile);
 		break;
 	case '5':	// EPSONBS.WBF
 		pSelFile = file_name[4];
-		bRet &= fatFileExist(pSelFile);
-		if (bRet)
+		if (fatFileExist(pSelFile))
 		{
 			BLOB blob = {0,};
 			blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
@@ -185,44 +184,61 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 			HALT(0);
 		}
 		return FALSE;
-
-	case '9':	// Format All -> EpsonBS.wbf -> Block0.nb0 -> Eboot.bin
-		if (fatFileExist(file_name[0]) && fatFileExist(file_name[1]) && fatFileExist(file_name[4]))
+	case '6':	// Format All -> <EpsonBS.wbf> -> Block0.nb0 -> Eboot.bin
+		if (fatFileExist(file_name[0]) && fatFileExist(file_name[1]))
 		{
-			/*VFL_Close();
+			EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
+			EPDOutputString("+++ Nand Flash Format All\r\n");
+			EPDOutputFlush();
+			VFL_Close();
 			WMR_Format_FIL();
+			EdbgOutputDebugString("--- Nand Flash Format All\r\n");
+			EPDOutputString("--- Nand Flash Format All\r\n");
+			EPDOutputFlush();
 
-			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 			pSelFile = file_name[4];
+			if (fatFileExist(pSelFile))
 			{
 				BLOB blob = {0,};
+				EdbgOutputDebugString("+++ EpsonBS.wbf Write\r\n");
+				EPDOutputString("+++ EpsonBS.wbf Write\r\n");
+				EPDOutputFlush();
 				blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
 				blob.pBlobData = (PBYTE)readPtIndex;
 				bRet = EPDSerialFlashWrite((void *)&blob);
-				OALMSG(TRUE, (TEXT("INFO: Step loader image stored to Smart Media\r\n")));
+				EdbgOutputDebugString("--- EpsonBS.wbf Write\r\n");
+				EPDOutputString("--- EpsonBS.wbf Write\r\n");
+				EPDOutputFlush();
 			}
 
 			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 			pSelFile = file_name[0];
-			if (parsingImageFromSD(IMAGE_NB0, pSelFile))
-			{
-				writeImage();
-				OALMSG(TRUE, (TEXT("INFO: Step loader image stored to Smart Media\r\n")));
-			}
+			EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
+			EPDOutputString("+++ Block0.nb0 Write\r\n");
+			EPDOutputFlush();
+			parsingImageFromSD(IMAGE_NB0, pSelFile);
+			writeImage();
+			EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
+			EPDOutputString("--- Block0.nb0 Write\r\n");
+			EPDOutputFlush();
 
 			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 			pSelFile = file_name[1];
-			if (parsingImageFromSD(IMAGE_BIN, pSelFile))
-			{
-				writeImage();
-				OALMSG(TRUE, (TEXT("INFO: Eboot image stored to Smart Media\r\n")));
-			}
+			EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
+			EPDOutputString("+++ Eboot.bin Write\r\n");
+			EPDOutputFlush();
+			parsingImageFromSD(IMAGE_BIN, pSelFile);
+			writeImage();
+			EdbgOutputDebugString("--- Eboot.bin Write\r\n");
+			EPDOutputString("--- Eboot.bin Write\r\n");
+			EPDOutputFlush();
 
-			HALT(0);*/
+			HALT(0);
 		}
+		else
+			HALT(-800);
 		return FALSE;
 
 	default:
@@ -459,16 +475,16 @@ static UINT32 parsingImageFromSD(UINT32 dwImageType, const char *sFileName)
 
 static void HALT(DWORD dwReason)
 {
-	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+	EdbgOutputDebugString("SpinForever... (%d)\r\n", dwReason);
 
-	if (dwReason)
+	EPDOutputString("SpinForever... (%d)\r\n", dwReason);
+	EPDOutputFlush();
+
+	VFL_Sync();
 	{
-		EdbgOutputDebugString("ERROR: HALT(%d)\r\n", dwReason);
-
-		EPDOutputString("ERROR: HALT(%d)\r\n", dwReason);
-		EPDOutputFlush();
+		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+		pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);	// GPC[3] PWRHOLD
 	}
-	pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);	// GPC[3] PWRHOLD
 	while (1);
 }
 static BOOL verifyChecksum(DWORD cbRecord, LPBYTE pbRecord, DWORD dwChksum)

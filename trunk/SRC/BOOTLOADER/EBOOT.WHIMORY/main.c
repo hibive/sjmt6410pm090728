@@ -112,6 +112,7 @@ BOOL 			g_bWaitForConnect = TRUE;
 BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
 #ifdef	OMNIBOOK_VER
+BYTE			g_AutoSDMMCDownload = 0;	// 1(Bootloader), 2(OS)
 BOOL			g_bSDMMCDownload = FALSE;
 BOOL			*g_bHiveCleanFlag;
 BOOL			*g_bFormatPartitionFlag;
@@ -501,8 +502,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "E) Erase Physical Block 0\r\n");
 #ifndef	OMNIBOOK_VER
         EdbgOutputDebugString ( "F) Make Initial Bad Block Information (Warning)\r\n");
-#endif	//!OMNIBOOK_VER
         EdbgOutputDebugString ( "T) MLC Low level test \r\n");
+#endif	//!OMNIBOOK_VER
         EdbgOutputDebugString ( "D) Download image now\r\n");
         EdbgOutputDebugString ( "L) LAUNCH existing Boot Media image\r\n");
         EdbgOutputDebugString ( "R) Read Configuration \r\n");
@@ -530,6 +531,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("X) Epson Instruction byte code update(Default)\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
+		if (g_AutoSDMMCDownload)
+			KeySelect = 'S';
 #endif	OMNIBOOK_VER
 
         while (! ( ( (KeySelect >= '0') && (KeySelect <= '8') ) ||
@@ -540,8 +543,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'E') || (KeySelect == 'e') ) ||
 #ifndef	OMNIBOOK_VER
                    ( (KeySelect == 'F') || (KeySelect == 'f') ) ||
-#endif	OMNIBOOK_VER
                    ( (KeySelect == 'T') || (KeySelect == 't') ) ||
+#endif	OMNIBOOK_VER
                    ( (KeySelect == 'L') || (KeySelect == 'l') ) ||
                    ( (KeySelect == 'R') || (KeySelect == 'r') ) ||
 #ifdef	OMNIBOOK_VER
@@ -882,11 +885,11 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			OALMSG(TRUE, (TEXT(" --Make Initial Bad Block Information (Warning)\r\n")));
 		}
 		break;
-#endif	OMNIBOOK_VER
         case 'T':           // Download? Yes.
         case 't':
 			MLC_LowLevelTest();
-		break;
+			break;
+#endif	OMNIBOOK_VER
         case 'D':           // Download? Yes.
         case 'd':
             bDownload = TRUE;
@@ -1083,6 +1086,7 @@ BOOL OEMPlatformInit(void)
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x2A<<0);		// Pull-up enable
 	pBSPArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
 
+	strcpy(pBSPArgs->szBootloaderBuildDateTime, __TIMESTAMP__);
 	InitializeInterrupt();
 #endif	OMNIBOOK_VER
 
@@ -1160,6 +1164,16 @@ BOOL OEMPlatformInit(void)
 			EKEY_DATA KeyData = GetKeypad();
 			if (KeyData == (KEY_HOLD | KEY_HOME))
 				KeySelect = 0x20;
+			else if (KeyData == (KEY_HOLD | KEY_B))
+			{
+				KeySelect = 0x20;
+				g_AutoSDMMCDownload = 1;
+			}
+			else if (KeyData == (KEY_HOLD | KEY_O))
+			{
+				KeySelect = 0x20;
+				g_AutoSDMMCDownload = 2;
+			}
 		}
 #endif	OMNIBOOK_VER
 
@@ -1432,7 +1446,7 @@ DWORD OEMPreDownload(void)
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
-		if (FALSE == ChooseImageFromSDMMC(0))
+		if (FALSE == ChooseImageFromSDMMC(g_AutoSDMMCDownload))
 		{
 			OALMSG(OAL_ERROR, (L"ERROR: ChooseImageFromSDMMC call failed\r\n"));;
 			SpinForever();
@@ -2184,6 +2198,7 @@ static void SpinForever(void)
 #endif	OMNIBOOK_VER
 
 #ifdef	OMNIBOOK_VER
+	VFL_Sync();
 	{
 		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 		// GPC[3] PWRHOLD
