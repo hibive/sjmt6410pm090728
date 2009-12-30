@@ -277,7 +277,7 @@ static BOOL fatFileExist(const char *sFileName)
 	}
 
 	EdbgOutputDebugString("ERROR: %s File not found\r\n", sFileName);
-	return TRUE;
+	return FALSE;
 }
 static UINT32 fatFileRead(const char *sFileName, UINT8 *pStartBuf)
 {
