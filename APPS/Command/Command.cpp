@@ -181,7 +181,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		{
 			RETAILMSG(1, (_T("SLEEP : RegOpenCreateStr(%s, %s)\r\n"), BMP_SLEEP_REG_STRING, szSleep));
 			// +++
-			ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 0, NULL, 0, NULL);
+			ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
 			// ---
 			bRet = dispShutdown(hDC, szSleep);
 		}
@@ -210,6 +210,9 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 				BMP_LOWBATTERY_REG_STRING, BMP_LOWBATTERY_REG_DEFAULT));
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), BMP_LOWBATTERY_REG_DEFAULT);
 		}
+		// +++
+		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
+		// ---
 		bRet = dispShutdown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
 		RegFlushKey(HKEY_LOCAL_MACHINE);

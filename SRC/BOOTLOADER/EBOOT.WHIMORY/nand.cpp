@@ -32,6 +32,7 @@ extern MultiBINInfo g_BINRegionInfo;
 extern DWORD        g_dwImageStartBlock;
 extern BOOL         g_bWaitForConnect;		// Is there a SmartMedia card on this device?
 
+#ifndef	OMNIBOOK_VER
 // MLC low level test function
 // by dodan2 061102
 extern UINT32 MLC_Read_RAW(UINT32 nBank, UINT32 nPpn, UINT8 *pMBuf, UINT8 *pSBuf);
@@ -42,8 +43,7 @@ extern void _Read_512Byte(UINT8* pBuf);
 extern void _Read_512Byte_Unaligned(UINT8* pBuf);
 extern void _Write_512Byte(UINT8* pBuf);
 extern void _Write_512Byte_Unaligned(UINT8* pBuf);
-
-#ifdef	OMNIBOOK_VER
+#else	//OMNIBOOK_VER
 extern void EPDShowProgress(DWORD dwCurrent, DWORD dwTotal);
 #endif	OMNIBOOK_VER
 }
@@ -1088,6 +1088,7 @@ MarkAndSkipBadBlock:
 	return TRUE;
 }
 
+#ifndef	OMNIBOOK_VER
 static DWORD GetDecimalNumber(void)
 {
 	DWORD dwNumber = 0;
@@ -1870,3 +1871,4 @@ void MLC_LowLevelTest(void)
 		else OALMSG(TRUE, (TEXT("Wrong selection\r\n")));
 	}
 }
+#endif	OMNIBOOK_VER

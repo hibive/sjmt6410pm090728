@@ -1086,6 +1086,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return g_PowerState;
 
 	case DRVESC_SYSTEM_SLEEP:
+		if (100 == cjIn)
 		{
 			g_bSBSet = TRUE;
 			g_bSBDirtyRect = g_bDirtyRect;

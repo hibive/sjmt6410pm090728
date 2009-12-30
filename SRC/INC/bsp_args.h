@@ -57,7 +57,10 @@ typedef struct
 	BYTE	WFM_bFPLSize;			// (0x32=5", 0x3C=6", 0x50=8", 0x61=9.7")
 	BYTE	WFM_bMFGCode;			// (0x01=PVI, 0x02=LGD)
 
-	BOOL	bBatteryFault;
+	DWORD	dwBatteryFault;
+
+	CHAR	szBootloaderBuildDateTime[32];
+	CHAR	szWinCEBuildDateTime[32];
 	// ...
 #else	//!OMNIBOOK_VER
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.

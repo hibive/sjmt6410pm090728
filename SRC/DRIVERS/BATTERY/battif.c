@@ -12,7 +12,7 @@
 #define BATT_LEVEL_CNT	5
 #define ADC_SAMPLE_NUM	8
 #define ADC_LEVEL_MAX	2800
-#define ADC_LEVEL_MIN	2400
+#define ADC_LEVEL_MIN	2300
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
@@ -135,6 +135,8 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 				g_PowerStatus.BatteryFlag = BATTERY_FLAG_CRITICAL;*/
 #endif	BATT_LOG_TEST
 		}
+		if (5 > nPercent)
+			nPercent = 5;
 		g_PowerStatus.BatteryLifePercent    = nPercent;
 		g_PowerStatus.BatteryVoltage        = nLevel;
 		g_PowerStatus.BatteryCurrent        = nAvgLevel;
