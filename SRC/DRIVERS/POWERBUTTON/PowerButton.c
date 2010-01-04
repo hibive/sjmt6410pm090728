@@ -337,7 +337,7 @@ AllocResources(void)
         return FALSE;
 	}
 	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
-	g_pArgs = (volatile S3C6410_SYSCON_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
+	g_pArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
 	if (g_pArgs == NULL)
 	{
 		RETAILMSG(PWR_ZONE_ERROR,(_T("[PWR:ERR] %s() : g_pArgs MmMapIoSpace() Failed \n\r"), _T(__FUNCTION__)));
@@ -472,10 +472,17 @@ static void InitInterrupt(void)
     // Clear Interrupt Pending
     Button_pwrbtn_clear_interrupt_pending();
     Button_rstbtn_clear_interrupt_pending();
+#ifdef	OMNIBOOK_VER
+	g_pSYSCONReg->OTHERS = (g_pSYSCONReg->OTHERS & ~(1<<12)) | (1<<12);
+	g_pSYSCONReg->PWR_CFG = (g_pSYSCONReg->PWR_CFG & ~(1<<3)) | (1<<3);		// generate interrupt
+#endif	OMNIBOOK_VER
 
     // Enable Interrupt
     Button_pwrbtn_enable_interrupt();
     Button_rstbtn_enable_interrupt();
+#ifdef	OMNIBOOK_VER
+	InterruptMask(g_dwSysIntrBatFlt, FALSE);
+#endif	OMNIBOOK_VER
 }
 
 

@@ -12,7 +12,7 @@
 #define BATT_LEVEL_CNT	5
 #define ADC_SAMPLE_NUM	8
 #define ADC_LEVEL_MAX	2800
-#define ADC_LEVEL_MIN	2300
+#define ADC_LEVEL_MIN	2200
 
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;

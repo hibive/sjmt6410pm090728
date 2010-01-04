@@ -1523,6 +1523,14 @@ void InitializeInterrupt(void)
 //    EdbgOutputDebugString("INFO: (unsigned)IsrHandler : 0x%x\r\n", (unsigned)IsrHandler);
 
     VIC_InterruptEnable(PHYIRQ_OTG);
+#ifdef	OMNIBOOK_VER
+	VIC_InterruptEnable(PHYIRQ_BATF);
+{
+	volatile S3C6410_SYSCON_REG *pSYSCONReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
+	pSYSCONReg->OTHERS = (pSYSCONReg->OTHERS & ~(1<<12)) | (1<<12);
+	pSYSCONReg->PWR_CFG = (pSYSCONReg->PWR_CFG & ~(1<<3)) | (1<<3);		// generate interrupt
+}
+#endif	OMNIBOOK_VER
 }
 
 void C_IsrHandler(unsigned int val)
@@ -1538,6 +1546,18 @@ void C_IsrHandler(unsigned int val)
         OTGDEV_HandleEvent();
         VIC_InterruptEnable(PHYIRQ_OTG);
     }
+#ifdef	OMNIBOOK_VER
+	else if (irq == PHYIRQ_BATF)
+	{
+		extern DWORD g_dwBatteryFaultCount;
+		volatile S3C6410_SYSCON_REG *pSYSCONReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
+
+		VIC_InterruptDisable(PHYIRQ_BATF);
+		pSYSCONReg->OTHERS = (pSYSCONReg->OTHERS & ~(1<<12)) | (1<<12);
+		g_dwBatteryFaultCount++;
+		VIC_InterruptEnable(PHYIRQ_BATF);
+	}
+#endif	OMNIBOOK_VER
 
     VIC_ClearVectAddr();
 }
