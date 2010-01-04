@@ -312,7 +312,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		bRet = g_pBspArgs->bBoardRevision;
 		break;
 	case IOCTL_GET_BOOTLOADER_BUILD_DATETIME:
-		if (pOutBuf && 32 == nOutBufSize)	// g_pBspArgs->szBootloaderBuildDateTime[32];
+		if (pOutBuf && sizeof(SYSTEMTIME) == nOutBufSize)	// g_pBspArgs->stBootloader;
 		{
 			PVOID pMarshalledOutBuf = NULL;
 			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
@@ -321,7 +321,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				return FALSE;
 			}
 
-			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->szBootloaderBuildDateTime[0], 32);
+			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->stBootloader, sizeof(SYSTEMTIME));
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
 			{
@@ -331,7 +331,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		}
 		break;
 	case IOCTL_GET_WINCE_BUILD_DATETIME:
-		if (pOutBuf && 32 == nOutBufSize)	// g_pBspArgs->szWinCEBuildDateTime[32];
+		if (pOutBuf && sizeof(SYSTEMTIME) == nOutBufSize)	// g_pBspArgs->stWinCE;
 		{
 			PVOID pMarshalledOutBuf = NULL;
 			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
@@ -340,7 +340,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				return FALSE;
 			}
 
-			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->szWinCEBuildDateTime[0], 32);
+			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->stWinCE, sizeof(SYSTEMTIME));
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
 			{

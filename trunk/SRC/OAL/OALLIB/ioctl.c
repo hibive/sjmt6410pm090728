@@ -535,6 +535,7 @@ static BOOL OALIoCtlHalInitRegistry(
 }
 
 #ifdef	OMNIBOOK_VER
+extern INT32 VFL_Sync(VOID);
 static BOOL OALIoCtlHalOmnibookShutdown(
         UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
         VOID *lpOutBuf, UINT32 nOutBufSize, UINT32* lpBytesReturned)

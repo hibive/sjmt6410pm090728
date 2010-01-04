@@ -63,6 +63,8 @@ extern BOOL InitializeSDMMC(void);
 extern BOOL ChooseImageFromSDMMC(BYTE bSelect);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
+
+extern void GetReleaseDate(LPCSTR lpTimeStamp, LPSYSTEMTIME lpst);
 #endif	OMNIBOOK_VER
 
 
@@ -1089,18 +1091,22 @@ BOOL OEMPlatformInit(void)
 	g_DevID = (UCHAR *)OALArgsQuery( OAL_ARGS_QUERY_DEVID);
 
 #ifdef	OMNIBOOK_VER
-	EdbgOutputDebugString("\t 111 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 	if (1 < g_dwBatteryFaultCount)
+	{
+		EdbgOutputDebugString("\t 111 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 		SpinForever();
+	}
 #endif	OMNIBOOK_VER
 
 	// Initialize the display.
 	InitializeDisplay();
 
 #ifdef	OMNIBOOK_VER
-	EdbgOutputDebugString("\t 222 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 	if (1 < g_dwBatteryFaultCount)
+	{
+		EdbgOutputDebugString("\t 222 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 		SpinForever();
+	}
 #endif	OMNIBOOK_VER
 
 #ifdef	OMNIBOOK_VER
@@ -1108,8 +1114,7 @@ BOOL OEMPlatformInit(void)
 	pGPIOReg->GPMCON = (pGPIOReg->GPMCON & ~(0xFFF<<0)) | (0x000<<0);	// Input
 	pGPIOReg->GPMPUD = (pGPIOReg->GPMPUD & ~(0x3F<<0)) | (0x2A<<0);		// Pull-up enable
 	pBSPArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
-
-	strcpy(pBSPArgs->szBootloaderBuildDateTime, __TIMESTAMP__);
+	GetReleaseDate(__TIMESTAMP__, &pBSPArgs->stBootloader);
 #endif	OMNIBOOK_VER
 
 	g_dwImageStartBlock = IMAGE_START_BLOCK;
@@ -1740,9 +1745,11 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 	}
 
 #ifdef	OMNIBOOK_VER
-	EdbgOutputDebugString("\t 333 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 	if (1 < g_dwBatteryFaultCount)
+	{
+		EdbgOutputDebugString("\t 333 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
 		SpinForever();
+	}
 
 	{
 		unsigned char buf[2];

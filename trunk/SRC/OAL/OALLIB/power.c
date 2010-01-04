@@ -35,6 +35,7 @@ static void S3C6410_WakeUpSource_Detect(void);
 #define	PMIC_ADDR	0xCC
 extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
 extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
+extern INT32 VFL_Sync(VOID);
 #endif	OMNIBOOK_VER
 
 VOID BSPPowerOff()

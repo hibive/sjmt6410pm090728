@@ -26,7 +26,6 @@
 ; @CESYSGEN ENDIF WCESHELLFE_MODULES_CTLPNL
 ;-------------------------------------------------------------------------
 
-
 ;-------------------------------------------------------------------------
 ; @CESYSGEN IF WCESHELLFE_MODULES_EXPLORER
 ; This registry setting controls display of the Explorer's suspend menu button
@@ -41,7 +40,6 @@
 	"ScreenPowerOff"=dword:0
 ; @CESYSGEN ENDIF WCESHELLFE_MODULES_EXPLORER
 ;-------------------------------------------------------------------------
-
 
 ;------------ Display Driver -------------------------------------------------
 ; @CESYSGEN IF CE_MODULES_DISPLAY
@@ -97,7 +95,6 @@ ENDIF BSP_DISPLAY_BROADSHEET
 ; @CESYSGEN ENDIF CE_MODULES_DISPLAY
 ;-------------------------------------------------------------------------
 
-
 ;------------ Touch Driver -------------------------------------------------
 ; @CESYSGEN IF CE_MODULES_POINTER
 IF BSP_NOTOUCH !
@@ -139,7 +136,6 @@ ENDIF BSP_TOUCH_UART
 ; @CESYSGEN ENDIF CE_MODULES_POINTER
 ;-------------------------------------------------------------------------
 
-
 ;--------------Key Board Driver---------------------------------------------
 ; @CESYSGEN IF CE_MODULES_KEYBD
 IF BSP_NOKEYBD !
@@ -149,7 +145,6 @@ ENDIF BSP_NOKEYBD !
 ; @CESYSGEN ENDIF CE_MODULES_KEYBD
 ;------------------------------------------------------------------------------
 
-
 ;------------ Direct3D Mobile -----------------------------------------------
 ; @CESYSGEN IF DIRECTX_MODULES_D3DM
 IF BSP_NOD3DM !
@@ -158,7 +153,6 @@ IF BSP_NOD3DM !
 ENDIF BSP_NOD3DM !
 ; @CESYSGEN ENDIF DIRECTX_MODULES_D3DM
 ;-------------------------------------------------------------------------
-
 
 ;-------------------------------------------------------------------------
 ; HIVE BOOT SECTION
@@ -183,10 +177,8 @@ ENDIF IMGHIVEREG
 ; END HIVE BOOT SECTION
 ;-------------------------------------------------------------------------
 
-
 ;-------------------------------------------------------------------------
 ; @CESYSGEN IF CE_MODULES_DEVICE
-
 
 ;-------------- NAND Flash Block Device Driver ----------------------------------
 ; @CESYSGEN IF CE_MODULES_FSDMGR
@@ -201,7 +193,6 @@ IF BSP_POCKETMORY
 	"LoadFlags"=dword:1
 	"BootPhase"=dword:0
 	"MountFlags"=dword:11
-
 IF IMGHIVEREG
 	"MountAsBootable"=dword:1
 ENDIF IMGHIVEREG
@@ -215,7 +206,6 @@ ENDIF IMGHIVEREG
 	"FriendlyName"="Samsung Flash Driver"
 	"MountFlags"=dword:11	
 	"BootPhase"=dword:0
-	
 IF IMGHIVEREG
 	"Flags"=dword:1000
 ENDIF IMGHIVEREG
@@ -230,15 +220,14 @@ ENDIF IMGHIVEREG
 	"Folder"="ResidentFlash"
 	"Name"="Samsung Flash Disk"
 	"BootPhase"=dword:0
-    	
+
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\SMFlash\BINFS]
     "MountHidden"=dword:1
     "MountAsROM"=dword:1
-    
+
 [HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\SMFlash\Filters\CacheFilt]
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
-
 
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\FDSK]
    "Prefix"="DSK"
@@ -252,7 +241,6 @@ ENDIF IMGHIVEREG
    "WMRStartSector"=dword:0
    "WMRNumOfSector"=dword:10000	; 32MByte
    "ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
-
 IF IMGHIVEREG
    "Flags"=dword:1000
 ENDIF IMGHIVEREG
@@ -283,11 +271,8 @@ ENDIF IMGHIVEREG
 ;    "EnableCacheWarm"=dword:0
     "CheckForFormat"=dword:1
     "EnableWriteBack"=dword:1
-	
     "MountAsRoot"=dword:1		; for ROM-only file system    
-    
     "DisableAutoScan"=dword:1
-    
 IF IMGHIVEREG
    "MountAsBootable"=dword:1
 ENDIF IMGHIVEREG
@@ -316,7 +301,6 @@ ENDIF IMGHIVEREG
    "WMRStartSector"=dword:10000
    "WMRNumOfSector"=dword:ffffffff	; last location
    "ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
-   
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1]
     "DefaultFileSystem"="FATFS"
@@ -335,7 +319,6 @@ ENDIF IMGHIVEREG
     "LoadFlags"=dword:1
     "BootPhase"=dword:0
 
-
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS]
     "FriendlyName"="PocketMory FAT FileSystem1"
 ;    "Dll"="fatfsd.dll"
@@ -350,7 +333,6 @@ ENDIF OMNIBOOK_VER
     "CheckForFormat"=dword:1
     "EnableWriteBack"=dword:1
 
-
 [HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\FDSK1\Filters\CacheFilt]
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
@@ -359,7 +341,6 @@ ENDIF OMNIBOOK_VER
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
 
-
 ENDIF BSP_POCKETMORY
 ENDIF BSP_IROM_SDMMC_CH1_BOOT !
 ENDIF BSP_IROM_SDMMC_CH0_BOOT !
@@ -367,7 +348,6 @@ ENDIF BSP_IROM_SDMMC_CH0_BOOT !
 ; END HIVE BOOT SECTION
 ; @CESYSGEN ENDIF CE_MODULES_FSDMGR
 ;-------------------------------------------------------------------------
-
 
 ;-------------- HSMMC/SD Device Driver ---------------------------------------
 ; @CESYSGEN IF CE_MODULES_SDBUS
@@ -471,7 +451,6 @@ ENDIF BSP_NOHSMMC_CH0 ! || BSP_NOHSMMC_CH1 ! || BSP_NOHSMMC_CH2 !
 ; @CESYSGEN ENDIF CE_MODULES_SDBUS
 ;---------------------------------------------------------------------------
 
-
 ;-------------- CF ATAPI Device Driver ---------------------------------------
 ; @CESYSGEN IF CE_MODULES_ATAPI
 IF BSP_NOCFATAPI !
@@ -528,7 +507,6 @@ ENDIF BSP_NOCFATAPI !
 ; @CESYSGEN ENDIF CE_MODULES_ATAPI
 ;---------------------------------------------------------------------------
 
-
 ;------------ Power Control Driver -------------------------------------------
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\PowerControl]
 	"Dll"="s3c6410_PwrCon.dll"
@@ -537,7 +515,6 @@ ENDIF BSP_NOCFATAPI !
 	"Index"=dword:0
 	"FriendlyName"="S3C6410 Power Control Driver"
 ;-------------------------------------------------------------------------
-
 
 ;------------ Power Button Driver -------------------------------------------
 IF BSP_NOPWRBTN !
@@ -550,7 +527,6 @@ IF BSP_NOPWRBTN !
 ENDIF BSP_NOPWRBTN !
 ;-------------------------------------------------------------------------
 
-
 ;------------ Video Engine Driver -------------------------------------------
 IF BSP_NOVIDEO !
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\VideoEngine]
@@ -561,6 +537,7 @@ IF BSP_NOVIDEO !
 	"FriendlyName"="S3C6410 Video Engine Driver"
 ENDIF BSP_NOVIDEO !
 ;-------------------------------------------------------------------------
+
 ;------------ I2C Bus Driver ------------------------------------------------
 IF BSP_NOI2C !
 ;; I2C Bus Driver
@@ -575,7 +552,6 @@ IF BSP_NOI2C !
 	"IClass"="{A32942B7-920C-486b-B0E6-92A702A99B35}"   ; Power-manageable generic
 ENDIF BSP_NOI2C !
 ;-------------------------------------------------------------------------
-
 
 ;-------------- Wave Device Driver -----------------------------------------
 ; @CESYSGEN IF CE_MODULES_WAVEAPI
@@ -598,7 +574,6 @@ IF BSP_NOAUDIO !
 ENDIF BSP_NOAUDIO !
 ; @CESYSGEN ENDIF CE_MODULES_WAVEAPI
 ;-------------------------------------------------------------------------
-
 
 ;------------ USB Function Driver -------------------------------------------
 ; @CESYSGEN IF CE_MODULES_USBFN
@@ -664,7 +639,6 @@ ENDIF BSP_USBFNCLASS
 	"Index"=dword:3
 ;-------------------------------------------------------------------------
 
-
 [HKEY_CURRENT_USER\ControlPanel\Comm]
 	"Cnct"="`USB"
 
@@ -698,7 +672,6 @@ ENDIF BSP_NOUSBHCD !
 ; @CESYSGEN ENDIF CE_MODULES_USBD
 ;-------------------------------------------------------------------------
 
-
 ;------------ Camera Capture Filter Driver ------------------------------------
 IF BSP_NOCAMERA !
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\CameraDriver]
@@ -720,7 +693,6 @@ IF BSP_NOCAMERA !
 ENDIF BSP_NOCAMERA!
 ;-------------------------------------------------------------------------
 
-
 ;------------ High Speed SPI Driver ------------------------------------------
 IF BSP_NOSPI !
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\spi]
@@ -730,7 +702,6 @@ IF BSP_NOSPI !
 	"Order"=dword:30
 ENDIF BSP_NOSPI !
 ;-------------------------------------------------------------------------
-
 
 ;--------------- Serial / IrDA Driver -----------------------------------------
 ; @CESYSGEN IF CE_MODULES_SERIAL
@@ -933,11 +904,9 @@ ENDIF
 ENDIF BSP_NOSIR !
 ; @CESYSGEN ENDIF CE_MODULES_IRDASTK
 
-
 ENDIF BSP_NOSERIAL !
 ; @CESYSGEN ENDIF CE_MODULES_SERIAL
 ;--------------------------------------------------------------------------
-
 
 ; This drivers will be delivered separately from BSP.
 ; At default, comment out.
@@ -961,7 +930,6 @@ IF BSP_NOJPEG !
 	"Order"=dword:30
 ENDIF BSP_NOJPEG !
 ;------------------------------------------------------------------------------
-
 
 ;-------------- CMM Driver -----------------------------------------------------
 IF BSP_NOCMM !
@@ -1025,7 +993,6 @@ IF BSP_NOBACKLIGHT !
 ENDIF BSP_NOBACKLIGHT !
 ;------------------------------------------------------------------------------
 
-
 ;-------------- iROM SDMMC Drivers ----------------------------------
 ; @CESYSGEN IF CE_MODULES_FSDMGR
 IF BSP_IROMBOOT !
@@ -1038,7 +1005,6 @@ IF BSP_IROM_SDMMC_CH0_BOOT || BSP_IROM_SDMMC_CH1_BOOT
 	"Order"=dword:0
 	"Profile"="SDBOOT"
 	"IClass"="{A4E7EDDA-E575-4252-9D6B-4195D48BB865}"
-
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\SDBOOT]
 	"DefaultFileSystem"="BINFS"
@@ -1140,7 +1106,6 @@ IF BSP_ACCELERATION
 ENDIF BSP_ACCELERATION
 ;----------------------------------------------------------------------------
 
-
 ; @CESYSGEN ENDIF CE_MODULES_DEVICE
 ;-------------------------------------------------------------------------
 
@@ -1149,7 +1114,6 @@ IF SAMPLES_DSHOWFILTERS
 ENDIF SAMPLES_DSHOWFILTERS
 
 #include "$(_TARGETPLATROOT)\FILES\rasbook.reg"
-
 
 IF OMNIBOOK_VER
 
