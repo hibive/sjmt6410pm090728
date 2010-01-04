@@ -229,3 +229,51 @@ VOID OEMWriteDebugString(LPWSTR string)
 
 
 //------------------------------------------------------------------------------
+
+#ifdef	OMNIBOOK_VER
+static int ascii2digit(char ch)
+{
+	if (0x30<=ch && 0x39>=ch)
+		return(ch-'0');
+	return 0;
+}
+void GetReleaseDate(LPCSTR lpTimeStamp, LPSYSTEMTIME lpst)
+{
+	char *szDayOfWeek[] =	{
+		"Sun","Mon","Tue","Wed","Thu","Fri","Sat"
+	};
+	char *szMonth[] =	{
+		"Jan","Feb","Mar","Apr","May","Jun",
+		"Jul","Aug","Sep","Oct","Nov","Dec"
+	};
+	char *pTmp;
+
+	pTmp = (char *)lpTimeStamp;	// "Wed Dec 30 15:51:20 2009"
+	for (lpst->wDayOfWeek=0; lpst->wDayOfWeek<sizeof(szDayOfWeek)/sizeof(szDayOfWeek[0]); lpst->wDayOfWeek++)
+	{
+		if (!strncmp(pTmp, szDayOfWeek[lpst->wDayOfWeek], 3))
+			break;
+	}
+	pTmp += 4;	// "Dec 30 15:51:20 2009"
+	for (lpst->wMonth=0; lpst->wMonth<sizeof(szMonth)/sizeof(szMonth[0]); lpst->wMonth++)
+	{
+		if (!strncmp(pTmp, szMonth[lpst->wMonth], 3))
+		{
+			lpst->wMonth++;
+			break;
+		}
+	}
+	pTmp += 4;	// "30 15:51:20 2009"
+	lpst->wDay = ascii2digit(*pTmp)*10 + ascii2digit(*(pTmp+1));
+	pTmp += 3;	// "15:51:20 2009"
+	lpst->wHour = ascii2digit(*pTmp)*10 + ascii2digit(*(pTmp+1));
+	pTmp += 3;	// "51:20 2009"
+	lpst->wMinute = ascii2digit(*pTmp)*10 + ascii2digit(*(pTmp+1));
+	pTmp += 3;	// "20 2009"
+	lpst->wSecond = ascii2digit(*pTmp)*10 + ascii2digit(*(pTmp+1));
+	pTmp += 3;	// "2009"
+	lpst->wYear= ascii2digit(*pTmp)*1000 + ascii2digit(*(pTmp+1))*100
+		 + ascii2digit(*(pTmp+2))*10 + ascii2digit(*(pTmp+3));
+}
+#endif	OMNIBOOK_VER
+

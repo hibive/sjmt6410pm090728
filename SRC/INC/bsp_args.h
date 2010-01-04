@@ -59,8 +59,8 @@ typedef struct
 
 	DWORD	dwBatteryFault;
 
-	CHAR	szBootloaderBuildDateTime[32];
-	CHAR	szWinCEBuildDateTime[32];
+	SYSTEMTIME stBootloader;
+	SYSTEMTIME stWinCE;
 	// ...
 #else	//!OMNIBOOK_VER
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.

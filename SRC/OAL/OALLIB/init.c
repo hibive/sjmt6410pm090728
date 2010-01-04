@@ -54,6 +54,7 @@ extern void InitializeOTGCLK(void);
 #define	PMIC_ADDR	0xCC
 extern void IICWriteByte(unsigned long slvAddr, unsigned long addr, unsigned char data);
 extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char *data);
+extern void GetReleaseDate(LPCSTR lpTimeStamp, LPSYSTEMTIME lpst);
 #endif	OMNIBOOK_VER
 
 //------------------------------------------------------------------------------
@@ -188,9 +189,6 @@ void OEMInit()
         // Notify to filesys.exe that we want a clean boot.
         NKForceCleanBoot();
     }
-#ifdef	OMNIBOOK_VER
-	strcpy(((BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START)->szWinCEBuildDateTime, __TIMESTAMP__);
-#endif	OMNIBOOK_VER
 
     // Initialize Interrupts
     //
@@ -211,6 +209,10 @@ void OEMInit()
     // Initialize the KITL connection if required
     //
     KITLIoctl(IOCTL_KITL_STARTUP, NULL, 0, NULL, 0, NULL);
+	
+#ifdef	OMNIBOOK_VER
+	GetReleaseDate(__TIMESTAMP__, &((BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START)->stWinCE);
+#endif	OMNIBOOK_VER
 
     OALMSG(1 && OAL_FUNC, (L"[OAL] --OEMInit()\r\n"));
 }
