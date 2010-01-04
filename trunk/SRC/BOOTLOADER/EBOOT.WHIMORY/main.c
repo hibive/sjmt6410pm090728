@@ -116,6 +116,7 @@ BYTE			g_AutoSDMMCDownload = 0;	// 1(Bootloader), 2(OS)
 BOOL			g_bSDMMCDownload = FALSE;
 BOOL			*g_bHiveCleanFlag;
 BOOL			*g_bFormatPartitionFlag;
+DWORD			g_dwBatteryFaultCount = 0;
 #endif	OMNIBOOK_VER
 
 //for KITL Configuration Of Args
@@ -940,7 +941,6 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				data[0] = 0x91 | (1<<5);	// [bit5] ELDO8 - VDD_OTG(3.3V)
 				IICWriteByte(PMIC_ADDR, 0x01, data[0]);
 
-				InitializeInterrupt();
 			    pSysConReg->HCLK_GATE |= (1<<20);
 				OTGDEV_SetSoftDisconnect();
 				InitializeUSB();
@@ -1026,6 +1026,17 @@ BOOL OEMPlatformInit(void)
 	data[0] = 0x9B;	// DVSINT2[7:4]=1.20V, DVSINT1[3:0]=1.30V
 	IICWriteByte(PMIC_ADDR, 0x06, data[0]);
 	// --- i2c settings ---
+
+	InitializeInterrupt();
+
+	data[0] = 0x90;	// Turn Battery Monitor Off
+	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+	data[0] = 0x91;	// Turn Battery Monitor On
+	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+	{
+		volatile int delay = 100000;
+		while (delay--);
+	}
 #endif	OMNIBOOK_VER
 
 	// Check if Current ARM speed is not matched to Target Arm speed
@@ -1077,8 +1088,20 @@ BOOL OEMPlatformInit(void)
 	g_KITLConfig = (OAL_KITL_ARGS *)OALArgsQuery(OAL_ARGS_QUERY_KITL);
 	g_DevID = (UCHAR *)OALArgsQuery( OAL_ARGS_QUERY_DEVID);
 
+#ifdef	OMNIBOOK_VER
+	EdbgOutputDebugString("\t 111 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
+	if (1 < g_dwBatteryFaultCount)
+		SpinForever();
+#endif	OMNIBOOK_VER
+
 	// Initialize the display.
 	InitializeDisplay();
+
+#ifdef	OMNIBOOK_VER
+	EdbgOutputDebugString("\t 222 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
+	if (1 < g_dwBatteryFaultCount)
+		SpinForever();
+#endif	OMNIBOOK_VER
 
 #ifdef	OMNIBOOK_VER
 	// GPM[2:0] BOARD_REV
@@ -1087,7 +1110,6 @@ BOOL OEMPlatformInit(void)
 	pBSPArgs->bBoardRevision = (BYTE)(pGPIOReg->GPMDAT & 0x7);
 
 	strcpy(pBSPArgs->szBootloaderBuildDateTime, __TIMESTAMP__);
-	InitializeInterrupt();
 #endif	OMNIBOOK_VER
 
 	g_dwImageStartBlock = IMAGE_START_BLOCK;
@@ -1718,6 +1740,10 @@ void OEMLaunch( DWORD dwImageStart, DWORD dwImageLength, DWORD dwLaunchAddr, con
 	}
 
 #ifdef	OMNIBOOK_VER
+	EdbgOutputDebugString("\t 333 - g_dwBatteryFaultCount(%d)\r\n", g_dwBatteryFaultCount);
+	if (1 < g_dwBatteryFaultCount)
+		SpinForever();
+
 	{
 		unsigned char buf[2];
 		IICReadByte(PMIC_ADDR, 0x00, buf);
@@ -2193,7 +2219,10 @@ static void SpinForever(void)
 {
 	EdbgOutputDebugString("SpinForever...\r\n");
 #ifdef	OMNIBOOK_VER
-	EPDOutputString("SpinForever...\r\n");
+	if (1 >= g_dwBatteryFaultCount)
+		EPDOutputString("SpinForever...\r\n");
+	else
+		EPDOutputString("Low Battery...\r\n");
 	EPDOutputFlush();
 #endif	OMNIBOOK_VER
 

@@ -159,19 +159,18 @@ static BOOL RunProgram(LPCWSTR lpszImageName, LPCWSTR lpszCmdLine, DWORD dwWait)
 
 static BOOL CheckWifiMacAddress(void)
 {
-	BOOL bRet;
+	BOOL bRet = FALSE;
 	HANDLE hEtc;
-	int nRetry = 0;
+ 	int nRetry = 0;
 	WSADATA WsaData;
 
 	hEtc = CreateFile(ETC_DRIVER_NAME,
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_EXISTING, 0, 0);
-	if (INVALID_HANDLE_VALUE == hEtc)
+ 	if (INVALID_HANDLE_VALUE == hEtc)
 	{
 		RETAILMSG(1, (_T("ERROR : INVALID_HANDLE_VALUE == CreateFile(%s)\r\n"), ETC_DRIVER_NAME));
-		bRet = FALSE;
 		goto goto_Cleanup;
 	}
 
@@ -180,7 +179,6 @@ goto_Retry:
 	if (0 != WSAStartup(MAKEWORD(1, 1), &WsaData))
 	{
 		RETAILMSG(1, (_T("ERROR : WSAStartup failed (error %ld)\r\n"), GetLastError()));
-		bRet = FALSE;
 		goto goto_Cleanup;
 	}
 
