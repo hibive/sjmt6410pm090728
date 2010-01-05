@@ -327,6 +327,9 @@ BOOL TOC_Write(void)
 	INT32 nRet;
 	UINT8 *pSBuf;
 	UINT32 nSyncRet;
+#ifdef	OMNIBOOK_VER
+	ULONG ulOldConfigFlags;
+#endif	OMNIBOOK_VER
 
 	EdbgOutputDebugString("+TOC_Write\r\n");
 
@@ -352,6 +355,7 @@ BOOL TOC_Write(void)
 	}
 
 #ifdef	OMNIBOOK_VER
+	ulOldConfigFlags = g_pTOC->BootCfg.ConfigFlags;
 	if (g_pTOC->BootCfg.ConfigFlags & BOOT_OPTION_HIVECLEAN)
 		g_pTOC->BootCfg.ConfigFlags = (g_pTOC->BootCfg.ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
 	if (g_pTOC->BootCfg.ConfigFlags & BOOT_OPTION_FORMATPARTITION)
@@ -430,6 +434,9 @@ MarkAndSkipBadBlock:
 		}
 	}
 
+#ifdef	OMNIBOOK_VER
+	g_pTOC->BootCfg.ConfigFlags = ulOldConfigFlags;
+#endif	OMNIBOOK_VER
 	EdbgOutputDebugString("-TOC_Write\r\n");
 
 	return TRUE;

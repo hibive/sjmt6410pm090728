@@ -2157,6 +2157,55 @@ UfnPdd_IsConfigurationSupportable(
     // This PDD does not have any special requirements that cannot be
     // handled through IsEndpointSupportable.
     DWORD dwRet = ERROR_SUCCESS;
+#ifdef	OMNIBOOK_VER
+	pConfiguration->Descriptor.MaxPower = 0xFA;	// 500mA
+#if	0
+	RETAILMSG(1, (_T("UFN_CONFIGURATION +++\r\n")));
+	RETAILMSG(1, (_T("=== pConfiguration->dwCount(%d)\r\n"), pConfiguration->dwCount));
+	RETAILMSG(1, (_T("===USB_CONFIGURATION_DESCRIPTOR +++\r\n")));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.bLength(%d)\r\n"), pConfiguration->Descriptor.bLength));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.bDescriptorType(%d)\r\n"), pConfiguration->Descriptor.bDescriptorType));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.wTotalLength(%d)\r\n"), pConfiguration->Descriptor.wTotalLength));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.bNumInterfaces(%d)\r\n"), pConfiguration->Descriptor.bNumInterfaces));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.bConfigurationValue(%d)\r\n"), pConfiguration->Descriptor.bConfigurationValue));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.iConfiguration(%d)\r\n"), pConfiguration->Descriptor.iConfiguration));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.bmAttributes(%d)\r\n"), pConfiguration->Descriptor.bmAttributes));
+	RETAILMSG(1, (_T("====== pConfiguration->Descriptor.MaxPower(%d)\r\n"), pConfiguration->Descriptor.MaxPower));
+	RETAILMSG(1, (_T("===USB_CONFIGURATION_DESCRIPTOR ---\r\n")));
+	RETAILMSG(1, (_T("=== pConfiguration->pvExtended(0x%X)\r\n"), pConfiguration->pvExtended));
+	RETAILMSG(1, (_T("=== pConfiguration->cbExtended(%d)\r\n"), pConfiguration->cbExtended));
+	RETAILMSG(1, (_T("===UFN_INTERFACE +++\r\n")));
+	RETAILMSG(1, (_T("====== pConfiguration->pInterfaces->dwCount(%d)\r\n"), pConfiguration->pInterfaces->dwCount));
+	RETAILMSG(1, (_T("=========USB_INTERFACE_DESCRIPTOR +++\r\n")));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bLength(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bLength));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bDescriptorType(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bDescriptorType));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bInterfaceNumber(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bInterfaceNumber));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bAlternateSetting(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bAlternateSetting));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bNumEndpoints(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bNumEndpoints));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bInterfaceClass(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bInterfaceClass));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bInterfaceSubClass(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bInterfaceSubClass));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.bInterfaceProtocol(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.bInterfaceProtocol));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->Descriptor.iInterface(%d)\r\n"), pConfiguration->pInterfaces->Descriptor.iInterface));
+	RETAILMSG(1, (_T("=========USB_INTERFACE_DESCRIPTOR ---\r\n")));
+	RETAILMSG(1, (_T("====== pConfiguration->pInterfaces->pvExtended(0x%X)\r\n"), pConfiguration->pInterfaces->pvExtended));
+	RETAILMSG(1, (_T("====== pConfiguration->pInterfaces->cbExtended(%d)\r\n"), pConfiguration->pInterfaces->cbExtended));
+	RETAILMSG(1, (_T("=========UFN_ENDPOINT +++\r\n")));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->pEndpoints->dwCount(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->dwCount));
+	RETAILMSG(1, (_T("============USB_ENDPOINT_DESCRIPTOR +++\r\n")));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.bLength(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.bLength));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.bDescriptorType(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.bDescriptorType));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.bEndpointAddress(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.bEndpointAddress));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.bmAttributes(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.bmAttributes));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.wMaxPacketSize(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.wMaxPacketSize));
+	RETAILMSG(1, (_T("============ pConfiguration->pInterfaces->pEndpoints->Descriptor.bInterval(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->Descriptor.bInterval));
+	RETAILMSG(1, (_T("============USB_ENDPOINT_DESCRIPTOR ---\r\n")));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->pEndpoints->pvExtended(0x%X)\r\n"), pConfiguration->pInterfaces->pEndpoints->pvExtended));
+	RETAILMSG(1, (_T("========= pConfiguration->pInterfaces->pEndpoints->cbExtended(%d)\r\n"), pConfiguration->pInterfaces->pEndpoints->cbExtended));
+	RETAILMSG(1, (_T("=========UFN_ENDPOINT ---\r\n")));
+	RETAILMSG(1, (_T("===UFN_INTERFACE ---\r\n")));
+	RETAILMSG(1, (_T("UFN_CONFIGURATION ---\r\n")));
+#endif
+#endif	OMNIBOOK_VER
 
     FUNCTION_LEAVE_MSG();
 
@@ -2945,7 +2994,7 @@ UfnPdd_Init(
     {
         if (dii.dwSysintr == SYSINTR_NOP)
         {
-            RETAILMSG(UFN_ZONE_INIT, (_T("[UFNPDD] dii.dwIrq = %d\n\r"), dii.dwIrq));
+            RETAILMSG(UFN_ZONE_INIT, (_T("[UFNPDD] dii.dwIrq = %d\r\n"), dii.dwIrq));
             BOOL fSuccess = KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &dii.dwIrq,
                 sizeof(DWORD), &dii.dwSysintr, sizeof(DWORD), NULL);
             if (!fSuccess)
