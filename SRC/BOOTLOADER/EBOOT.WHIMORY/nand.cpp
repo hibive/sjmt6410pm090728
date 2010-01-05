@@ -351,6 +351,13 @@ BOOL TOC_Write(void)
 		return FALSE;
 	}
 
+#ifdef	OMNIBOOK_VER
+	if (g_pTOC->BootCfg.ConfigFlags & BOOT_OPTION_HIVECLEAN)
+		g_pTOC->BootCfg.ConfigFlags = (g_pTOC->BootCfg.ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
+	if (g_pTOC->BootCfg.ConfigFlags & BOOT_OPTION_FORMATPARTITION)
+		g_pTOC->BootCfg.ConfigFlags = (g_pTOC->BootCfg.ConfigFlags ^ BOOT_OPTION_FORMATPARTITION);
+#endif	OMNIBOOK_VER
+
 	pLowFuncTbl = FIL_GetFuncTbl();
 
 	memset(WMRBuf, '\0', WMRBUFSIZE);

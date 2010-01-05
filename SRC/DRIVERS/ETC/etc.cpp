@@ -322,6 +322,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			}
 
 			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->stBootloader, sizeof(SYSTEMTIME));
+			bRet = TRUE;
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
 			{
@@ -341,6 +342,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			}
 
 			memcpy(pMarshalledOutBuf, (void *)&g_pBspArgs->stWinCE, sizeof(SYSTEMTIME));
+			bRet = TRUE;
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
 			{
@@ -350,6 +352,44 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		}
 		break;
 
+	case IOCTL_GET_BOARD_INFO:
+		if (pOutBuf && 512 == nOutBufSize)	// SECTOR_SIZE
+		{
+			PVOID pMarshalledOutBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_GET_BOARD_INFO for OUT buf.\r\n")));
+				return FALSE;
+			}
+
+			bRet = KernelIoControl(IOCTL_HAL_OMNIBOOK_GET_INFO, NULL, nInBufSize, pMarshalledOutBuf, nOutBufSize, NULL);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_GET_BOARD_INFO for OUT buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
+	case IOCTL_SET_BOARD_INFO:
+		if (pInBuf && 512 == nInBufSize)	// SECTOR_SIZE
+		{
+			PVOID pMarshalledInBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_SET_BOARD_INFO for IN buf.\r\n")));
+				return FALSE;
+			}
+
+			bRet = KernelIoControl(IOCTL_HAL_OMNIBOOK_SET_INFO, pMarshalledInBuf, nInBufSize, NULL, nOutBufSize, NULL);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_SET_BOARD_INFO for IN buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
 	case IOCTL_SET_BOARD_UUID:
 		if (pInBuf && 16 == nInBufSize)	// g_pBspArgs->uuid[16];
 		{
@@ -361,6 +401,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			}
 
 			memcpy((void *)&g_pBspArgs->uuid[0], pMarshalledInBuf, 16);
+			bRet = TRUE;
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR)))
 			{

@@ -36,6 +36,8 @@
 
 #ifdef	OMNIBOOK_VER
 { IOCTL_HAL_OMNIBOOK_SHUTDOWN,				0,    OALIoCtlHalOmnibookShutdown       },
+{ IOCTL_HAL_OMNIBOOK_GET_INFO,				0,    OALIoCtlHalOmnibookGetInfo        },
+{ IOCTL_HAL_OMNIBOOK_SET_INFO,				0,    OALIoCtlHalOmnibookSetInfo        },
 #endif	OMNIBOOK_VER
 
 // Required Termination
