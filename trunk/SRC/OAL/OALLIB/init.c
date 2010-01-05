@@ -27,10 +27,10 @@ UINT32 g_oalIoCtlClockSpeed;
 SYSTEMTIME g_oalRtcResetTime =
 {
 #ifdef	OMNIBOOK_VER
-	2009,	// wYear
-	12,		// wMonth
-	2,		// wDayofWeek
-	1,		// wDay
+	2010,	// wYear
+	1,		// wMonth
+	1,		// wDayofWeek
+	4,		// wDay
 	12,		// wHour
 #else	//!OMNIBOOK_VER
     2007,     // wYear
@@ -212,6 +212,7 @@ void OEMInit()
 	
 #ifdef	OMNIBOOK_VER
 	GetReleaseDate(__TIMESTAMP__, &((BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START)->stWinCE);
+	memcpy(&g_oalRtcResetTime, &((BSP_ARGS *)IMAGE_SHARE_ARGS_UA_START)->stWinCE, sizeof(SYSTEMTIME));
 #endif	OMNIBOOK_VER
 
     OALMSG(1 && OAL_FUNC, (L"[OAL] --OEMInit()\r\n"));

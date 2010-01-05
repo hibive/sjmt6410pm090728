@@ -910,12 +910,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #ifdef	OMNIBOOK_VER
 		case 'H':	// Toggle
 		case 'h':
-			pBootCfg->ConfigFlags= (pBootCfg->ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
+			pBootCfg->ConfigFlags = (pBootCfg->ConfigFlags ^ BOOT_OPTION_HIVECLEAN);
 			//bConfigChanged = TRUE;
 			break;
 		case 'P':	// Toggle
 		case 'p':
-			pBootCfg->ConfigFlags= (pBootCfg->ConfigFlags ^ BOOT_OPTION_FORMATPARTITION);
+			pBootCfg->ConfigFlags = (pBootCfg->ConfigFlags ^ BOOT_OPTION_FORMATPARTITION);
 			//bConfigChanged = TRUE;
 			break;
 		case 'S':

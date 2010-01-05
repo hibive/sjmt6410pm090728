@@ -16,8 +16,6 @@
 #define BMP_LOWBATTERY_REG_STRING	_T("BmpLowbattery")
 #define BMP_LOWBATTERY_REG_DEFAULT	_T("\\Windows\\Omnibook_Lowbattery.bmp")
 
-#define BMP_STARTUP_REG_STRING		_T("BmpStartup")
-
 #define BMP_SLEEP_REG_STRING		_T("BmpSleep")
 
 
@@ -164,17 +162,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		return FALSE;
 
 	hDC = GetDC(HWND_DESKTOP);
-	if (0 == _tcsnicmp(_T("STARTUP"), argv[1], _tcslen(_T("STARTUP"))))
-	{
-		TCHAR szStartup[MAX_PATH] = {0,};
-		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_STARTUP_REG_STRING, szStartup, MAX_PATH, FALSE))
-		{
-			RETAILMSG(1, (_T("STARTUP : RegOpenCreateStr(%s, %s)\r\n"), BMP_STARTUP_REG_STRING, szStartup));
-			bRet = dispShutdown(hDC, szStartup);
-		}
-		RETAILMSG(1, (_T("App_Command => STARTUP(%d)\r\n"), bRet));
-	}
-	else if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
+	if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
 	{
 		TCHAR szSleep[MAX_PATH] = {0,};
 		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SLEEP_REG_STRING, szSleep, MAX_PATH, FALSE))
@@ -267,7 +255,6 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	return 0;
 }
 
-// _T("\\Windows\\App_Command.exe STARTUP");
 // _T("\\Windows\\App_Command.exe SLEEP");
 // _T("\\Windows\\App_Command.exe SHUTDOWN");
 // _T("\\Windows\\App_Command.exe LOWBATTERY");

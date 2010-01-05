@@ -21,12 +21,6 @@
 #define APP_SIPSYMBOL_REG_STRING	_T("AppSipSymbol")
 #define APP_SIPSYMBOL_REG_DEFAULT	_T("\\Windows\\Omnibook_SipSymbol.exe")
 
-#define BMP_STARTUPTIME_REG_STRING	_T("BmpStartupTime")
-#define BMP_STARTUPTIME_REG_DEFAULT	3000	// mSec
-
-#define CFG_SKIPREADMAC_REG_STRING	_T("CfgSkipReadMac")
-#define CFG_SKIPREADMAC_REG_DEFAULT	0
-
 #define	WIFI_CARDNAME_TCHAR			_T("SDIO86861")
 #define	WIFI_CARDNAME_CHAR			"SDIO86861"
 #define	WIFI_CARDNAME_LEN			9
@@ -159,8 +153,9 @@ static BOOL RunProgram(LPCWSTR lpszImageName, LPCWSTR lpszCmdLine, DWORD dwWait)
 
 static BOOL CheckWifiMacAddress(void)
 {
-	BOOL bRet = FALSE;
 	HANDLE hEtc;
+	BOOL bRet = FALSE;
+	BYTE abInfo[512]={0,};
  	int nRetry = 0;
 	WSADATA WsaData;
 
@@ -171,6 +166,21 @@ static BOOL CheckWifiMacAddress(void)
  	if (INVALID_HANDLE_VALUE == hEtc)
 	{
 		RETAILMSG(1, (_T("ERROR : INVALID_HANDLE_VALUE == CreateFile(%s)\r\n"), ETC_DRIVER_NAME));
+		goto goto_Cleanup;
+	}
+
+	bRet = DeviceIoControl(hEtc, IOCTL_GET_BOARD_INFO, NULL, 100, abInfo, sizeof(abInfo), NULL, NULL);
+	if (FALSE == bRet)
+	{
+		RETAILMSG(1, (_T("ERROR : DeviceIoControl(IOCTL_GET_BOARD_INFO)\r\n")));
+		goto goto_Cleanup;
+	}
+
+	if (0 == memcmp(abInfo, "SJMT", 4))
+	{
+		UINT8 szUUID[16]={0,};
+		memcpy(szUUID, abInfo, 16);
+		bRet = DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, sizeof(szUUID), NULL, 0, NULL, NULL);
 		goto goto_Cleanup;
 	}
 
@@ -249,7 +259,15 @@ goto_Retry:
 					RETAILMSG(1, (_T("%02x"), pAdapterInfo->Address[i]));
 				}
 				RETAILMSG(1, (_T("\r\n")));
-				DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, 16, NULL, 0, NULL, NULL);
+				DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, sizeof(szUUID), NULL, 0, NULL, NULL);
+
+				memcpy(abInfo, szUUID, 16);
+				bRet = DeviceIoControl(hEtc, IOCTL_SET_BOARD_INFO, abInfo, sizeof(abInfo), NULL, 100, NULL, NULL);
+				if (FALSE == bRet)
+				{
+					RETAILMSG(1, (_T("ERROR : DeviceIoControl(IOCTL_SET_BOARD_INFO)\r\n")));
+					goto goto_Cleanup;
+				}
 			}
 
 			pAdapterInfo = pAdapterInfo->Next;
@@ -289,46 +307,11 @@ static void DirtyRectUpdate(HDC hDC)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	DWORD dwSkipReadMac=0, dwStartupTime=0, dwStart=0, dwTotal, i;
-	TCHAR szProgram[MAX_PATH]={0,};
-	BOOL bLoop=TRUE, bDispUpdate=FALSE;
+	TCHAR szProgram[MAX_PATH] = {0,};
+	BOOL bDispUpdate = FALSE;
 
-	if (RunProgram(_T("\\Windows\\Omnibook_Command.exe"), _T("STARTUP"), 3000))
-		dwStart = GetTickCount();
+	CheckWifiMacAddress();
 
-	if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, CFG_SKIPREADMAC_REG_STRING, &dwSkipReadMac, FALSE))
-	{
-		RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
-			CFG_SKIPREADMAC_REG_STRING, CFG_SKIPREADMAC_REG_DEFAULT));
-		dwSkipReadMac = CFG_SKIPREADMAC_REG_DEFAULT;
-	}
-	if (0 == dwSkipReadMac)
-		CheckWifiMacAddress();
-
-	if (FALSE == RegOpenCreateDword(OMNIBOOK_REG_KEY, BMP_STARTUPTIME_REG_STRING, &dwStartupTime, FALSE))
-	{
-		RETAILMSG(1, (_T("RegOpenCreateDword(%s), Default(%d)\r\n"),
-			BMP_STARTUPTIME_REG_STRING, BMP_STARTUPTIME_REG_DEFAULT));
-		dwStartupTime = BMP_STARTUPTIME_REG_DEFAULT;
-	}
-	if (BMP_STARTUPTIME_REG_DEFAULT > dwStartupTime)
-		dwStartupTime = BMP_STARTUPTIME_REG_DEFAULT;
-	for (i=0, bLoop=TRUE; (TRUE==bLoop && i<50); i++)
-	{
-		dwTotal = GetTickCount() - dwStart;
-		if (dwStartupTime < dwTotal)
-		{
-			if (NULL == FindWindow(_T("Dialog"), WIFI_CARDNAME_TCHAR))
-			{
-				RETAILMSG(1, (_T("\t BMP_STARTUPTIME : %d\r\n"), dwTotal));
-				bLoop = FALSE;
-			}
-			else
-				Sleep(100);
-		}
-		else
-			Sleep(100);
-	}
 	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
 	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_STARTUP_REG_STRING, szProgram, MAX_PATH, FALSE))
@@ -380,7 +363,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	if (TRUE == bDispUpdate)
 	{
 		BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-		for (i=0; (FALSE==bDirtyRect && i<5); i++)
+		for (int i=0; (FALSE==bDirtyRect && i<5); i++)
 		{
 			Sleep(1000);
 			bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);

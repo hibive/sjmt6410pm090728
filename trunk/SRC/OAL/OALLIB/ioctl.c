@@ -538,7 +538,7 @@ static BOOL OALIoCtlHalInitRegistry(
 extern INT32 VFL_Sync(VOID);
 static BOOL OALIoCtlHalOmnibookShutdown(
         UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
-        VOID *lpOutBuf, UINT32 nOutBufSize, UINT32* lpBytesReturned)
+        VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
 {
 	volatile S3C6410_GPIO_REG *pGPIOReg;
 
@@ -553,6 +553,158 @@ static BOOL OALIoCtlHalOmnibookShutdown(
 	pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(1<<3)) | (0<<3);
 
 	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalEBook2Shutdown()\r\n")));
+
+	return TRUE;
+}
+
+#include <VFLBuffer.h>
+#include <WMRTypes.h>
+#include <VFL.h>
+#include <FIL.h>
+#define	WMRBUF_SIZE			(8192 + 256)	// the maximum size of 2-plane data for 4KByte/Page NAND flash Device
+#define	INFO_BLOCK_START	(8)	//EBOOT_BLOCK_RESERVED
+#define	INFO_BLOCK_END		(9)	//EBOOT_BLOCK_RESERVED+1
+#define	SECTOR_SIZE			(512)
+static UCHAR WMRBuf[WMRBUF_SIZE];
+static BOOL OALIoCtlHalOmnibookGetInfo(
+        UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
+        VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
+{
+	LowFuncTbl *pLowFuncTbl = FIL_GetFuncTbl();
+	UINT8 *pSBuf = WMRBuf + BYTES_PER_MAIN_SUPAGE;
+	DWORD dwBlock = INFO_BLOCK_START;
+	INT32 nRet;
+
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalOmnibookGetInfo()\r\n")));
+	if ((lpOutBuf == NULL) || (nOutBufSize != SECTOR_SIZE) || (nInBufSize != 100))
+    {
+        OALMSG(OAL_ERROR, (TEXT("[OAL:ERR] OALIoCtlHalOmnibookSetInfo() Invalid Input Parameter\r\n")));
+        return FALSE;
+    }
+
+	while (1)
+	{
+		if (dwBlock == INFO_BLOCK_END)
+		{
+			OALMSG(TRUE, (TEXT("Read Failed !!!\r\n")));
+			OALMSG(TRUE, (TEXT("Too many Bad Block\r\n")));
+			return FALSE;
+		}
+
+		IS_CHECK_SPARE_ECC = FALSE32;
+		pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK+PAGES_PER_BLOCK-1, 0x0, enuLEFT_PLANE_BITMAP, NULL, pSBuf, TRUE32, FALSE32);
+		IS_CHECK_SPARE_ECC = TRUE32;
+		if (pSBuf[0] == 0xff)
+		{
+			nRet = pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK, 0x01, enuLEFT_PLANE_BITMAP, (UINT8 *)lpOutBuf, NULL, FALSE32, FALSE32);
+			if (nRet != FIL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] FIL Read Error @ %d Block Skipped\r\n"), dwBlock));
+				dwBlock++;
+				continue;
+			}
+			else
+			{
+				OALMSG(TRUE, (TEXT("[OK] Read @ %d Block Success\r\n"), dwBlock));
+				break;
+			}
+		}
+		else
+		{
+			OALMSG(TRUE, (TEXT("Bad @ %d Block Skipped\r\n"), dwBlock));
+			dwBlock++;
+			continue;
+		}
+	}
+
+	if (pOutSize)
+		*pOutSize = sizeof(UINT32);
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalOmnibookGetInfo()\r\n")));
+
+	return TRUE;
+}
+static BOOL OALIoCtlHalOmnibookSetInfo(
+        UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
+        VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
+{
+	LowFuncTbl *pLowFuncTbl = FIL_GetFuncTbl();
+	UINT8 *pSBuf = WMRBuf + BYTES_PER_MAIN_SUPAGE;
+	DWORD dwBlock = INFO_BLOCK_START;
+	INT32 nRet;
+	UINT32 nSyncRet;
+	UCHAR TempInfo[SECTOR_SIZE];
+
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalOmnibookSetInfo()\r\n")));
+	if ((lpInBuf == NULL) || (nInBufSize != SECTOR_SIZE) || (nOutBufSize != 100))
+    {
+        OALMSG(OAL_ERROR, (TEXT("[OAL:ERR] OALIoCtlHalOmnibookSetInfo() Invalid Input Parameter\r\n")));
+        return FALSE;
+    }
+
+	memset(WMRBuf, '\0', WMRBUF_SIZE);
+	while (1)
+	{
+		if (dwBlock == INFO_BLOCK_END)
+		{
+			OALMSG(TRUE, (TEXT("Write Failed !!!\r\n")));
+			OALMSG(TRUE, (TEXT("Too many Bad Block\r\n")));
+			return FALSE;
+		}
+
+		IS_CHECK_SPARE_ECC = FALSE32;
+		pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK+PAGES_PER_BLOCK-1, 0x0, enuLEFT_PLANE_BITMAP, NULL, pSBuf, TRUE32, FALSE32);
+		IS_CHECK_SPARE_ECC = TRUE32;
+		if (pSBuf[0] == 0xff)
+		{
+			pLowFuncTbl->Erase(0, dwBlock, enuLEFT_PLANE_BITMAP);
+			nRet = pLowFuncTbl->Sync(0, &nSyncRet);
+			if (nRet != FIL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] FIL Erase Error @ %d block, Skipped\r\n"), dwBlock));
+				goto MarkAndSkipBadBlock;
+			}
+
+			pLowFuncTbl->Write(0, dwBlock*PAGES_PER_BLOCK, 0x01, enuLEFT_PLANE_BITMAP, (UINT8 *)lpInBuf, NULL);
+			nRet = pLowFuncTbl->Sync(0, &nSyncRet);
+			if (nRet != FIL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] FIL Write Error @ %d Block Skipped\r\n"), dwBlock));
+				goto MarkAndSkipBadBlock;
+			}
+
+			nRet = pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK, 0x01, enuLEFT_PLANE_BITMAP, TempInfo, NULL, FALSE32, FALSE32);
+			if (nRet != FIL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] FIL Read Error @ %d Block Skipped\r\n"), dwBlock));
+				goto MarkAndSkipBadBlock;
+			}
+
+			if (0 != memcmp(TempInfo, (UINT8 *)lpInBuf, SECTOR_SIZE))
+			{
+				OALMSG(TRUE, (TEXT("[ERR] Verify Error @ %d Block Skipped\r\n"), dwBlock));
+				goto MarkAndSkipBadBlock;
+			}
+
+			OALMSG(TRUE, (TEXT("[OK] Write @ %d Block Success\r\n"), dwBlock));
+			break;
+
+MarkAndSkipBadBlock:
+			pLowFuncTbl->Erase(0, dwBlock, enuLEFT_PLANE_BITMAP);
+			memset(pSBuf, 0x0, BYTES_PER_SPARE_PAGE);
+			IS_CHECK_SPARE_ECC = FALSE32;
+			pLowFuncTbl->Write(0, dwBlock*PAGES_PER_BLOCK+PAGES_PER_BLOCK-1, 0x0, enuLEFT_PLANE_BITMAP, NULL, pSBuf);
+			IS_CHECK_SPARE_ECC = TRUE32;
+			dwBlock++;
+			continue;
+		}
+		else
+		{
+			OALMSG(TRUE, (TEXT("Bad Block %d Skipped\r\n"), dwBlock));
+			dwBlock++;
+			continue;
+		}
+	}
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalOmnibookSetInfo()\r\n")));
 
 	return TRUE;
 }

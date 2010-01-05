@@ -1174,18 +1174,10 @@ ENDIF BSP_IROMBOOT
 
 IF APPS_COMMAND
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-;Default	"BmpStartup"=""
-;Default	"BmpStartupTime"=dword:00000bb8	; 3000 msec
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
-
-[HKEY_LOCAL_MACHINE\Software\Omnibook]
-;Default	"CfgSkipReadMac"=dword:0
-IF OMNIBOOK_VER_DEMO
-	"CfgSkipReadMac"=dword:1
-ENDIF OMNIBOOK_VER_DEMO
 
 ENDIF OMNIBOOK_VER
 
