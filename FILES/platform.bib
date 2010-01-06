@@ -344,7 +344,14 @@ IF OMNIBOOK_VER
 
 IF BSP_DISPLAY_BROADSHEET
 	Omnibook_Wallpaper.gif		$(_FLATRELEASEDIR)\Img_Wallpaper.gif		NK	S
+
+IF MODEL_OMNIBOOK_GW610
 	Omnibook_Shutdown.bmp		$(_FLATRELEASEDIR)\Img_Shutdown.bmp			NK	S
+ENDIF MODEL_OMNIBOOK_GW610
+IF MODEL_BOOKCUBE_B612
+	Omnibook_Shutdown.bmp		$(_FLATRELEASEDIR)\Img_Shutdown_Dasan.bmp	NK	S
+ENDIF MODEL_BOOKCUBE_B612
+
 	Omnibook_Lowbattery.bmp		$(_FLATRELEASEDIR)\Img_Lowbattery.bmp		NK	S
 ENDIF BSP_DISPLAY_BROADSHEET
 

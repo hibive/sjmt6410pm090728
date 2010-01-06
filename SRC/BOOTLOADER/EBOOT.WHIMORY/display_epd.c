@@ -10,7 +10,11 @@
 // const unsigned char Instruction_Byte_Code[];
 #include "display_epd_instructionbytecode.h"
 // const unsigned char Rle_Image_BootUp[];
+#ifdef	MODEL_OMNIBOOK_GW610
 #include "display_epd_rle_image_bootup.h"
+#elif	MODEL_BOOKCUBE_B612
+#include "display_epd_rle_image_bootup_dasan.h"
+#endif	//MODEL_
 
 
 #define S1D13521_BASE_PA	0x30000000

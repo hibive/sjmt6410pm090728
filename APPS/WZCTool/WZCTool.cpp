@@ -318,7 +318,11 @@ ChannelNumber
     IN ULONG ulFrequency_kHz // frequency in kHz
 )
 {
+#ifdef	OMNIBOOK_VER
+	ULONG ulFrequency_MHz = ulFrequency_kHz;
+#else	//!OMNIBOOK_VER
     ULONG ulFrequency_MHz = ulFrequency_kHz/1000;
+#endif	OMNIBOOK_VER
     if((2412<=ulFrequency_MHz) && (ulFrequency_MHz<2484))
         return ((ulFrequency_MHz-2412)/5)+1;
     else if(ulFrequency_MHz==2484)
@@ -665,9 +669,19 @@ DoQuery
             L"Ndis802_11WEPDisabled",
             L"Ndis802_11WEPKeyAbsent",
             L"Ndis802_11WEPNotSupported"
+#ifdef	OMNIBOOK_VER
+			L"Ndis802_11Encryption2Enabled",
+			L"Ndis802_11Encryption2KeyAbsent",
+			L"Ndis802_11Encryption3Enabled",
+			L"Ndis802_11Encryption3KeyAbsent"
+#endif	OMNIBOOK_VER
         };
 
+#ifdef	OMNIBOOK_VER
+		if(Intf.nWepStatus < 8)
+#else	//!OMNIBOOK_VER
         if(Intf.nWepStatus < 4)
+#endif	OMNIBOOK_VER
             wprintf(L"%s\n", szWepStatus[Intf.nWepStatus]);
         else
             wprintf(L"<unknown value>\n");
