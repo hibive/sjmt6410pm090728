@@ -55,18 +55,17 @@ VOID BSPPowerOff()
 #ifdef	OMNIBOOK_VER
 	{
 		unsigned char buf[2];
+		volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+
 		IICReadByte(PMIC_ADDR, 0x00, buf);
-		if ((buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
-		{
-			buf[0] &= ~(1<<3);	// off
-			IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
-		}
+		if (pArgs->bSDMMCCH2CardDetect)
+			buf[0] = (buf[0] & ~(1<<2)) | (0<<2);	// off [bit2] ELDO4 - WLAN_PA(3.3V)
+		buf[0] = (buf[0] & ~(1<<3)) | (0<<3);		// off [bit3] ELDO3 - VDD_OTGI(1.2V)
+		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
+
 		IICReadByte(PMIC_ADDR, 0x01, buf);
-		if ((buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
-		{
-			buf[0] &= ~(1<<5);	// off
-			IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
-		}
+		buf[0] = (buf[0] & ~(1<<5)) | (0<<5);		// off [bit5] ELDO8 - VDD_OTG(3.3V)
+		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
 	}
 #endif	OMNIBOOK_VER
 
@@ -104,21 +103,20 @@ VOID BSPPowerOn()
     OALMSG(OAL_FUNC, (TEXT("++BSPPowerOn()\n")));
 
 #ifdef	OMNIBOOK_VER
-{
-	unsigned char buf[2];
-	IICReadByte(PMIC_ADDR, 0x00, buf);
-	if (!(buf[0] & (1<<3)))	// [bit3] ELDO3 - VDD_OTGI(1.2V)
 	{
-		buf[0] |= (1<<3);	// on
+		unsigned char buf[2];
+		volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+
+		IICReadByte(PMIC_ADDR, 0x00, buf);
+		if (pArgs->bSDMMCCH2CardDetect)
+			buf[0] = (buf[0] & ~(1<<2)) | (1<<2);	// on [bit2] ELDO4 - WLAN_PA(3.3V)
+		buf[0] = (buf[0] & ~(1<<3)) | (1<<3);		// on [bit3] ELDO3 - VDD_OTGI(1.2V)
 		IICWriteByte(PMIC_ADDR, 0x00, buf[0]);
-	}
-	IICReadByte(PMIC_ADDR, 0x01, buf);
-	if (!(buf[0] & (1<<5)))	// [bit5] ELDO8 - VDD_OTG(3.3V)
-	{
-		buf[0] |= (1<<5);	// on
+
+		IICReadByte(PMIC_ADDR, 0x01, buf);
+		buf[0] = (buf[0] & ~(1<<5)) | (1<<5);		// on [bit5] ELDO8 - VDD_OTG(3.3V)
 		IICWriteByte(PMIC_ADDR, 0x01, buf[0]);
 	}
-}
 #endif	OMNIBOOK_VER
 
 // The OEM can add BSP specific procedure here when system power up

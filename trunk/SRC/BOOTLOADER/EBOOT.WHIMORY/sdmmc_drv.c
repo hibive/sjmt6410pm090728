@@ -19,10 +19,10 @@ extern "C" {
 #include <HSMMCDrv.h>
 
 
-#if	(OMNIBOOK_VER == 3)
+#ifdef	OMNIBOOK_VER
 #define	FOR_EBOOT	// jhlee
 #define	USE_CHANNEL0
-#endif
+#endif	OMNIBOOK_VER
 
 
 #ifdef FOR_EBOOT
