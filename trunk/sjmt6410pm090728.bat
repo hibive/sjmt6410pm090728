@@ -170,8 +170,8 @@ call %_TARGETPLATROOT%\src\Whimory\wmrenv.bat
 
 set APP_STARTUP=1
 set APP_COMMAND=1
-set APP_SIPSYMBOL=1
 set APP_WZCTOOL=1
+set APP_SIPSYMBOL=1
 
 
 set SYSGEN_K_IME97=1

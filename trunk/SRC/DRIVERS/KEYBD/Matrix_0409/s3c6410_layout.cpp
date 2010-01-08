@@ -173,7 +173,11 @@ UINT8 ScanCodeToVKeyTable[] =
 	'G',				// scan code 28
 	'F',				// scan code 29
 	'D',				// scan code 30
+#if	(OMNIBOOK_VER==4)
+	VK_F15,//VK_HOME,			// scan code 31
+#else
 	0,					// scan code 31
+#endif	(OMNIBOOK_VER==4)
 
 	'A',				// scan code 32
 	'S',				// scan code 33
@@ -198,7 +202,11 @@ UINT8 ScanCodeToVKeyTable[] =
 	VK_NEXT,			// scan code 50
 	VK_F13,//VK_BACK,			// scan code 51
 	VK_F18,//VK_MENU,			// scan code 52
+#if	(OMNIBOOK_VER==3)
 	VK_F15,//VK_HOME,			// scan code 53
+#elif (OMNIBOOK_VER==4)
+	VK_NEXT,			// scan code 53
+#endif	//(OMNIBOOK_VER==x)
 	VK_SPACE,			// scan code 54
 	0,					// scan code 55
 

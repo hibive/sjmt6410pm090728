@@ -4,8 +4,6 @@
 
 #include <windows.h>
 #include "s1d13521.h"
-#include <winsock2.h>
-#include <iptypes.h>
 #include "iphlpapi.h"
 #include "etc.h"
 
@@ -13,10 +11,10 @@
 #define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
 
 #define APP_STARTUP_REG_STRING		_T("AppStartup")
-#define APP_STARTUP_REG_DEFAULT		_T("\\Omnibook Store\\Omnibook_MainApp.exe")
+#define APP_STARTUP_REG_DEFAULT		_T("\\eBook Store\\eBook_MainApp.exe")
 
 #define APP_UPDATE_REG_STRING		_T("AppUpdate")
-#define APP_UPDATE_REG_DEFAULT		_T("\\Storage Card\\Omnibook_UpdateApp.exe")
+#define APP_UPDATE_REG_DEFAULT		_T("\\Storage Card\\eBook_UpdateApp.exe")
 
 #define APP_SIPSYMBOL_REG_STRING	_T("AppSipSymbol")
 #define APP_SIPSYMBOL_REG_DEFAULT	_T("\\Windows\\Omnibook_SipSymbol.exe")
@@ -157,7 +155,7 @@ static BOOL CheckWifiMacAddress(void)
 	BOOL bRet = FALSE;
 	BYTE abInfo[512]={0,};
  	int nRetry = 0;
-	WSADATA WsaData;
+	PIP_ADAPTER_INFO pAdapterInfo = NULL;
 
 	hEtc = CreateFile(ETC_DRIVER_NAME,
 		GENERIC_READ | GENERIC_WRITE,
@@ -186,16 +184,11 @@ static BOOL CheckWifiMacAddress(void)
 
 goto_Retry:
 	DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, TRUE, NULL, 0, NULL, NULL);
-	if (0 != WSAStartup(MAKEWORD(1, 1), &WsaData))
-	{
-		RETAILMSG(1, (_T("ERROR : WSAStartup failed (error %ld)\r\n"), GetLastError()));
-		goto goto_Cleanup;
-	}
 
 	{
-		PIP_ADAPTER_INFO pAdapterInfo = NULL, pOriginalPtr;
 		ULONG ulSizeAdapterInfo = 0;
 		DWORD dwReturnvalueGetAdapterInfo, i;
+		PIP_ADAPTER_INFO pOriginalPtr;
 		TCHAR szAdapterName[MAX_ADAPTER_NAME_LENGTH + 4 + 1];
 
 		for (i=0; i<20; i++)
@@ -268,19 +261,22 @@ goto_Retry:
 					RETAILMSG(1, (_T("ERROR : DeviceIoControl(IOCTL_SET_BOARD_INFO)\r\n")));
 					goto goto_Cleanup;
 				}
+				break;
 			}
 
 			pAdapterInfo = pAdapterInfo->Next;
 			RETAILMSG(1, (_T("\r\n")));
 		}
+		pAdapterInfo = NULL;
 		if (pOriginalPtr)  
 			free(pOriginalPtr);
 	}
 
-	WSACleanup();
 	bRet = TRUE;
 
 goto_Cleanup:
+	if (pAdapterInfo)
+		free(pAdapterInfo);
 	if (INVALID_HANDLE_VALUE != hEtc)
 	{
 		DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, FALSE, NULL, 0, NULL, NULL);

@@ -127,6 +127,7 @@ void EPDDisplayBitmap(EBITMAP_TYPE eBitmapType)
 		delay(100);
 		RleData.cbSize = sizeof(Rle_Image_BootUp) / sizeof(Rle_Image_BootUp[0]);
 		RleData.pBlobData = (PBYTE)Rle_Image_BootUp;
+		//S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
 		S1d13521DrvEscape(DRVESC_SET_WAVEFORMMODE, WAVEFORM_DU, NULL, 0, NULL);
 		break;
 	default:
@@ -142,7 +143,14 @@ void EPDDisplayBitmap(EBITMAP_TYPE eBitmapType)
 }
 
 static BYTE g_bOldPercent = 0xFF;
+#ifdef	MODEL_OMNIBOOK_GW610
 static RECT g_rect = {100+20, 320+138, 100+20, 320+138+11};
+static int g_nOffset = 34;
+#endif	MODEL_OMNIBOOK_GW610
+#ifdef	MODEL_BOOKCUBE_B612
+static RECT g_rect = {200, 571, 200+200, 571+11};
+static int g_nOffset = 20;
+#endif	MODEL_BOOKCUBE_B612
 static IMAGERECT g_imgRect = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rect};
 void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 {
@@ -158,7 +166,7 @@ void EPDShowProgress(unsigned long dwCurrent, unsigned long dwTotal)
 		}
 		else if (0 == (bPercent%10))
 		{
-			g_imgRect.pRect->right = g_imgRect.pRect->left + 34;
+			g_imgRect.pRect->right = g_imgRect.pRect->left + g_nOffset;
 			S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&g_imgRect, 0, NULL);
 			g_imgRect.pRect->left = g_imgRect.pRect->right;
 		}
@@ -179,8 +187,8 @@ static IMAGERECT g_imgRectText = {(PBYTE)EBOOT_FRAMEBUFFER_UA_START, &g_rectText
 void EPDOutputString(const char *fmt, ...)
 {
 	char szLine[256], *buf;
-	char c, *p, tmp[11];	//int형의 최대크기의 길이는 10자리수 이므로
-	unsigned char uc;
+	char c, *p, tmp[11+1];	//int형의 최대크기의 길이는 10자리수 이므로
+	unsigned char uc, minus;
 	int i, tmp_index, in, j;
 	unsigned long ul;
 	va_list sarg;
@@ -211,11 +219,19 @@ void EPDOutputString(const char *fmt, ...)
 				break;
 			case 'd':	//정수형
 				in = (int)va_arg(sarg, int);
+				minus = (in < 0) ? 1 : 0;
+				if (minus)
+					in = -in;
 				tmp_index = 0;
 				while (in)	//ASCII to integer
 				{
 					tmp[tmp_index] = (in%10) + '0';
 					in /= 10;   
+					tmp_index++;
+				}
+				if (minus)
+				{
+					tmp[tmp_index] = '-';
 					tmp_index++;
 				}
 				tmp_index--;	//마지막 배열을 가리키도록 인덱스 값의 1을 빼줌

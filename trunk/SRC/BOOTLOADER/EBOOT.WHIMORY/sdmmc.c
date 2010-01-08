@@ -39,7 +39,6 @@ volatile UINT32	readPtIndex;
 volatile UINT8	*g_pDownPt;
 
 extern const PTOC g_pTOC;
-extern DWORD g_dwTocEntry;
 static BOOL g_fOEMNotified = FALSE;
 static BYTE g_hdr[BL_HDRSIG_SIZE];
 static DownloadManifest g_DownloadManifest;
@@ -93,7 +92,7 @@ BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData)
 }
 #pragma optimize ("",on)
 
-BOOL ChooseImageFromSDMMC(BYTE bSelect)
+BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 {
 	const char file_name[][12] = {
 		"BLOCK0  NB0",	// 0 : block0img.nb0 or stepldr.nb0("STEPLDR NB0")
@@ -104,11 +103,12 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 	}, *pSelFile;
 	BYTE KeySelect = 0;
 	BOOL bRet = TRUE;
+	PBOOT_CFG pBootCfg = &g_pTOC->BootCfg;
 
-	if (1 == bSelect)		// Bootloader Update
+	if (bIsAuto)
+	{
 		KeySelect = '6';
-	else if (2 == bSelect)	// OS Update
-		KeySelect = '3';
+	}
 	else
 	{
 		EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
@@ -117,7 +117,7 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 		EdbgOutputDebugString("3) NK.BIN\r\n");
 		EdbgOutputDebugString("4) CHAIN.LST\r\n");
 		EdbgOutputDebugString("5) EPSONBS.WBF\r\n");
-		EdbgOutputDebugString("6) Nand Format And Bootloader Update\r\n");
+		EdbgOutputDebugString("6) Nand Format And Image(Waveform, Bootloader, OS) Update\r\n");
 		EdbgOutputDebugString("\r\nEnter your selection: ");
 
 		EPDOutputString("\r\nChoose Download Image:\r\n\r\n");
@@ -126,7 +126,7 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 		EPDOutputString("3) NK.BIN\r\n");
 		EPDOutputString("4) CHAIN.LST\r\n");
 		EPDOutputString("5) EPSONBS.WBF\r\n");
-		EPDOutputString("6) Nand Format And Bootloader Update\r\n");
+		EPDOutputString("6) Nand Format And Image(Waveform, Bootloader, OS) Update\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
 
@@ -184,58 +184,82 @@ BOOL ChooseImageFromSDMMC(BYTE bSelect)
 			HALT(0);
 		}
 		return FALSE;
-	case '6':	// Format All -> <EpsonBS.wbf> -> Block0.nb0 -> Eboot.bin
-		if (fatFileExist(file_name[0]) && fatFileExist(file_name[1]))
+	case '6':	// (Format All -> EpsonBS.wbf -> Block0.nb0 -> Eboot.bin) or (NK.bin)
+		EdbgOutputDebugString("pBootCfg->ConfigFlags(%X)\r\n", BOOT_WRITE_MASK(pBootCfg->ConfigFlags));
+		EPDOutputString("pBootCfg->ConfigFlags(%X)\r\n", BOOT_WRITE_MASK(pBootCfg->ConfigFlags));
+		EPDOutputFlush();
+		if (fatFileExist(file_name[4]) && fatFileExist(file_name[0]) && fatFileExist(file_name[1]) && fatFileExist(file_name[2]))
 		{
-			EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
-			EPDOutputString("+++ Nand Flash Format All\r\n");
-			EPDOutputFlush();
-			VFL_Close();
-			WMR_Format_FIL();
-			EdbgOutputDebugString("--- Nand Flash Format All\r\n");
-			EPDOutputString("--- Nand Flash Format All\r\n");
-			EPDOutputFlush();
-
-			pSelFile = file_name[4];
-			if (fatFileExist(pSelFile))
+			if (pBootCfg->ConfigFlags & BOOT_WRITE_MASK(BOOT_WRITE_EPSON | BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT))
 			{
-				BLOB blob = {0,};
-				EdbgOutputDebugString("+++ EpsonBS.wbf Write\r\n");
-				EPDOutputString("+++ EpsonBS.wbf Write\r\n");
+				EdbgOutputDebugString("+++ NK.bin Read\r\n");
+				EPDOutputString("+++ NK.bin Read\r\n");
 				EPDOutputFlush();
-				blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
-				blob.pBlobData = (PBYTE)readPtIndex;
-				bRet = EPDSerialFlashWrite((void *)&blob);
-				EdbgOutputDebugString("--- EpsonBS.wbf Write\r\n");
-				EPDOutputString("--- EpsonBS.wbf Write\r\n");
+				pSelFile = file_name[2];
+				bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+				EdbgOutputDebugString("+++ NK.bin Write\r\n");
+				EPDOutputString("+++ NK.bin Write\r\n");
 				EPDOutputFlush();
+				//pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_NK);
+				pBootCfg->ConfigFlags &= ~BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT | BOOT_WRITE_NK | BOOT_WRITE_EPSON);
+				return bRet;
 			}
-
-			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-			pSelFile = file_name[0];
-			EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
-			EPDOutputString("+++ Block0.nb0 Write\r\n");
-			EPDOutputFlush();
-			parsingImageFromSD(IMAGE_NB0, pSelFile);
-			writeImage();
-			EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
-			EPDOutputString("--- Block0.nb0 Write\r\n");
-			EPDOutputFlush();
-
-			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-			pSelFile = file_name[1];
-			EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
-			EPDOutputString("+++ Eboot.bin Write\r\n");
-			EPDOutputFlush();
-			parsingImageFromSD(IMAGE_BIN, pSelFile);
-			writeImage();
-			EdbgOutputDebugString("--- Eboot.bin Write\r\n");
-			EPDOutputString("--- Eboot.bin Write\r\n");
-			EPDOutputFlush();
-
-			HALT(0);
+			else	// Format All -> EpsonBS.wbf -> Block0.nb0 -> Eboot.bin
+			{
+				EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
+				EPDOutputString("+++ Nand Flash Format All\r\n");
+				EPDOutputFlush();
+				VFL_Close();
+				WMR_Format_FIL();
+				EdbgOutputDebugString("--- Nand Flash Format All\r\n");
+				EPDOutputString("--- Nand Flash Format All\r\n");
+				EPDOutputFlush();
+				pBootCfg->ConfigFlags &= ~BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT | BOOT_WRITE_NK | BOOT_WRITE_EPSON);
+				
+				pSelFile = file_name[4];
+				{
+					BLOB blob = {0,};
+					EdbgOutputDebugString("+++ EpsonBS.wbf Write\r\n");
+					EPDOutputString("+++ EpsonBS.wbf Write\r\n");
+					EPDOutputFlush();
+					blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
+					blob.pBlobData = (PBYTE)readPtIndex;
+					bRet = EPDSerialFlashWrite((void *)&blob);
+					EdbgOutputDebugString("--- EpsonBS.wbf Write\r\n");
+					EPDOutputString("--- EpsonBS.wbf Write\r\n");
+					EPDOutputFlush();
+					pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EPSON);
+				}
+				
+				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+				pSelFile = file_name[0];
+				EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
+				EPDOutputString("+++ Block0.nb0 Write\r\n");
+				EPDOutputFlush();
+				parsingImageFromSD(IMAGE_NB0, pSelFile);
+				writeImage();
+				EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
+				EPDOutputString("--- Block0.nb0 Write\r\n");
+				EPDOutputFlush();
+				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0);
+				
+				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+				pSelFile = file_name[1];
+				EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
+				EPDOutputString("+++ Eboot.bin Write\r\n");
+				EPDOutputFlush();
+				parsingImageFromSD(IMAGE_BIN, pSelFile);
+				writeImage();
+				EdbgOutputDebugString("--- Eboot.bin Write\r\n");
+				EPDOutputString("--- Eboot.bin Write\r\n");
+				EPDOutputFlush();
+				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EBOOT);
+				
+				TOC_Write();
+				HALT(0);
+			}
 		}
 		else
 			HALT(-800);
