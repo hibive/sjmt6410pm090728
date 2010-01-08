@@ -60,7 +60,7 @@ extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char
 
 // +++ sdmmc settings +++
 extern BOOL InitializeSDMMC(void);
-extern BOOL ChooseImageFromSDMMC(BYTE bSelect);
+extern BOOL ChooseImageFromSDMMC(BOOL bIsAuto);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
 
@@ -114,7 +114,8 @@ BOOL 			g_bWaitForConnect = TRUE;
 BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
 #ifdef	OMNIBOOK_VER
-BYTE			g_AutoSDMMCDownload = 0;	// 1(Bootloader), 2(OS)
+BOOL			g_bSDMMCBooting = FALSE;
+BOOL			g_bAutoSDMMCDownload = FALSE;
 BOOL			g_bSDMMCDownload = FALSE;
 BOOL			*g_bHiveCleanFlag;
 BOOL			*g_bFormatPartitionFlag;
@@ -538,7 +539,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("X) Epson Instruction byte code update(Default)\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
-		if (g_AutoSDMMCDownload)
+		if (g_bAutoSDMMCDownload)
 			KeySelect = 'S';
 #endif	OMNIBOOK_VER
 
@@ -1023,42 +1024,10 @@ BOOL OEMPlatformInit(void)
 	OALMSG(OAL_FUNC, (TEXT("+OEMPlatformInit.\r\n")));
 
 #ifdef	OMNIBOOK_VER
-	// +++ i2c settings +++
-	// 1.30V(B), 1.20V(9), 1.10V(7), 1.05V(6)
-	data[0] = 0x79;	// DVSARM2[7:4]=1.10V, DVSARM1[3:0]=1.20V
-	IICWriteByte(PMIC_ADDR, 0x04, data[0]);
-	data[0] = 0xB6;	// DVSARM4[7:4]=1.30V, DVSARM3[3:0]=1.05V
-	IICWriteByte(PMIC_ADDR, 0x05, data[0]);
-	data[0] = 0x9B;	// DVSINT2[7:4]=1.20V, DVSINT1[3:0]=1.30V
-	IICWriteByte(PMIC_ADDR, 0x06, data[0]);
-	// --- i2c settings ---
+	if (0x6 != (pGPIOReg->GPNDAT>>13))
+		g_bSDMMCBooting = TRUE;
+	OALMSG(1, (TEXT("IROM BootMode : 0x%X, SDMMCBooting(%d)\r\n"), (pGPIOReg->GPNDAT>>13), g_bSDMMCBooting));
 
-	InitializeInterrupt();
-
-	data[0] = 0x90;	// Turn Battery Monitor Off
-	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
-	data[0] = 0x91;	// Turn Battery Monitor On
-	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
-	{
-		volatile int delay = 100000;
-		while (delay--);
-	}
-#endif	OMNIBOOK_VER
-
-	// Check if Current ARM speed is not matched to Target Arm speed
-	// then To get speed up, set Voltage
-#if (APLL_CLK == CLK_1332MHz)
-    LTC3714_Init();
-    LTC3714_VoltageSet(1,1200,100);     // ARM
-    LTC3714_VoltageSet(2,1300,100);     // INT
-#endif
-#if (TARGET_ARM_CLK == CLK_800MHz)
-    LTC3714_Init();
-    LTC3714_VoltageSet(1,1300,100);     // ARM
-    LTC3714_VoltageSet(2,1200,100);     // INT
-#endif
-
-#ifdef	OMNIBOOK_VER
 	// +++ gpio settings +++
 	// GPC[3] PWRHOLD
 	pGPIOReg->GPCCON = (pGPIOReg->GPCCON & ~(0xF<<12)) | (0x1<<12);	// Output
@@ -1078,7 +1047,41 @@ BOOL OEMPlatformInit(void)
 	// GPE[2] TOUCH_SLP
 	pGPIOReg->GPEDAT = (pGPIOReg->GPEDAT & ~(0x1<<2)) | (1<<2);
 	// --- gpio settings ---
+
+	InitializeInterrupt();
+
+	// +++ i2c settings +++
+	// 1.30V(B), 1.20V(9), 1.10V(7), 1.05V(6)
+	data[0] = 0x79;	// DVSARM2[7:4]=1.10V, DVSARM1[3:0]=1.20V
+	IICWriteByte(PMIC_ADDR, 0x04, data[0]);
+	data[0] = 0xB6;	// DVSARM4[7:4]=1.30V, DVSARM3[3:0]=1.05V
+	IICWriteByte(PMIC_ADDR, 0x05, data[0]);
+	data[0] = 0x9B;	// DVSINT2[7:4]=1.20V, DVSINT1[3:0]=1.30V
+	IICWriteByte(PMIC_ADDR, 0x06, data[0]);
+	// Turn Battery Monitor Setting
+	data[0] = 0x90;	// Turn Battery Monitor Off
+	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+	data[0] = 0x91;	// Turn Battery Monitor On
+	IICWriteByte(PMIC_ADDR, 0x01, data[0]);
+	{
+		volatile int delay = 100000;
+		while (delay--);
+	}
+	// --- i2c settings ---
 #endif	OMNIBOOK_VER
+
+	// Check if Current ARM speed is not matched to Target Arm speed
+	// then To get speed up, set Voltage
+#if (APLL_CLK == CLK_1332MHz)
+    LTC3714_Init();
+    LTC3714_VoltageSet(1,1200,100);     // ARM
+    LTC3714_VoltageSet(2,1300,100);     // INT
+#endif
+#if (TARGET_ARM_CLK == CLK_800MHz)
+    LTC3714_Init();
+    LTC3714_VoltageSet(1,1300,100);     // ARM
+    LTC3714_VoltageSet(2,1200,100);     // INT
+#endif
 
     EdbgOutputDebugString("Microsoft Windows CE Bootloader for the Samsung SMDK6410 Version %d.%d Built %s\r\n\r\n",
 	EBOOT_VERSION_MAJOR, EBOOT_VERSION_MINOR, __DATE__);
@@ -1193,17 +1196,12 @@ BOOL OEMPlatformInit(void)
 		if (((BYTE)OEM_DEBUG_READ_NODATA == KeySelect))
 		{
 			EKEY_DATA KeyData = GetKeypad();
-			if (KeyData == (KEY_HOLD | KEY_HOME))
+			if (KeyData == (KEY_HOLD | KEY_NP2))
 				KeySelect = 0x20;
-			else if (KeyData == (KEY_HOLD | KEY_B))
+			else if ((KeyData == (KEY_HOLD | KEY_F)) || g_bSDMMCBooting)
 			{
 				KeySelect = 0x20;
-				g_AutoSDMMCDownload = 1;
-			}
-			else if (KeyData == (KEY_HOLD | KEY_O))
-			{
-				KeySelect = 0x20;
-				g_AutoSDMMCDownload = 2;
+				g_bAutoSDMMCDownload = TRUE;
 			}
 		}
 #endif	OMNIBOOK_VER
@@ -1477,7 +1475,7 @@ DWORD OEMPreDownload(void)
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
-		if (FALSE == ChooseImageFromSDMMC(g_AutoSDMMCDownload))
+		if (FALSE == ChooseImageFromSDMMC(g_bAutoSDMMCDownload))
 		{
 			OALMSG(OAL_ERROR, (L"ERROR: ChooseImageFromSDMMC call failed\r\n"));;
 			SpinForever();
@@ -1899,6 +1897,16 @@ void OEMMultiBINNotify(const PMultiBINInfo pInfo)
     OALMSG(OAL_FUNC, (TEXT("_OEMMultiBINNotify.\r\n")));
 }
 
+#ifdef	OMNIBOOK_VER
+BOOL OEMReportError(DWORD dwReason, DWORD dwReserved)
+{
+	EdbgOutputDebugString("OEMReportError(%d)\r\n", dwReason);
+	EPDOutputString("OEMReportError(%d)\r\n", dwReason);
+	SpinForever();
+	return TRUE;
+}
+#endif	OMNIBOOK_VER
+
 #if	0	// by dodan2
 /////////////////////// START - Stubbed functions - START //////////////////////////////
 /*
@@ -2047,6 +2055,9 @@ BOOL OEMDebugInit(void)
     //
     g_pOEMVerifyMemory   = OEMVerifyMemory;      // Verify RAM.
     g_pOEMMultiBINNotify = OEMMultiBINNotify;
+#ifdef	OMNIBOOK_VER
+	g_pOEMReportError = OEMReportError;
+#endif	OMNIBOOK_VER
 
     // Call serial initialization routine (shared with the OAL).
     //

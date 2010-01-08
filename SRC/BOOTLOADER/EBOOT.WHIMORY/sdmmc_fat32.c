@@ -901,6 +901,13 @@ uint16_t get_word(uint8_t* buffer)
 
 uint8_t 	mmc_read_sector(uint32_t sector,  uint16_t count, uint8_t* buffer)
 {
+	static int nCount=0, nLED=0;
+	if (0 == (nCount%128))
+	{
+		OEMWriteDebugLED(0, (nLED%4));
+		nLED++;
+	}
+	nCount++;
 	return (uint8_t)SDHC_READ(sector, (UINT32)count, (UINT32)buffer);
 }
 void 		mmc_write_sector(uint32_t sector, uint8_t* buffer)

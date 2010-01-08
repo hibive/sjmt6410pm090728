@@ -324,7 +324,7 @@ ENDIF IMGHIVEREG
 ;    "Dll"="fatfsd.dll"
     "Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
 IF OMNIBOOK_VER
-    "Folder"="Omnibook Store"
+    "Folder"="eBook Store"
 ELSE
     "Folder"="PocketMory1"
 ENDIF OMNIBOOK_VER
@@ -1159,11 +1159,11 @@ ENDIF BSP_DISPLAY_BROADSHEET
 
 IF BSP_IROMBOOT
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-;Default	"AppStartup"="\\Omnibook Store\\Omnibook_MainApp.exe"
+;Default	"AppStartup"="\\Omnibook Store\\eBook_MainApp.exe"
 IF OMNIBOOK_VER_DEMO
 	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
 ENDIF OMNIBOOK_VER_DEMO
-;Default	"AppUpdate"="\\Storage Card\\Omnibook_UpdateApp.exe"
+;Default	"AppUpdate"="\\Storage Card\\eBook_UpdateApp.exe"
 ;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 
 IF OMNIBOOK_VER_DEMO

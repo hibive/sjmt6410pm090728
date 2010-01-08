@@ -113,7 +113,7 @@ BYTE GetKeypad2(void)
 	case KEY_F:		return 'f';
 	case KEY_V:		return 'v';
 	case KEY_SYM:
-	case KEY_HOME:
+	case KEY_NP2:
 	case KEY_DOWN:
 		break;
 	case KEY_4:		return '4';
@@ -128,6 +128,7 @@ BYTE GetKeypad2(void)
 	case KEY_FN:
 	case KEY_SHIFT:
 	case KEY_ALT:
+	case KEY_HOME:
 		break;
 	}
 

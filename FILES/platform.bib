@@ -355,21 +355,21 @@ ENDIF MODEL_BOOKCUBE_B612
 	Omnibook_Lowbattery.bmp		$(_FLATRELEASEDIR)\Img_Lowbattery.bmp		NK	S
 ENDIF BSP_DISPLAY_BROADSHEET
 
-IF APP_COMMAND
-	Omnibook_Command.exe		$(_FLATRELEASEDIR)\App_Command.exe			NK	U
-ENDIF APP_COMMAND
-
-IF APP_SIPSYMBOL
-	Omnibook_SipSymbol.exe		$(_FLATRELEASEDIR)\App_SipSymbol.exe		NK	U
-ENDIF APP_SIP_SYMBOL
-
 IF APP_STARTUP
 	Omnibook_Startup.exe		$(_FLATRELEASEDIR)\App_Startup.exe			NK	U
 ENDIF APP_STARTUP
 
+IF APP_COMMAND
+	Omnibook_Command.exe		$(_FLATRELEASEDIR)\App_Command.exe			NK	U
+ENDIF APP_COMMAND
+
 IF APP_WZCTOOL
 	Omnibook_WZCTool.exe		$(_FLATRELEASEDIR)\App_WZCTool.exe			NK	U
 ENDIF APP_WZCTOOL
+
+IF APP_SIPSYMBOL
+	Omnibook_SipSymbol.exe		$(_FLATRELEASEDIR)\App_SipSymbol.exe		NK	U
+ENDIF APP_SIP_SYMBOL
 
 ENDIF OMNIBOOK_VER
 ;####################################################################

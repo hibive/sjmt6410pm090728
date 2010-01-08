@@ -26,7 +26,6 @@ INCLUDES=\
 
 TARGETLIBS=\
 	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib\
-	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\ws2.lib\
 	$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\iphlpapi.lib\
 
 SOURCES=\
