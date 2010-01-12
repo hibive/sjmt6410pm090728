@@ -124,8 +124,9 @@ static BOOL dispBitmap(HDC hDC, LPCTSTR lpszFileName)
 	}
 
 	dispBmp.pUpdate = NULL;
+	dispBmp.bIsWait = TRUE;
 	int nRet = ExtEscape(hDC, DRVESC_DISP_BITMAP, sizeof(dispBmp), (LPCSTR)&dispBmp, 0, NULL);
-	RETAILMSG(1, (_T("+ DRVESC_DISP_BITMAP %d\r\n"), nRet));
+	RETAILMSG(0, (_T("+ DRVESC_DISP_BITMAP %d\r\n"), nRet));
 
 	delete [] dispBmp.pBuffer;
 	CloseHandle(hFile);
@@ -165,12 +166,12 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
 	{
 		TCHAR szSleep[MAX_PATH] = {0,};
+		// +++
+		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
+		// ---
 		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SLEEP_REG_STRING, szSleep, MAX_PATH, FALSE))
 		{
 			RETAILMSG(1, (_T("SLEEP : RegOpenCreateStr(%s, %s)\r\n"), BMP_SLEEP_REG_STRING, szSleep));
-			// +++
-			ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
-			// ---
 			bRet = dispShutdown(hDC, szSleep);
 		}
 		RETAILMSG(1, (_T("App_Command => SLEEP(%d)\r\n"), bRet));
@@ -186,26 +187,23 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 		}
 		bRet = dispShutdown(hDC, szShutdown);
 		RETAILMSG(1, (_T("App_Command => SHUTDOWN(%d)\r\n"), bRet));
-		RegFlushKey(HKEY_LOCAL_MACHINE);
-		RegFlushKey(HKEY_CURRENT_USER);
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
 	{
 		TCHAR szLowbattery[MAX_PATH] = {0,};
+		// +++
+		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
+		// ---
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
 		{
 			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
 				BMP_LOWBATTERY_REG_STRING, BMP_LOWBATTERY_REG_DEFAULT));
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), BMP_LOWBATTERY_REG_DEFAULT);
 		}
-		// +++
-		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
-		// ---
 		bRet = dispShutdown(hDC, szLowbattery);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
-		RegFlushKey(HKEY_LOCAL_MACHINE);
-		RegFlushKey(HKEY_CURRENT_USER);
 	}
+
 
 	else if (0 == _tcsnicmp(_T("DIRTYRECT"), argv[1], _tcslen(_T("DIRTYRECT"))))
 	{

@@ -12,61 +12,49 @@ using namespace std;
 typedef queue<RECT> QDIRTYRECT;
 typedef struct
 {
-	BOOL		bIsFirst;
 	HANDLE		hEvnet;
 	BOOL		bThread;
 	HANDLE		hThread;
-	HANDLE		hMutex;
 	QDIRTYRECT	qDirtyRect;
 	CBWORK		cbWork;
 } SDIRTYRECT, *PSDIRTYRECT;
 
 
-SDIRTYRECT g_DirtyRect = {FALSE, };
+static CRITICAL_SECTION	g_CS;
+static SDIRTYRECT g_DirtyRect = {FALSE, };
 
 
 static int queueSize(HDIRTYRECT hDR)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
-	if (WAIT_OBJECT_0 != WaitForSingleObject(pDR->hMutex, INFINITE))
-	{
-		MYERR((_T("WAIT_OBJECT_0 != WaitForSingleObject\r\n")));
-		return -1;
-	}
 
+	EnterCriticalSection(&g_CS);
 	int nSize = (int)pDR->qDirtyRect.size();
-	ReleaseMutex(pDR->hMutex);
+	LeaveCriticalSection(&g_CS);
 	return nSize;
 }
 static int queuePush(HDIRTYRECT hDR, RECT rect)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
-	if (WAIT_OBJECT_0 != WaitForSingleObject(pDR->hMutex, INFINITE))
-	{
-		MYERR((_T("WAIT_OBJECT_0 != WaitForSingleObject\r\n")));
-		return 0;
-	}
 
+	EnterCriticalSection(&g_CS);
 	pDR->qDirtyRect.push(rect);
 	int nSize = (int)pDR->qDirtyRect.size();
-	ReleaseMutex(pDR->hMutex);
+	LeaveCriticalSection(&g_CS);
 	return nSize;
 }
 static int queuePop(HDIRTYRECT hDR, PRECT pdr)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
-	if (WAIT_OBJECT_0 != WaitForSingleObject(pDR->hMutex, INFINITE))
-	{
-		MYERR((_T("WAIT_OBJECT_0 != WaitForSingleObject\r\n")));
-		return 0;
-	}
+
+	EnterCriticalSection(&g_CS);
 	if (pDR->qDirtyRect.size())
 	{
 		*pdr = pDR->qDirtyRect.front();
 		pDR->qDirtyRect.pop();
 	}
 	int nSize = (int)pDR->qDirtyRect.size();
-	ReleaseMutex(pDR->hMutex);
+	LeaveCriticalSection(&g_CS);
 	return nSize;
 }
 
@@ -118,12 +106,6 @@ HDIRTYRECT DirtyRect_Init(CBWORK cbWork)
 {
 	PSDIRTYRECT pDR = &g_DirtyRect;
 
-	if (TRUE == pDR->bIsFirst)
-	{
-		MYERR((_T("TRUE == g_DirtyRect.bIsFirst\r\n")));
-		goto goto_err;
-	}
-
 	pDR->hEvnet = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (NULL == pDR->hEvnet)
 	{
@@ -140,15 +122,9 @@ HDIRTYRECT DirtyRect_Init(CBWORK cbWork)
 	}
 	//default(251)//CeSetThreadPriority(pDR->hThread, 200);
 
-	pDR->hMutex = CreateMutex(NULL, FALSE, NULL);
-	if (NULL == pDR->hMutex)
-	{
-		MYERR((_T("NULL == pDR->hMutex\r\n")));
-		goto goto_err;
-	}
-
 	pDR->cbWork = cbWork;
-	pDR->bIsFirst = TRUE;
+
+	InitializeCriticalSection(&g_CS);
 
 	return (HDIRTYRECT)pDR;
 goto_err:
@@ -168,12 +144,6 @@ void DirtyRect_Destroy(HDIRTYRECT hDR)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
 
-	if (pDR->hMutex)
-	{
-		CloseHandle(pDR->hMutex);
-		pDR->hMutex = NULL;
-	}
-
 	if (pDR->hEvnet)
 	{
 		pDR->bThread = FALSE;
@@ -182,7 +152,7 @@ void DirtyRect_Destroy(HDIRTYRECT hDR)
 
 	if (pDR->hThread)
 	{
-		WaitForSingleObject(pDR->hThread, 2000/*INFINITE*/);
+		WaitForSingleObject(pDR->hThread, INFINITE);
 		CloseHandle(pDR->hThread);
 		pDR->hThread = NULL;
 	}
@@ -192,7 +162,5 @@ void DirtyRect_Destroy(HDIRTYRECT hDR)
 		CloseHandle(pDR->hEvnet);
 		pDR->hEvnet = NULL;
 	}
-
-	pDR->bIsFirst = FALSE;
 }
 

@@ -384,7 +384,7 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 							  NULL, // psiStartInfo
 							  &pi)) // pProcInfo
 			{
-				WaitForSingleObject(pi.hThread, 3000);
+				WaitForSingleObject(pi.hThread, 1000);
 				CloseHandle(pi.hThread);
 				CloseHandle(pi.hProcess);
 			}
