@@ -60,6 +60,7 @@ typedef struct {
 	ALIGNIMAGE	Align;
 	int			x, y;
 	PDISPUPDATE	pUpdate;
+	BOOL		bIsWait;
 } DISPBITMAP, *PDISPBITMAP;
 //////////////////////////////////////////////////////////////////////////////////
 // Microsoft reserves the range 0 to 0x10000 for its escape codes.

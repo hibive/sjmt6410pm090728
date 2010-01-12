@@ -359,7 +359,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	if (TRUE == bDispUpdate)
 	{
 		BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-		for (int i=0; (FALSE==bDirtyRect && i<5); i++)
+		for (int i=0; (FALSE==bDirtyRect && i<3); i++)
 		{
 			Sleep(1000);
 			bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);

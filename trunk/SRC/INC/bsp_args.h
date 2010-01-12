@@ -42,7 +42,7 @@ typedef struct
 
 	WORD	BS_wRevsionCode;
 	WORD	BS_wProductCode;
-	WORD	CMD_wType;	// (little-endian, 0x0000 or 'bs' -> 0x6273)
+	WORD	CMD_wType;				// (little-endian, 0x0000 or 'bs' -> 0x6273)
 	BYTE	CMD_bMinor;
 	BYTE	CMD_bMajor;
 	DWORD	WFM_dwFileSize;
@@ -61,7 +61,9 @@ typedef struct
 
 	SYSTEMTIME stBootloader;
 	SYSTEMTIME stWinCE;
+
 	// ...
+
 #else	//!OMNIBOOK_VER
     HANDLE                 g_SDCardDetectEvent;    //For USB MSF , check SD Card insert & remove.
     DWORD                 g_SDCardState;            //For USB MSF , check SD Card insert & remove.

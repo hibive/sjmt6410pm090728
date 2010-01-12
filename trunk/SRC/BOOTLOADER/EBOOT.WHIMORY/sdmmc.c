@@ -150,17 +150,41 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 	case '1':	// BLOCK0.NB0
 		pSelFile = file_name[0];
 		if (fatFileExist(pSelFile))
+		{
+			EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
+			EPDOutputString("+++ Block0.nb0 Write\r\n");
+			EPDOutputFlush();
 			bRet = parsingImageFromSD(IMAGE_NB0, pSelFile);
+			EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
+			EPDOutputString("--- Block0.nb0 Write\r\n");
+			EPDOutputFlush();
+		}
 		break;
 	case '2':	// EBOOT.BIN
 		pSelFile = file_name[1];
 		if (fatFileExist(pSelFile))
+		{
+			EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
+			EPDOutputString("+++ Eboot.bin Write\r\n");
+			EPDOutputFlush();
 			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+			EdbgOutputDebugString("--- Eboot.bin Write\r\n");
+			EPDOutputString("--- Eboot.bin Write\r\n");
+			EPDOutputFlush();
+		}
 		break;
 	case '3':	// NK.BIN
 		pSelFile = file_name[2];
 		if (fatFileExist(pSelFile))
+		{
+			EdbgOutputDebugString("+++ NK.bin Write\r\n");
+			EPDOutputString("+++ NK.bin Write\r\n");
+			EPDOutputFlush();
 			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+			EdbgOutputDebugString("--- NK.bin Write\r\n");
+			EPDOutputString("--- NK.bin Write\r\n");
+			EPDOutputFlush();
+		}
 		break;
 	case '4':	// CHAIN.LST
 		pSelFile = file_name[3];
@@ -172,9 +196,16 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 		if (fatFileExist(pSelFile))
 		{
 			BLOB blob = {0,};
+
+			EdbgOutputDebugString("+++ EpsonBS.wbf Write\r\n");
+			EPDOutputString("+++ EpsonBS.wbf Write\r\n");
+			EPDOutputFlush();
 			blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
 			blob.pBlobData = (PBYTE)readPtIndex;
 			bRet = EPDSerialFlashWrite((void *)&blob);
+			EdbgOutputDebugString("--- EpsonBS.wbf Write\r\n");
+			EPDOutputString("--- EpsonBS.wbf Write\r\n");
+			EPDOutputFlush();
 
 			EdbgOutputDebugString("%s - %s\r\n", pSelFile, bRet ? "Success" : "Failure");
 

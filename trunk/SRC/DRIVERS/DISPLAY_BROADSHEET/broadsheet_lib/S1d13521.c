@@ -60,14 +60,11 @@ static LPBYTE		g_lpFrameBuffer = NULL;
 static volatile S1D13521_REG *g_pS1D13521Reg = NULL;
 static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 
+// Sleep Status
 static BOOL			g_bSleepDirtyRect = FALSE;
-static POWERSTATE	g_SleepPowerState = POWER_SLEEP;
-
-// Sleep Bitmap
-static BOOL			g_bSBSet = FALSE;
-static BOOL			g_bSBDirtyRect = FALSE;
-static DSPUPDSTATE	g_SBDspUpdState = DSPUPD_FULL;
-static WAVEFORMMODE	g_SBWaveformMode = WAVEFORM_GU;
+static DSPUPDSTATE	g_SleepDspUpdState = DSPUPD_FULL;
+static BOOL			g_bSleepBorder = TRUE;
+static WAVEFORMMODE	g_SleepWaveformMode = WAVEFORM_GU;
 
 
 static WORD RegRead(WORD wReg);
@@ -220,8 +217,11 @@ static void initDisplay(BOOL bClean)
 	CmdArg.pArgv[0] = 0x0154;
 	CmdArg.nArgc = 1;
 	Command(CmdArg);
-	for (i=0; i<S1D13521_FB_SIZE; i+=2)
-		OUTREG16(&g_pS1D13521Reg->DATA, 0xFFFF);
+	if (TRUE == bClean)
+	{
+		for (i=0; i<S1D13521_FB_SIZE; i+=2)
+			OUTREG16(&g_pS1D13521Reg->DATA, 0xFFFF);
+	}
 	MYMSG((_T("[S1D13521] LD_IMG_END\r\n")));
 	CmdArg.bCmd = 0x23;
 	CmdArg.nArgc = 0;
@@ -392,6 +392,19 @@ static BOOL WaitHrdy(int nDebug)
 	if (S1D13521_HRDY_TIMEOUT == i)
 	{
 		MYERR((_T("WaitHrdy(%d)\r\n"), nDebug));
+		{
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x11);
+			OUTREG16(&g_pS1D13521Reg->DATA, 0x0008);	// Software Reset Register
+			OUTREG16(&g_pS1D13521Reg->DATA, 0xFFFF);
+			for (i=0; i<S1D13521_HRDY_TIMEOUT; i++)
+			{
+				if ((g_pGPIOPReg->GPNDAT & (1<<8)))
+					break;
+				delay(5);
+			}
+			initChip();
+			initDisplay(FALSE);
+		}
 #ifdef	FOR_EBOOT
 		g_bSkipWaitHrdy = TRUE;
 #endif	FOR_EBOOT
@@ -693,7 +706,7 @@ static BOOL ImageWrite(PIMAGERECT pir)
 
 	return TRUE;
 }
-static BOOL UpdateWrite(PRECT pRect)
+static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 {
 	CMDARG CmdArg;
 #ifndef	FOR_EBOOT
@@ -736,23 +749,25 @@ static BOOL UpdateWrite(PRECT pRect)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 #ifndef	FOR_EBOOT
-/*if (DSPUPD_FULL == g_DspUpdState)
-{
-	DWORD i=0, loop=0;
-	WORD wData=0;
-
-	if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
-		loop = 78 + 20;	//delay(780);
-	else
-		loop = 26 + 20;	//delay(260);
-	for (i=0; i<loop; i++)
+	if (bIsWait)
 	{
-		wData = RegRead2(0x0338, FALSE);
-		if (0 == (wData & (1<<3)))	// [3] Display Frame Busy
-			break;
-		delay(10);
+		DWORD i=0, loop=0;
+		WORD wData=0;
+
+		if (WAVEFORM_DU == g_WaveformMode)
+			loop = 26 + 20;	//delay(260);
+		else if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
+			loop = 78 + 20;	//delay(780);
+
+		for (i=0; i<loop; i++)
+		{
+			wData = RegRead2(0x0338, FALSE);
+			if (0 == (wData & (1<<3)))	// [3] Display Frame Busy
+				break;
+			delay(10);
+		}
+		MYERR((_T("[S1D13521] i == %d\r\n"), i));
 	}
-}*/
 #endif	FOR_EBOOT
 
 	if (DRVESC_WRITE_UPDATE == g_dwDebugLevel)
@@ -763,7 +778,7 @@ static BOOL UpdateWrite(PRECT pRect)
 	}
 
 #ifndef	FOR_EBOOT
-	MYMSG((_T("\t%d\r\n"), GetTickCount()-dwStart));
+	MYMSG((_T("\tUpdateWrite %d mSec\r\n"), GetTickCount()-dwStart));
 #endif	FOR_EBOOT
 	return TRUE;
 }
@@ -773,7 +788,7 @@ static BOOL ImageUpdate(PIMAGERECT pir)
 
 	bRet = ImageWrite(pir);
 	if (bRet)
-		bRet = UpdateWrite(pir->pRect);
+		bRet = UpdateWrite(pir->pRect, FALSE);
 
 	if (DRVESC_IMAGE_UPDATE == g_dwDebugLevel)
 	{
@@ -786,7 +801,7 @@ static BOOL ImageUpdate(PIMAGERECT pir)
 	return bRet;
 }
 
-static BOOL DispUpdate(PDISPUPDATE pdu)
+static BOOL DispUpdate(PDISPUPDATE pdu, BOOL bIsWait)
 {
 	CMDARG CmdArg;
 	RECT rect;
@@ -837,6 +852,28 @@ static BOOL DispUpdate(PDISPUPDATE pdu)
 	CmdArg.bCmd = 0x29;
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
+#ifndef	FOR_EBOOT
+	if (bIsWait)
+	{
+		DWORD i=0, loop=0;
+		WORD wData=0;
+
+		if (WAVEFORM_DU == g_WaveformMode)
+			loop = 26 + 20; //delay(260);
+		else if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
+			loop = 78 + 20; //delay(780);
+
+		for (i=0; i<loop; i++)
+		{
+			wData = RegRead2(0x0338, FALSE);
+			if (0 == (wData & (1<<3)))	// [3] Display Frame Busy
+				break;
+			delay(10);
+		}
+		MYERR((_T("[S1D13521] i == %d\r\n"), i));
+	}
+#endif	FOR_EBOOT
+
 
 	if (DRVESC_DISP_UPDATE == g_dwDebugLevel)
 	{
@@ -977,7 +1014,7 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 	Command(CmdArg);
 
 	if (pdi->pUpdate)
-		bRet = DispUpdate(pdi->pUpdate);
+		bRet = DispUpdate(pdi->pUpdate, pdi->bIsWait);
 	else
 	{
 		RECT rect;
@@ -985,7 +1022,7 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 		rect.top = pdi->y;
 		rect.right = pdi->x + bih.biWidth;
 		rect.bottom = pdi->y + bih.biHeight;
-		bRet = UpdateWrite(&rect);
+		bRet = UpdateWrite(&rect, pdi->bIsWait);
 	}
 
 	return bRet;
@@ -1021,26 +1058,16 @@ void S1d13521PowerHandler(BOOL bOff)
 {
 	if (bOff)
 	{
-		g_bSleepDirtyRect = g_bDirtyRect;
-		g_bDirtyRect = FALSE;
-
-		g_SleepPowerState = g_PowerState;
-		if (POWER_SLEEP != g_SleepPowerState)
-			OUTREG16(&g_pS1D13521Reg->CMD, 0x05);	// SLP
-		g_PowerState = POWER_SLEEP;
+		if (POWER_SLEEP != g_PowerState)
+		{
+		}
 	}
 	else
 	{
 		g_bDirtyRect = g_bSleepDirtyRect;
-		g_PowerState = g_SleepPowerState;
-
-		if (g_bSBSet)
-		{
-			g_bDirtyRect = g_bSBDirtyRect;
-			g_DspUpdState = g_SBDspUpdState;
-			g_WaveformMode = g_SBWaveformMode;
-			g_bSBSet = FALSE;
-		}
+		g_DspUpdState = g_SleepDspUpdState;
+		g_bBorder = g_bSleepBorder;
+		g_WaveformMode = g_SleepWaveformMode;
 	}
 }
 
@@ -1088,10 +1115,12 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	case DRVESC_SYSTEM_SLEEP:
 		if (100 == cjIn)
 		{
-			g_bSBSet = TRUE;
-			g_bSBDirtyRect = g_bDirtyRect;
-			g_SBDspUpdState = g_DspUpdState;
-			g_SBWaveformMode = g_WaveformMode;
+			g_bSleepDirtyRect = g_bDirtyRect;
+			g_SleepDspUpdState = g_DspUpdState;
+			g_bSleepBorder = g_bBorder;
+			g_SleepWaveformMode = g_WaveformMode;
+
+			g_bDirtyRect = FALSE;
 		}
 		return 0;
 	case DRVESC_SYSTEM_WAKEUP:
@@ -1102,7 +1131,10 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	}
 
 	if (POWER_RUN != g_PowerState)
-		psOld = SetPowerState(POWER_RUN, g_PowerState);
+	{
+		psOld = g_PowerState;
+		g_PowerState = SetPowerState(POWER_RUN, g_PowerState);
+	}
 	switch (iEsc)
 	{
 	case DRVESC_COMMAND:
@@ -1140,7 +1172,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		break;
 	case DRVESC_WRITE_UPDATE:
 		if ((sizeof(RECT) == cjIn) && pvIn)
-			nRetVal = UpdateWrite((PRECT)pvIn);
+			nRetVal = UpdateWrite((PRECT)pvIn, FALSE);
 		break;
 	case DRVESC_IMAGE_UPDATE:
 		if ((sizeof(IMAGERECT) == cjIn) && pvIn)
@@ -1153,12 +1185,12 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		break;
 	case DRVESC_DISP_UPDATE:
 		if ((sizeof(DISPUPDATE) == cjIn) && pvIn)
-			nRetVal = DispUpdate((PDISPUPDATE)pvIn);
+			nRetVal = DispUpdate((PDISPUPDATE)pvIn, FALSE);
 		break;
 
 	}
 	if (psOld != g_PowerState)
-		SetPowerState(g_PowerState, psOld);
+		g_PowerState = SetPowerState(psOld, g_PowerState);
 
 	return nRetVal;
 }

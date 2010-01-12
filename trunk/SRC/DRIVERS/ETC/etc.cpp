@@ -351,7 +351,44 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			}
 		}
 		break;
+	case IOCTL_GET_EPSON_INFO:
+		if (pOutBuf && sizeof(EPSON_INFO) == nOutBufSize)
+		{
+			PVOID pMarshalledOutBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_GET_EPSON_INFO for OUT buf.\r\n")));
+				return FALSE;
+			}
 
+			PEPSON_INFO pei = (PEPSON_INFO)pMarshalledOutBuf;
+			pei->BS_wRevsionCode			= g_pBspArgs->BS_wRevsionCode;
+			pei->BS_wProductCode			= g_pBspArgs->BS_wProductCode;
+			pei->CMD_wType					= g_pBspArgs->CMD_wType;
+			pei->CMD_bMinor					= g_pBspArgs->CMD_bMinor;
+			pei->CMD_bMajor					= g_pBspArgs->CMD_bMajor;
+			pei->WFM_dwFileSize				= g_pBspArgs->WFM_dwFileSize;
+			pei->WFM_dwSerialNumber			= g_pBspArgs->WFM_dwSerialNumber;
+			pei->WFM_bRunType				= g_pBspArgs->WFM_bRunType;
+			pei->WFM_bFPLPlatform			= g_pBspArgs->WFM_bFPLPlatform;
+			pei->WFM_wFPLLot				= g_pBspArgs->WFM_wFPLLot;
+			pei->WFM_bModeVersion			= g_pBspArgs->WFM_bModeVersion;
+			pei->WFM_bWaveformVersion		= g_pBspArgs->WFM_bWaveformVersion;
+			pei->WFM_bWaveformSubVersion	= g_pBspArgs->WFM_bWaveformSubVersion;
+			pei->WFM_bWaveformType			= g_pBspArgs->WFM_bWaveformType;
+			pei->WFM_bFPLSize				= g_pBspArgs->WFM_bFPLSize;
+			pei->WFM_bMFGCode				= g_pBspArgs->WFM_bMFGCode;
+			bRet = TRUE;
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_GET_EPSON_INFO for OUT buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
+
+	// +++ Only System Used +++
 	case IOCTL_GET_BOARD_INFO:
 		if (pOutBuf && 512 == nOutBufSize)	// SECTOR_SIZE
 		{
@@ -410,6 +447,7 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 			}
 		}
 		break;
+	// --- Only System Used ---
 	}
 	ReleaseMutex(g_hMutex);
 

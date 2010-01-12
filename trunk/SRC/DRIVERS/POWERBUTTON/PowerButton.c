@@ -52,6 +52,8 @@ static volatile BSP_ARGS *g_pArgs = NULL;
 static DWORD g_dwSysIntrBatFlt = SYSINTR_UNDEFINED;
 static HANDLE g_hEventBatFlt = NULL;
 static HANDLE g_hThreadBatFlt = NULL;
+static HANDLE g_hEventShutdown = NULL;
+static HANDLE g_hThreadShutdown = NULL;
 #endif	OMNIBOOK_VER
 
 DBGPARAM dpCurSettings =                                \
@@ -110,12 +112,53 @@ INT WINAPI BatteryFaultThread(void)
 							  NULL,	// psiStartInfo
 							  &pi))	// pProcInfo
 			{
-				WaitForSingleObject(pi.hThread, 3000);
+				WaitForSingleObject(pi.hThread, 1000);
 				CloseHandle(pi.hThread);
 				CloseHandle(pi.hProcess);
 			}
 			SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 		}
+	}
+
+	return 0;
+}
+
+INT WINAPI ShutdownThread(void)
+{
+	LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+	PROCESS_INFORMATION pi;
+
+	while (1)
+	{
+		WaitForSingleObject(g_hEventShutdown, INFINITE);
+
+		RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SHUTDOWN)\r\n")));
+		PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SHUTDOWN")), 0, 0);
+
+		ZeroMemory(&pi,sizeof(pi));
+		if (CreateProcess(lpszPathName,
+						  _T("SHUTDOWN"),	// pszCmdLine
+						  NULL,	// psaProcess
+						  NULL,	// psaThread
+						  FALSE,// fInheritHandle
+						  0,	// fdwCreate
+						  NULL,	// pvEnvironment
+						  NULL,	// pszCurDir
+						  NULL,	// psiStartInfo
+						  &pi))	// pProcInfo
+		{
+			WaitForSingleObject(pi.hThread, 1000);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+		}
+
+		RegFlushKey(HKEY_CLASSES_ROOT);
+		RegFlushKey(HKEY_CURRENT_USER);
+		RegFlushKey(HKEY_LOCAL_MACHINE);
+
+		Sleep(1000);
+		SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
+		KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
 	}
 
 	return 0;
@@ -162,31 +205,8 @@ INT WINAPI PowerButtonThread(void)
 			dwTickCount = GetTickCount() - dwTickStart;
 			if (TIMEOUT_POWEROFF <= dwTickCount)	// GPC[3] - PWRHOLD(3)
 			{
-				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-				PROCESS_INFORMATION pi;
-
-				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SHUTDOWN)\r\n")));
-				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SHUTDOWN")), 0, 0);
-
-				ZeroMemory(&pi,sizeof(pi));
-				if (CreateProcess(lpszPathName,
-								  _T("SHUTDOWN"),	// pszCmdLine
-								  NULL,	// psaProcess
-								  NULL,	// psaThread
-								  FALSE,// fInheritHandle
-								  0,	// fdwCreate
-								  NULL,	// pvEnvironment
-								  NULL,	// pszCurDir
-								  NULL,	// psiStartInfo
-								  &pi))	// pProcInfo
-				{
-					WaitForSingleObject(pi.hThread, 3000);
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
-				}
-
-				SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
-				KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
+				SetEvent(g_hEventShutdown);
+				Sleep(10000);
 			}
 #endif	OMNIBOOK_VER
         }
@@ -368,6 +388,13 @@ AllocResources(void)
 	if (!(InterruptInitialize(g_dwSysIntrBatFlt, g_hEventBatFlt, 0, 0)))
 	{
 		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : InterruptInitialize() Battery Fault Failed \n\r"), _T(__FUNCTION__)));
+		return FALSE;
+	}
+
+	g_hEventShutdown = CreateEvent(NULL, FALSE, FALSE, _T("OMNIBOOK_EVENT_SHUTDOWN"));
+	if(NULL == g_hEventShutdown)
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateEvent() Shutdown Failed \n\r"), _T(__FUNCTION__)));
 		return FALSE;
 	}
 #endif	OMNIBOOK_VER
@@ -628,6 +655,14 @@ PWR_Init(DWORD dwContext)
 		goto CleanUp;
 	}
 	CeSetThreadPriority(g_hThreadBatFlt, 90);
+
+	// Create Shutdown Thread
+	g_hThreadShutdown = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) ShutdownThread, NULL, 0, NULL);
+	if (g_hThreadShutdown == NULL)
+	{
+		RETAILMSG(PWR_ZONE_ERROR, (_T("[PWR:ERR] %s() : CreateThread() Shutdown Failed \n\r"), _T(__FUNCTION__)));
+		goto CleanUp;
+	}
 #endif	OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR] --%s()\r\n"), _T(__FUNCTION__)));
