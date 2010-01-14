@@ -518,6 +518,7 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
 	{ VK_F21,		VK_TAB },		// Sym
 	{ VK_RETURN,	VK_LWIN },		// ENTER
 	{ VK_BACK,		VK_DELETE },	// DEL
+	{ 'T',			VK_F22 },		// Test Program...
 #else //!OMNIBOOK_VER
     { VK_HYPHEN, VK_NUMLOCK },
     { VK_EQUAL, VK_CANCEL },

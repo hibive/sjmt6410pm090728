@@ -20,6 +20,7 @@
 #include <bsp.h>
 #include "Pmplatform.h"
 static HANDLE g_hEventBatFlt = NULL;
+static volatile BSP_ARGS *g_pArgs = NULL;
 #endif	OMNIBOOK_VER
 #include <pmimpl.h>
 #include "PmSysReg.h"
@@ -366,27 +367,37 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 #ifdef	OMNIBOOK_VER
 		if (0 == _tcsncmp(_T("suspend"), szStateName, 7))
 		{
-			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
-			PROCESS_INFORMATION pi;
-
-			RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SUSPEND)\r\n")));
-			PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SUSPEND")), 0, 0);
-
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("SLEEP"),	// pszCmdLine
-							  NULL, // psaProcess
-							  NULL, // psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL, // pvEnvironment
-							  NULL, // pszCurDir
-							  NULL, // psiStartInfo
-							  &pi)) // pProcInfo
+			if (NULL == g_pArgs)
 			{
-				WaitForSingleObject(pi.hThread, 1000);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
+				PHYSICAL_ADDRESS    ioPhysicalBase = {0,0};
+				ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
+				g_pArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
+			}
+
+			if (g_pArgs && (0 == g_pArgs->dwBatteryFault))
+			{
+				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+				PROCESS_INFORMATION pi;
+
+				RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SUSPEND)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SUSPEND")), 0, 0);
+
+				ZeroMemory(&pi,sizeof(pi));
+				if (CreateProcess(lpszPathName,
+								  _T("SLEEP"),	// pszCmdLine
+								  NULL, // psaProcess
+								  NULL, // psaThread
+								  FALSE,// fInheritHandle
+								  0,	// fdwCreate
+								  NULL, // pvEnvironment
+								  NULL, // pszCurDir
+								  NULL, // psiStartInfo
+								  &pi)) // pProcInfo
+				{
+					WaitForSingleObject(pi.hThread, 1000);
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
 			}
 		}
 		else if (0 == _tcsncmp(_T("resuming"), szStateName, 8))

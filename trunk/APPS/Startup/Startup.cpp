@@ -328,6 +328,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 			RETAILMSG(1, (_T("ERROR : RunProgram(%s)\r\n"), szProgram));
 		}
 	}
+	if (FALSE == bDispUpdate)
+	{
+		HDC hDC = GetDC(HWND_DESKTOP);
+		DirtyRectUpdate(hDC);
+		InvalidateRect(HWND_DESKTOP, NULL, TRUE);
+		ReleaseDC(HWND_DESKTOP, hDC);
+	}
 
 	if (FALSE == bDispUpdate)
 	{
@@ -340,39 +347,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		if (IsProgram(szProgram))
 		{
 			if (RunProgram(szProgram, NULL, 0))
-			{
 				RETAILMSG(1, (_T("RunProgram(%s)\r\n"), szProgram));
-				bDispUpdate = TRUE;
-			}
 			else
-			{
 				RETAILMSG(1, (_T("ERROR : RunProgram(%s)\r\n"), szProgram));
-			}
 		}
 		else
 		{
 			RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
 		}
 	}
-
-	HDC hDC = GetDC(HWND_DESKTOP);
-	if (TRUE == bDispUpdate)
-	{
-		BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-		for (int i=0; (FALSE==bDirtyRect && i<3); i++)
-		{
-			Sleep(1000);
-			bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-		}
-		if (FALSE == bDirtyRect)
-		{
-			RETAILMSG(1, (_T("ERROR : FALSE == bDirtyRect\r\n")));
-			bDispUpdate = FALSE;
-		}
-	}
-	if (FALSE == bDispUpdate)
-		DirtyRectUpdate(hDC);
-	ReleaseDC(HWND_DESKTOP, hDC);
 
 	if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_SIPSYMBOL_REG_STRING, szProgram, MAX_PATH, FALSE))
 	{
