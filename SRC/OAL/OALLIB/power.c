@@ -147,6 +147,7 @@ static void S3C6410_WakeUpSource_Configure(void)
 #endif
 #ifdef	OMNIBOOK_VER
 	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+	#define	REMOVE_KBD_WAKEUP_SRC	1
 #endif	OMNIBOOK_VER
 
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);

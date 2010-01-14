@@ -313,6 +313,29 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				ShowWindow(g_hWndMain, bIsVisible ? SW_HIDE : SW_SHOWNOACTIVATE);
 			}
 		}
+		else if (VK_F22 == key->vkCode)	// Test Program...
+		{
+			if (bIsKeyUp)
+			{
+				LPCTSTR lpszPathName = _T("\\eBook Store\\testOmnibook.exe");
+				PROCESS_INFORMATION pi;
+				ZeroMemory(&pi,sizeof(pi));
+				if (CreateProcess(lpszPathName,
+								  NULL,	// pszCmdLine
+								  NULL,	// psaProcess
+								  NULL,	// psaThread
+								  FALSE,// fInheritHandle
+								  0,	// fdwCreate
+								  NULL,	// pvEnvironment
+								  NULL,	// pszCurDir
+								  NULL,	// psiStartInfo
+								  &pi))	// pProcInfo
+				{
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+			}
+		}
 		else if (bIsVisible)
 		{
 			if (VK_LEFT == key->vkCode)
