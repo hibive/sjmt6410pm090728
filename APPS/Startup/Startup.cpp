@@ -334,10 +334,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		DirtyRectUpdate(hDC);
 		InvalidateRect(HWND_DESKTOP, NULL, TRUE);
 		ReleaseDC(HWND_DESKTOP, hDC);
-	}
 
-	if (FALSE == bDispUpdate)
-	{
 		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, APP_UPDATE_REG_STRING, szProgram, MAX_PATH, FALSE))
 		{
 			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
@@ -372,6 +369,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 	{
 		RETAILMSG(1, (_T("ERROR : Not Found - %s\r\n"), szProgram));
 	}
+
+	HDC hDC = GetDC(HWND_DESKTOP);
+	BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
+	for (int i=0; (FALSE==bDirtyRect && i<3); i++)
+	{
+		Sleep(1000);
+		bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
+	}
+	if (FALSE == bDirtyRect)
+		DirtyRectUpdate(hDC);
+	ReleaseDC(HWND_DESKTOP, hDC);
 
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("PowerManager/ReloadActivityTimeouts"));
 	if (hEvent)
