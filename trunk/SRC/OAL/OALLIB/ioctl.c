@@ -708,6 +708,24 @@ MarkAndSkipBadBlock:
 
 	return TRUE;
 }
+static BOOL OALIoCtlHalOmnibookUpdateImage(
+        UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
+        VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
+{
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalOmnibookUpdateImage()\r\n")));
+
+
+
+
+
+
+
+
+
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalOmnibookUpdateImage()\r\n")));
+	
+	return TRUE;
+}
 #endif	OMNIBOOK_VER
 
 

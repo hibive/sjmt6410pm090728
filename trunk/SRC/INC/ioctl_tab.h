@@ -38,6 +38,7 @@
 { IOCTL_HAL_OMNIBOOK_SHUTDOWN,				0,    OALIoCtlHalOmnibookShutdown       },
 { IOCTL_HAL_OMNIBOOK_GET_INFO,				0,    OALIoCtlHalOmnibookGetInfo        },
 { IOCTL_HAL_OMNIBOOK_SET_INFO,				0,    OALIoCtlHalOmnibookSetInfo        },
+{ IOCTL_HAL_OMNIBOOK_UPDATE_IMAGE,			0,    OALIoCtlHalOmnibookUpdateImage    },
 #endif	OMNIBOOK_VER
 
 // Required Termination

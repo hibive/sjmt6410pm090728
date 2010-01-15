@@ -301,6 +301,9 @@ ENDIF IMGHIVEREG
    "WMRStartSector"=dword:10000
    "WMRNumOfSector"=dword:ffffffff	; last location
    "ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
+IF IMGHIVEREG
+   "Flags"=dword:1000
+ENDIF IMGHIVEREG
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1]
     "DefaultFileSystem"="FATFS"
@@ -629,14 +632,28 @@ IF BSP_USBFNCLASS == MASS_STORAGE
 	"Removable"=dword:1
 ENDIF BSP_USBFNCLASS
 
+IF OMNIBOOK_VER
+
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\FDSK1]
+	"Index"=dword:3
+
+[HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
+	"Index"=dword:1
+[HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class\High_Capacity]
+	"Index"=dword:1
+[HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\MMC_Class]
+	"Index"=dword:1
+
+ELSE
+
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
 	"Index"=dword:3
-
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class\High_Capacity]
 	"Index"=dword:3
-
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\MMC_Class]
 	"Index"=dword:3
+
+ENDIF OMNIBOOK_VER
 ;-------------------------------------------------------------------------
 
 [HKEY_CURRENT_USER\ControlPanel\Comm]
@@ -968,7 +985,6 @@ ENDIF BSP_NOOES !
 ;-- backlight driver ----------------------------------------------------------------
 IF BSP_NOBACKLIGHT !
 [HKEY_LOCAL_MACHINE\Drivers\BuiltIn\Backlight]
-	"Index"=dword:1
 	"Prefix"="BKL"
 	"Dll"="backlight.dll"
 	"Flags"=dword:00010000
