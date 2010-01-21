@@ -61,7 +61,10 @@ static BOOL downloadBin(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD p
 static BOOL downloadNB0(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr);
 static BOOL downloadImage(LPDWORD pdwImageStart, LPDWORD pdwImageLength, LPDWORD pdwLaunchAddr);
 static void writeImage(void);
-
+#if	0
+BOOL fatReadBin(PUCHAR FileName, PULONG JumpAddress, PULONG pulSize, PULONG pulImageAddress);
+static void cardBoot(void);
+#endif
 
 BOOL InitializeSDMMC(void)
 {
@@ -246,7 +249,7 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 				EPDOutputString("--- Nand Flash Format All\r\n");
 				EPDOutputFlush();
 				pBootCfg->ConfigFlags &= ~BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT | BOOT_WRITE_NK | BOOT_WRITE_EPSON);
-				
+
 				pSelFile = file_name[4];
 				{
 					BLOB blob = {0,};
@@ -261,7 +264,7 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 					EPDOutputFlush();
 					pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EPSON);
 				}
-				
+
 				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 				pSelFile = file_name[0];
@@ -274,7 +277,7 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 				EPDOutputString("--- Block0.nb0 Write\r\n");
 				EPDOutputFlush();
 				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0);
-				
+
 				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 				pSelFile = file_name[1];
@@ -287,14 +290,19 @@ BOOL ChooseImageFromSDMMC(BOOL bIsAuto)
 				EPDOutputString("--- Eboot.bin Write\r\n");
 				EPDOutputFlush();
 				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EBOOT);
-				
-				TOC_Write();
+
 				HALT(0);
 			}
 		}
 		else
 			HALT(-800);
 		return FALSE;
+
+#if	0
+	case '7':
+		cardBoot();
+		break;
+#endif
 
 	default:
 		return FALSE;
@@ -914,4 +922,98 @@ static void writeImage(void)
 		HALT(-901);
 	}
 }
+
+#if	0
+#include <pshpack1.h>		// byte packing
+typedef struct _BINFILE_HEADER {
+	UCHAR	SyncBytes[7];
+	ULONG	ImageAddress;
+	ULONG	ImageLength;
+} BINFILE_HEADER, *PBINFILE_HEADER;
+typedef struct _BINFILE_RECORD_HEADER {
+	ULONG	LoadAddress;
+	ULONG	Length;
+	ULONG	CheckSum;
+} BINFILE_RECORD_HEADER, *PBINFILE_RECORD_HEADER;
+#include <poppack.h>
+BOOL fatReadBin(PUCHAR FileName, PULONG JumpAddress, PULONG pulSize, PULONG pulImageAddress)
+{
+	UINT32 dwImageSize = 0;
+	ULONG StartAddress, ImageLength, BytesProcessed;
+	BINFILE_HEADER BinFileHeader;
+	BINFILE_RECORD_HEADER BinRecordHeader;
+	LONG CheckSum;
+	PUCHAR pData;
+
+	if (FALSE == fatFileExist(FileName))
+		return FALSE;
+
+	EdbgOutputDebugString("+++ NK.bin Read\r\n");
+	dwImageSize = fatFileRead(FileName, (UINT8 *)g_pDownPt);
+	EdbgOutputDebugString("--- NK.bin Read\r\n");
+	if ((UINT32)-1 == dwImageSize)
+		return FALSE;
+	g_pDownPt += dwImageSize;
+
+	if (dwImageSize < sizeof(BINFILE_HEADER) + 2*sizeof(BINFILE_RECORD_HEADER))
+	{
+		EdbgOutputDebugString("FATReadBin: BIN file size: %u bytes is too small.\r\n", dwImageSize);
+		return FALSE;
+	}
+
+	SDMMCReadData(sizeof(BINFILE_HEADER), (PUCHAR)&BinFileHeader);
+	EdbgOutputDebugString("INFO: Image Address =  : %X\r\n", BinFileHeader.ImageAddress);
+	EdbgOutputDebugString("INFO: Image Size =     : %X\r\n", BinFileHeader.ImageLength);
+
+	if (pulImageAddress)
+		*pulImageAddress  = BinFileHeader.ImageAddress;
+	StartAddress = BinFileHeader.ImageAddress;
+	ImageLength  = BinFileHeader.ImageLength;
+
+	BytesProcessed = sizeof(BINFILE_HEADER);
+	while (BytesProcessed < (dwImageSize - sizeof(BINFILE_RECORD_HEADER)))
+	{
+		SDMMCReadData(sizeof(BINFILE_RECORD_HEADER), (PUCHAR)&BinRecordHeader);
+		//EdbgOutputDebugString("INFO: Record Address = : %X\r\n", BinRecordHeader.LoadAddress);
+		//EdbgOutputDebugString("INFO: Record Length  = : %X\r\n", BinRecordHeader.Length);
+
+		SDMMCReadData(BinRecordHeader.Length, (PUCHAR)BinRecordHeader.LoadAddress);
+		CheckSum = 0;
+		for (pData=(PUCHAR)BinRecordHeader.LoadAddress;	pData<(PUCHAR)BinRecordHeader.LoadAddress+BinRecordHeader.Length; pData++)
+			CheckSum += *pData;
+		if ((ULONG)CheckSum != BinRecordHeader.CheckSum)
+		{
+			EdbgOutputDebugString("FATReadBin: ERROR: Record checksum failure. Aborting. %X != %X\r\n",
+				CheckSum, BinRecordHeader.CheckSum);
+			return FALSE;
+		}
+		BytesProcessed += (BinRecordHeader.Length + sizeof(BINFILE_RECORD_HEADER));
+	}
+
+	EdbgOutputDebugString("\r\nProcess the termination record which contains the jump address\r\n");
+	SDMMCReadData(sizeof(BINFILE_RECORD_HEADER), (PUCHAR)&BinRecordHeader);
+	if ((BinRecordHeader.LoadAddress != 0) || (BinRecordHeader.CheckSum != 0))
+		EdbgOutputDebugString("FATReadBin: WARNING: Termination record invalid format.\r\n");
+	*JumpAddress = BinRecordHeader.Length;
+	*pulSize = BinFileHeader.ImageLength;
+	EdbgOutputDebugString("JumpAddress(%X), pulSize(%X), pulImageAddress(%X)\r\n",
+		*JumpAddress, *pulSize, *pulImageAddress);
+
+	EdbgOutputDebugString("\r\nINFO: Copied BIN file from card to RAM \r\n");
+
+	return TRUE;
+}
+static void cardBoot(void)
+{
+	ULONG ulJumpAddr;	// The image boot address.
+	ULONG ulImageSize;	// The image size.
+	ULONG ulImageAddr;	// The image address.
+
+	if (fatReadBin("NK      BIN", &ulJumpAddr, &ulImageSize, &ulImageAddr))
+	{
+		EdbgOutputDebugString("Start CE at 0x%X\r\n", ulJumpAddr);
+		OEMLaunch(ulImageAddr, ulImageSize, ulJumpAddr, NULL);
+	}
+}
+#endif
 

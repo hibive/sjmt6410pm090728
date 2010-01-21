@@ -17,6 +17,7 @@
 
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 static volatile S3C6410_ADC_REG *g_pADCReg = NULL;
+static volatile BSP_ARGS *g_pBspArgs = NULL;
 
 static HANDLE g_hMutex = NULL;
 static HANDLE g_hEventExit = NULL;
@@ -142,25 +143,28 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		g_PowerStatus.BatteryCurrent        = nAvgLevel;
 		g_PowerStatus.BatteryAverageCurrent = fBatteryState;
 
-		if (fCharging)
+		if (0 == g_pBspArgs->dwLEDCheck)
 		{
-			// LED_R#[7] : 1Sec ON, 1Sec OFF
-			g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~((nLEDCount%2)<<7);
-		}
-		else
-		{
-			if (fChgDone)	// LED_R#[7] : ON
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
-			else	// LED_R#[7] : 1Sec ON, 2Sec OFF
+			if (fAcOn || fCharging)
 			{
-#if	1
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
-#else
-				if (nLEDCount % 3)
-					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
-				else
+				// LED_R#[7] : 1Sec ON, 1Sec OFF
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~((nLEDCount%2)<<7);
+			}
+			else
+			{
+				if (fChgDone)	// LED_R#[7] : ON
 					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+				else	// LED_R#[7] : 1Sec ON, 2Sec OFF
+				{
+#if	1
+					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+#else
+					if (nLEDCount % 3)
+						g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+					else
+						g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
 #endif
+				}
 			}
 		}
 		nLEDCount++;
@@ -225,6 +229,14 @@ BOOL WINAPI BatteryPDDInitialize(LPCTSTR pszRegistryContext)
 		goto goto_err;
 	}
 
+	ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
+	g_pBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
+	if (NULL == g_pBspArgs)
+	{
+		MYERR((_T("[BAT_ERR] NULL == g_pBspArgs\r\n")));
+		goto goto_err;
+	}
+
 	g_hMutex = CreateMutex(NULL, FALSE, NULL);
 	if (NULL == g_hMutex)
 	{
@@ -269,6 +281,12 @@ void WINAPI BatteryPDDDeinitialize(void)
 	{
 		CloseHandle(g_hMutex);
 		g_hMutex = NULL;
+	}
+
+	if (g_pBspArgs)
+	{
+		MmUnmapIoSpace((PVOID)g_pBspArgs, sizeof(BSP_ARGS));
+		g_pBspArgs = NULL;
 	}
 
 	if(g_pADCReg)

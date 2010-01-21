@@ -10,9 +10,9 @@
 #define	PMIC_ADDR	0xCC
 
 
-volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
-volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
-volatile BSP_ARGS *g_pBspArgs = NULL;
+static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
+static volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
+static volatile BSP_ARGS *g_pBspArgs = NULL;
 static HANDLE g_hMutex = NULL;
 static HANDLE g_hFileI2C = INVALID_HANDLE_VALUE;
 static HANDLE g_hEventSDMMCCH2CD = NULL;
@@ -389,6 +389,41 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		break;
 
 	// +++ Only System Used +++
+	case IOCTL_LED_CHECK:
+		if (100 == nInBufSize)			// Get
+			bRet = g_pBspArgs->dwLEDCheck;
+		else if (100 == nOutBufSize)	// Set
+		{
+			g_pBspArgs->dwLEDCheck = (DWORD)nInBufSize;
+			if (g_pBspArgs->dwLEDCheck)
+			{
+				DWORD dwPattern;
+				// GPA7(LED_R#), GPA6(LED_B) : 0->2, 1->3, 2->0, 3->1
+				dwPattern = ((g_pBspArgs->dwLEDCheck & 0x3) + 2) % 4;
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (dwPattern<<6);
+			}
+			bRet = TRUE;
+		}
+		break;
+	case IOCTL_UPDATE_BOOTLOADER:
+		if (pInBuf && sizeof(BLOB) == nInBufSize)	// sizeof(BLOB)
+		{
+			PVOID pMarshalledInBuf = NULL;
+			if (FAILED(CeOpenCallerBuffer(&pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR, TRUE)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeOpenCallerBuffer failed in IOCTL_UPDATE_BOOTLOADER for IN buf.\r\n")));
+				return FALSE;
+			}
+
+			bRet = KernelIoControl(IOCTL_HAL_OMNIBOOK_UPDATE_BOOTLOADER, pMarshalledInBuf, nInBufSize, NULL, nOutBufSize, NULL);
+
+			if (FAILED(CeCloseCallerBuffer(pMarshalledInBuf, pInBuf, nInBufSize, ARG_I_PTR)))
+			{
+				RETAILMSG(1, (_T("ETC_IOControl: CeCloseCallerBuffer failed in IOCTL_UPDATE_BOOTLOADER for IN buf.\r\n")));
+				return FALSE;
+			}
+		}
+		break;
 	case IOCTL_GET_BOARD_INFO:
 		if (pOutBuf && 512 == nOutBufSize)	// SECTOR_SIZE
 		{

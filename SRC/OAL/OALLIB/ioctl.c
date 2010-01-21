@@ -562,10 +562,11 @@ static BOOL OALIoCtlHalOmnibookShutdown(
 #include <VFL.h>
 #include <FIL.h>
 #define	WMRBUF_SIZE			(8192 + 256)	// the maximum size of 2-plane data for 4KByte/Page NAND flash Device
+static UCHAR WMRBuf[WMRBUF_SIZE];
+
 #define	INFO_BLOCK_START	(8)	//EBOOT_BLOCK_RESERVED
 #define	INFO_BLOCK_END		(9)	//EBOOT_BLOCK_RESERVED+1
 #define	SECTOR_SIZE			(512)
-static UCHAR WMRBuf[WMRBUF_SIZE];
 static BOOL OALIoCtlHalOmnibookGetInfo(
         UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
         VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
@@ -708,21 +709,120 @@ MarkAndSkipBadBlock:
 
 	return TRUE;
 }
-static BOOL OALIoCtlHalOmnibookUpdateImage(
+
+#define	EBOOT_BLOCK				(3)	// loader.h
+#define EBOOT_BLOCK_SIZE		(5)
+#define EBOOT_BLOCK_RESERVED	(2)
+static BOOL OALIoCtlHalOmnibookUpdateBootloader(
         UINT32 dwIoControlCode, VOID *lpInBuf, UINT32 nInBufSize,
         VOID *lpOutBuf, UINT32 nOutBufSize, UINT32 *pOutSize)
 {
-	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalOmnibookUpdateImage()\r\n")));
+	LowFuncTbl *pLowFuncTbl = FIL_GetFuncTbl();
+	UINT8 *pMBuf = WMRBuf;
+	UINT8 *pSBuf = WMRBuf + BYTES_PER_MAIN_SUPAGE;
+	BLOB *pBlob;
+	LPBYTE pbBuffer;
+	DWORD dwBlock, dwNumBlock;
+	BOOL32 bIsBadBlock = FALSE32;
+	UINT32 nSyncRet;
+	UINT32 dwPageOffset;
+	INT32 nRet;
 
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("++OALIoCtlHalOmnibookUpdateBootloader()\r\n")));
+	if ((lpInBuf == NULL) || (nInBufSize != sizeof(BLOB)) || (nOutBufSize != 100))
+    {
+        OALMSG(OAL_ERROR, (TEXT("[OAL:ERR] OALIoCtlHalOmnibookUpdateImage() Invalid Input Parameter\r\n")));
+        return FALSE;
+    }
 
+	pBlob = (BLOB *)lpInBuf;
+	pbBuffer = pBlob->pBlobData;
+	dwNumBlock = (pBlob->cbSize-1)/(BYTES_PER_MAIN_SUPAGE*PAGES_PER_BLOCK)+1;
+	dwBlock = EBOOT_BLOCK;
+	while (dwNumBlock > 0)
+	{
+		if (dwBlock == (EBOOT_BLOCK+EBOOT_BLOCK_SIZE+EBOOT_BLOCK_RESERVED))
+		{
+			OALMSG(TRUE, (TEXT("Write RAW image to BootMedia Failed !!!\r\n")));
+			OALMSG(TRUE, (TEXT("Too many Bad Block\r\n")));
+			return(FALSE);
+		}
 
+		IS_CHECK_SPARE_ECC = FALSE32;
+		pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK+PAGES_PER_BLOCK-1, 0x0, enuBOTH_PLANE_BITMAP, NULL, pSBuf, TRUE32, FALSE32);
+		IS_CHECK_SPARE_ECC = TRUE32;
+		if (TWO_PLANE_PROGRAM == TRUE32)
+		{
+			if (pSBuf[0] == 0xff && pSBuf[BYTES_PER_SPARE_PAGE] == 0xff)
+				bIsBadBlock = TRUE32;
+		}
+		else
+		{
+			if (pSBuf[0] == 0xff)
+				bIsBadBlock = TRUE32;
+		}
 
+		if (bIsBadBlock)
+		{
+			pLowFuncTbl->Erase(0, dwBlock, enuBOTH_PLANE_BITMAP);
+			nRet = pLowFuncTbl->Sync(0, &nSyncRet);
+			if ( nRet != FIL_SUCCESS)
+			{
+				OALMSG(TRUE, (TEXT("[ERR] FIL Erase Error @ %d block, Skipped\r\n"), dwBlock));
+				goto MarkAndSkipBadBlock;
+			}
 
+			for (dwPageOffset=0; dwPageOffset<PAGES_PER_BLOCK; dwPageOffset++)
+			{
+				pLowFuncTbl->Write(0, dwBlock*PAGES_PER_BLOCK+dwPageOffset, FULL_SECTOR_BITMAP_PAGE, enuBOTH_PLANE_BITMAP, pbBuffer+BYTES_PER_MAIN_SUPAGE*dwPageOffset, NULL);
+				nRet = pLowFuncTbl->Sync(0, &nSyncRet);
+				if (nRet != FIL_SUCCESS)
+				{
+					OALMSG(TRUE, (TEXT("[ERR] FIL Write Error @ %d Block %d Page, Skipped\r\n"), dwBlock, dwPageOffset));
+					goto MarkAndSkipBadBlock;
+				}
 
+				nRet = pLowFuncTbl->Read(0, dwBlock*PAGES_PER_BLOCK+dwPageOffset, FULL_SECTOR_BITMAP_PAGE, enuBOTH_PLANE_BITMAP, pMBuf, NULL, FALSE32, FALSE32);
+				if (nRet != FIL_SUCCESS)
+				{
+					OALMSG(TRUE, (TEXT("[ERR] FIL Read Error @ %d Block %d Page, Skipped\r\n"), dwBlock, dwPageOffset));
+					goto MarkAndSkipBadBlock;
+				}
 
+				if (0 != memcmp(pbBuffer+BYTES_PER_MAIN_SUPAGE*dwPageOffset, pMBuf, BYTES_PER_MAIN_SUPAGE))
+				{
+					OALMSG(TRUE, (TEXT("[ERR] Verify Error @ %d Block %d Page, Skipped\r\n"), dwBlock, dwPageOffset));
+					goto MarkAndSkipBadBlock;
+				}
+			}
 
+			OALMSG(TRUE, (TEXT("[OK] Write %d th Block Success\r\n"), dwBlock));
+			dwBlock++;
+			dwNumBlock--;
+			pbBuffer += BYTES_PER_MAIN_SUPAGE*PAGES_PER_BLOCK;
+			continue;
 
-	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalOmnibookUpdateImage()\r\n")));
+MarkAndSkipBadBlock:
+
+			pLowFuncTbl->Erase(0, dwBlock, enuBOTH_PLANE_BITMAP);
+			memset(pSBuf, 0x0, BYTES_PER_SPARE_SUPAGE);
+			IS_CHECK_SPARE_ECC = FALSE32;
+			pLowFuncTbl->Write(0, dwBlock*PAGES_PER_BLOCK+PAGES_PER_BLOCK-1, 0x0, enuBOTH_PLANE_BITMAP, NULL, pSBuf);
+			IS_CHECK_SPARE_ECC = TRUE32;
+			dwBlock++;
+			continue;
+		}
+		else
+		{
+			OALMSG(TRUE, (TEXT("Bad Block %d Skipped\r\n"), dwBlock));
+			dwBlock++;
+			continue;
+		}
+	}
+
+	OALMSG(TRUE, (TEXT("Write Eboot image to BootMedia Success\r\n")));
+
+	OALMSG(OAL_IOCTL&&OAL_FUNC, (TEXT("--OALIoCtlHalOmnibookUpdateBootloader()\r\n")));
 	
 	return TRUE;
 }
