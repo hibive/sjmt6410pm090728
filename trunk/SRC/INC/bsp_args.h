@@ -62,6 +62,8 @@ typedef struct
 	SYSTEMTIME stBootloader;
 	SYSTEMTIME stWinCE;
 
+	DWORD	dwLEDCheck;
+
 	// ...
 
 #else	//!OMNIBOOK_VER

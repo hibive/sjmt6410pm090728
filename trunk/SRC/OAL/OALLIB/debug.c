@@ -32,6 +32,9 @@
 static volatile S3C6410_UART_REG *g_pUARTReg = NULL;
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 static volatile S3C6410_SYSCON_REG *g_pSysConReg = NULL;
+#ifdef	OMNIBOOK_VER
+static volatile BSP_ARGS *g_pBSPArgs = NULL;
+#endif	OMNIBOOK_VER
 
 static const UINT32 aSlotTable[16] =
 {
@@ -189,6 +192,12 @@ int OEMReadDebugByte()
 // The SMDK6410 Evaluation Platform supports 4 LEDs
 void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
 {
+#ifdef	OMNIBOOK_VER
+	if (g_pBSPArgs == NULL)
+		g_pBSPArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
+	if (g_pBSPArgs->dwLEDCheck)
+		return;
+#endif	OMNIBOOK_VER
     if (g_pGPIOReg == NULL)
     {
         // It is first time. Initialize SFR and GPIO set to output
@@ -208,7 +217,7 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
 #ifdef	OMNIBOOK_VER
 		// GPA7(LED_R#), GPA6(LED_B) : 0->2, 1->3, 2->0, 3->1
 		Pattern = (Pattern + 2) % 4;
-		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<6)) | ((Pattern&0x1)<<6);
+		g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x3<<6)) | (Pattern<<6);
 #else	OMNIBOOK_VER
         g_pGPIOReg->GPNDAT = (g_pGPIOReg->GPNDAT & ~(0xf<<12)) | ((Pattern&0xf)<<12);    
 #endif	OMNIBOOK_VER
