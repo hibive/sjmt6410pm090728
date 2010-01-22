@@ -60,7 +60,7 @@ extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char
 
 // +++ sdmmc settings +++
 extern BOOL InitializeSDMMC(void);
-extern BOOL ChooseImageFromSDMMC(BOOL bIsAuto);
+extern BOOL ChooseImageFromSDMMC(BYTE bUpdateIdx);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
 
@@ -115,7 +115,7 @@ BOOL			g_bUSBDownload = FALSE;
 BOOL 			*g_bCleanBootFlag;
 #ifdef	OMNIBOOK_VER
 BOOL			g_bSDMMCBooting = FALSE;
-BOOL			g_bAutoSDMMCDownload = FALSE;
+BYTE			g_bSDMMCUpdateKey = 0;
 BOOL			g_bSDMMCDownload = FALSE;
 BOOL			*g_bHiveCleanFlag;
 BOOL			*g_bFormatPartitionFlag;
@@ -539,7 +539,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("X) Epson Instruction byte code update(Default)\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
-		if (g_bAutoSDMMCDownload)
+		if (g_bSDMMCUpdateKey)
 			KeySelect = 'S';
 #endif	OMNIBOOK_VER
 
@@ -1201,7 +1201,32 @@ BOOL OEMPlatformInit(void)
 			else if ((KeyData == (KEY_HOLD | KEY_F)) || g_bSDMMCBooting)
 			{
 				KeySelect = 0x20;
-				g_bAutoSDMMCDownload = TRUE;
+				g_bSDMMCUpdateKey = 'F';	// Factory Update
+			}
+			else if (KeyData == (KEY_HOLD | KEY_B))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'B';	// Block0Img.nb0 => Block0.nb0
+			}
+			else if (KeyData == (KEY_HOLD | KEY_E))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'E';	// Eboot.bin
+			}
+			else if (KeyData == (KEY_HOLD | KEY_N))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'N';	// NK.bin
+			}
+			else if (KeyData == (KEY_HOLD | KEY_D))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'D';	// DispEink.bin
+			}
+			else if (KeyData == (KEY_HOLD | KEY_C))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'C';	// Chain.lst
 			}
 		}
 #endif	OMNIBOOK_VER
@@ -1475,7 +1500,7 @@ DWORD OEMPreDownload(void)
 	else if (g_bSDMMCDownload == TRUE)
 	{
 		OALMSG(TRUE, (TEXT("Please choose the Image on SDMMCCard.\r\n")));
-		if (FALSE == ChooseImageFromSDMMC(g_bAutoSDMMCDownload))
+		if (FALSE == ChooseImageFromSDMMC(g_bSDMMCUpdateKey))
 		{
 			OALMSG(OAL_ERROR, (L"ERROR: ChooseImageFromSDMMC call failed\r\n"));;
 			SpinForever();

@@ -145,27 +145,22 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 
 		if (0 == g_pBspArgs->dwLEDCheck)
 		{
-			if (fAcOn || fCharging)
-			{
-				// LED_R#[7] : 1Sec ON, 1Sec OFF
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~((nLEDCount%2)<<7);
-			}
+#if	1
+			if (fCharging)	// LED_R#[7] : ON
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+			else			// LED_R#[7] : OFF
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+#else
+			if (fChgDone)	// LED_R#[7] : ON
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
 			else
 			{
-				if (fChgDone)	// LED_R#[7] : ON
-					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
-				else	// LED_R#[7] : 1Sec ON, 2Sec OFF
-				{
-#if	1
+				if (fAcOn || fCharging)	// LED_R#[7] : 1Sec ON, 1Sec OFF
+					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~((nLEDCount%2)<<7);
+				else					// LED_R#[7] : OFF
 					g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
-#else
-					if (nLEDCount % 3)
-						g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
-					else
-						g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
-#endif
-				}
 			}
+#endif
 		}
 		nLEDCount++;
 
