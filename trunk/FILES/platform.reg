@@ -1200,5 +1200,13 @@ IF BSP_NOWIFI !
 ;Default	"WifiDefaultCM"=dword:0
 ENDIF BSP_NOWIFI !
 
+IF MODEL_BOOKCUBE_B612
+[HKEY_CURRENT_USER\Software\Changeon\PrimeDic]
+	"Name"="Data"
+	"ROOT"="\\eBook Store\\PrimeDic\\"
+	"DB"="\\eBook Store\\PrimeDic\\DB\\"
+	"WORDBOOK"="\\eBook Store\\PrimeDic\\WORDB\\"
+ENDIF MODEL_BOOKCUBE_B612
+
 ENDIF OMNIBOOK_VER
 
