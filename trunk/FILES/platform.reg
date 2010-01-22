@@ -1195,5 +1195,10 @@ IF APPS_COMMAND
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
 
+IF BSP_NOWIFI !
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+;Default	"WifiDefaultCM"=dword:0
+ENDIF BSP_NOWIFI !
+
 ENDIF OMNIBOOK_VER
 

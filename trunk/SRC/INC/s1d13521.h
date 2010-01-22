@@ -101,6 +101,9 @@ enum {
 	DRVESC_DISP_BITMAP,			// DISPBITMAP	[set]
 	DRVESC_DISP_UPDATE,			// DISPUPDATE	[set]
 
+	DRVESC_WRITE_WAVEFORM,		// BLOB			[set]
+	DRVESC_READ_WAVEFORM,		// BLOB			[get]
+
 	DRVESC_MAX
 };
 //////////////////////////////////////////////////////////////////////////////////

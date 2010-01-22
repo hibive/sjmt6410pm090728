@@ -436,7 +436,6 @@ void EPDOutputFlush(void)
 int EPDSerialFlashWrite(void *pBlob)
 {
 	BLOB sfmd;
-	int nRet;
 
 	if (NULL == pBlob)
 	{
@@ -456,9 +455,8 @@ int EPDSerialFlashWrite(void *pBlob)
 		sfmd.cbSize = lpBlob->cbSize;
 		sfmd.pBlobData = lpBlob->pBlobData;
 	}
-	nRet = (int)S1d13521DrvEscape(DRVESC_WRITE_SFM, sizeof(BLOB), (PVOID)&sfmd, 0, NULL);
 
-	return nRet;
+	return (int)S1d13521DrvEscape(DRVESC_WRITE_SFM, sizeof(BLOB), (PVOID)&sfmd, 0, NULL);
 }
 
 #else	//!DISPLAY_BROADSHEET

@@ -45,7 +45,9 @@ typedef struct {
 
 
 #ifdef	FOR_EBOOT
-static BOOL	g_bSkipWaitHrdy = FALSE;
+static BOOL		g_bSkipWaitHrdy = FALSE;
+#else
+static DWORD	g_dwSWResetCount = 0;
 #endif	FOR_EBOOT
 
 DWORD	g_dwDebugLevel = 0;
@@ -392,7 +394,12 @@ static BOOL WaitHrdy(int nDebug)
 	if (S1D13521_HRDY_TIMEOUT == i)
 	{
 		MYERR((_T("WaitHrdy(%d)\r\n"), nDebug));
+#ifdef	FOR_EBOOT
+		g_bSkipWaitHrdy = TRUE;
+#else
+		if (3 > g_dwSWResetCount)
 		{
+			g_dwSWResetCount++;
 			OUTREG16(&g_pS1D13521Reg->CMD, 0x11);
 			OUTREG16(&g_pS1D13521Reg->DATA, 0x0008);	// Software Reset Register
 			OUTREG16(&g_pS1D13521Reg->DATA, 0xFFFF);
@@ -405,8 +412,6 @@ static BOOL WaitHrdy(int nDebug)
 			initChip();
 			initDisplay(FALSE);
 		}
-#ifdef	FOR_EBOOT
-		g_bSkipWaitHrdy = TRUE;
 #endif	FOR_EBOOT
 		return FALSE;
 	}
@@ -1028,6 +1033,92 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 	return bRet;
 }
 
+static int SfmReadWaveform(BLOB *pBlob)
+{
+	/*int spage, epage, offset, i;
+	PBYTE pData = pBlob->pBlobData;
+
+	init_spi();
+	spage = FLASH_WFM_ADDR / FLASH_PAGE_SIZE;
+	epage = (FLASH_WFM_ADDR + pBlob->cbSize - 1) / FLASH_PAGE_SIZE;
+	for (i=spage; i<=epage; i++)
+	{
+		read_flash(i, g_sfmBuffer);
+		if (spage == i)
+		{
+			offset = FLASH_WFM_ADDR % FLASH_PAGE_SIZE;
+			memcpy(pData, g_sfmBuffer+offset, FLASH_PAGE_SIZE-offset);
+			pData += (FLASH_PAGE_SIZE-offset);
+		}
+		else if (epage == i)
+		{
+			offset = (FLASH_WFM_ADDR + pBlob->cbSize) % FLASH_PAGE_SIZE;
+			memcpy(pData, g_sfmBuffer, offset);
+			pData += offset;
+		}
+		else
+		{
+			memcpy(pData, g_sfmBuffer, FLASH_PAGE_SIZE);
+			pData += FLASH_PAGE_SIZE;
+		}
+	}
+	exit_spi();
+
+	if (DRVESC_WRITE_WAVEFORM == g_dwDebugLevel)
+	{
+		MYERR((_T(" SfmReadWaveform(%d)\r\n"), pBlob->cbSize));
+	}*/
+
+	return pBlob->cbSize;
+}
+static int SfmWriteWaveform(BLOB *pBlob)
+{
+	/*int spage, epage, offset, i;
+	BYTE tmpBuf[FLASH_PAGE_SIZE];
+	PBYTE pData = pBlob->pBlobData;
+
+	init_spi();
+	spage = FLASH_WFM_ADDR / FLASH_PAGE_SIZE;
+	epage = (FLASH_WFM_ADDR + pBlob->cbSize - 1) / FLASH_PAGE_SIZE;
+	MYERR((_T(" size === %d \r\n"), pBlob->cbSize));
+	for (i=spage; i<=epage; i++)
+	{
+		if (spage == i)
+		{
+			read_flash(i, tmpBuf);
+			offset = (FLASH_WFM_ADDR % FLASH_PAGE_SIZE);
+			memcpy(g_sfmBuffer, tmpBuf, offset);
+			memcpy(g_sfmBuffer+offset, pData, (FLASH_PAGE_SIZE-offset));
+			pData += (FLASH_PAGE_SIZE-offset);
+			MYERR((_T(" spage === %d \r\n"), (FLASH_PAGE_SIZE-offset)));
+		}
+		else if (epage == i)
+		{
+			memset(g_sfmBuffer, 0, FLASH_PAGE_SIZE);
+			offset = (FLASH_WFM_ADDR + pBlob->cbSize) % FLASH_PAGE_SIZE;
+			memcpy(g_sfmBuffer, pData, offset);
+			pData += offset;
+			MYERR((_T(" epage === %d \r\n"), offset));
+		}
+		else
+		{
+			memcpy(g_sfmBuffer, pData, FLASH_PAGE_SIZE);
+			pData += FLASH_PAGE_SIZE;
+		}
+		erase_flash(i);
+		write_flash(i, g_sfmBuffer);
+	}
+	MYERR((_T(" pBlob->pBlobData(%X) === pData(%X) \r\n"), pBlob->pBlobData, pData-pBlob->cbSize));
+	exit_spi();
+
+	if (DRVESC_READ_WAVEFORM == g_dwDebugLevel)
+	{
+		MYERR((_T(" SfmWriteWaveform(%d)\r\n"), pBlob->cbSize));
+	}*/
+
+	return pBlob->cbSize;
+}
+
 
 
 
@@ -1186,6 +1277,15 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	case DRVESC_DISP_UPDATE:
 		if ((sizeof(DISPUPDATE) == cjIn) && pvIn)
 			nRetVal = DispUpdate((PDISPUPDATE)pvIn, FALSE);
+		break;
+
+	case DRVESC_WRITE_WAVEFORM:
+		if ((sizeof(BLOB) == cjIn) && pvIn)
+			nRetVal = SfmWriteWaveform((BLOB *)pvIn);
+		break;
+	case DRVESC_READ_WAVEFORM:
+		if ((sizeof(BLOB) == cjOut) && pvOut)
+			nRetVal = SfmReadWaveform((BLOB *)pvOut);
 		break;
 
 	}
