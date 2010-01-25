@@ -720,6 +720,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				OALMSG(TRUE, (TEXT("[ERR] WMR_Format_VFL() Failure\r\n")));
 				break;
 			}
+
+			TOC_Init(DEFAULT_IMAGE_DESCRIPTOR, (IMAGE_TYPE_RAMIMAGE), 0, 0, 0);
+			if (!TOC_Write())
+			{
+				OALMSG(OAL_WARN, (TEXT("TOC_Write Failed!\r\n")));
+			}
 #else	//OMNIBOOK_VER
 			if (VFL_Close() != VFL_SUCCESS)
 			{

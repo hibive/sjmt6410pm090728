@@ -1,0 +1,93 @@
+
+; registry keys for the Streams portion of the driver
+[HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Custom\MANF-02DF-CARDID-9103-FUNC-1]
+   "Dll"="SDIO8686_MFG.dll"     		; use the "streams" interface portion to load the NDIS portion
+   "Prefix"="NDL"
+       ; add instance key for each instance that can be added
+   "Instance0"="SDIO8686:SDIO86881"	; "InstanceX" = "<Miniport Name>:<Miniport Instance>"
+
+[HKEY_LOCAL_MACHINE\Comm\SDIO8686]
+	"ImagePath"="SDIO8686_MFG.dll"
+	"Group"="NDIS"
+	"DisplayName"="Marvell SDIO8686 Wireless Card"
+
+[HKEY_LOCAL_MACHINE\Comm\SDIO8686\Linkage]
+	"Route"=hex(7):\
+		53,44,49,4f,38,36,38,38,31,00,00
+
+[HKEY_LOCAL_MACHINE\Comm\SDIO86881]
+	"ImagePath"="SDIO8686_MFG.dll"
+	"Group"="NDIS"
+	"DisplayName"="Marvell SDIO8686 Wireless Card"
+
+[HKEY_LOCAL_MACHINE\Comm\SDIO86881\Parms]
+	"SetSD4BIT"=dword:00000001
+	"UseMfgFw"=dword:00000001
+	"RegionCode"=dword:00000010
+	"BusPowerInD3"=dword:00000000
+	"ehancePS"=dword:00000001
+	"AssoRetryTimes"=dword:00000002
+	"AutoDeepSleepTime"=dword:00000000
+	"RoamScanAlgorithm"=dword:00000001
+	"RoamDiffRSSIThreshold"=dword:0000000f
+	"RoamMinScanInterval"=dword:000000c8
+	"RoamMaxScanInterval"=dword:00000bb8
+	"RoamChannelScanList"=dword:000007ff
+	"RoamSignalStrengthThreshold"=dword:0000002d
+	"MacFrameType"=dword:00000000
+	"AdhocAwakePeriod"=dword:00000001
+	"MultipleDTim"=dword:00000001
+	"NullPktInterval"=dword:00000000
+	"GPIOIntPulsewidth"=dword:00000005
+	"GPIOIntTriggerEdge"=dword:00000001
+	"GPIOIntPinNumber"=dword:00000004
+	"SDGPIOIntEnable"=dword:00000000
+	"ESSID_32"=dword:00000000
+	"LocalListenInterval"=dword:00000000
+	"Enable80211D"=dword:00000000
+	"RoamingMode"=dword:00000001
+	"bActiveRoamingwithBGSCAN"=dword:00000000
+	"RSSI_Range"=dword:0000000a
+	"ulRSSIThresholdTimer"=dword:00001388
+	"bLinkLostScanOneChannel"=dword:00000001
+	"bActiveRoamingScanOneChannel"=dword:00000001
+	"AvoidScanTime"=dword:00002710
+	"SdioIstThread"=dword:00000065
+	"AdhocDefaultBand"=dword:00000001
+	"AdhocWiFiDataRate"=dword:00000000
+	"AdhocDefaultChannel"=dword:00000006
+	"BTMode"=dword:00000000
+	"RTSThsd"=dword:0000092a
+	"FragThsd"=dword:0000092a
+	"PowerMode"=dword:00000000
+	"NetworkAddress"="0"
+	"BusType"=dword:00000000
+	"BusNumber"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Comm\SDIO86881\Parms\Tcpip]
+	"AutoInterval"=dword:0000012c
+	"AutoMask"=hex(7):\
+		32,35,35,2e,32,35,35,2e,30,2e,30,00,00
+	"AutoSubnet"=hex(7):\
+		31,36,39,2e,32,35,34,2e,30,2e,30,00,00
+	"AutoIP"=hex(7):\
+		31,36,39,2e,32,35,34,2e,32,31,38,2e,31,36,35,00,00
+	"AutoSeed"=dword:fbc2a58e
+	"PrevReqOptions"=hex:\
+		07,01,03,06,0f,2c,2e,2f
+	"T2"=dword:00000000
+	"T1"=dword:00000000
+	"Lease"=dword:00000000
+	"LeaseObtainedHigh"=dword:01ca9296
+	"LeaseObtainedLow"=dword:1b0bfa80
+	"DhcpServer"=hex(7):\
+		32,35,35,2e,32,35,35,2e,32,35,35,2e,32,35,35,00,00
+	"AutoCfg"=dword:00000001
+	"Subnetmask"=hex(7):\
+		32,35,35,2e,32,35,35,2e,32,35,35,2e,30,00,00
+	"IpAddress"=hex(7):\
+		30,2e,30,2e,30,2e,30,00,00
+	"UseZeroBroadcast"=dword:00000000
+	"DefaultGateway"=hex(7):\
+		30,2e,30,2e,30,2e,30,00,00
+	"EnableDHCP"=dword:00000001

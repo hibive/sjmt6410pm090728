@@ -106,7 +106,6 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 	}, *pSelFile;
 	BYTE KeySelect = bUpdateKey;
 	BOOL bRet = TRUE;
-	PBOOT_CFG pBootCfg = &g_pTOC->BootCfg;
 
 	EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
 	EdbgOutputDebugString("B) BLOCK0.NB0\r\n");
@@ -222,90 +221,65 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 			HALT(0);
 		}
 		return FALSE;
-	case 'F':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin) or (NK.bin)
-	case 'f':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin) or (NK.bin)
-		EdbgOutputDebugString("pBootCfg->ConfigFlags(%X)\r\n", BOOT_WRITE_MASK(pBootCfg->ConfigFlags));
-		EPDOutputString("pBootCfg->ConfigFlags(%X)\r\n", BOOT_WRITE_MASK(pBootCfg->ConfigFlags));
-		EPDOutputFlush();
-		if (fatFileExist(file_name[3]) && fatFileExist(file_name[0]) && fatFileExist(file_name[1]) && fatFileExist(file_name[2]))
+	case 'F':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin)
+	case 'f':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin)
+		if (fatFileExist(file_name[3]) && fatFileExist(file_name[0]) && fatFileExist(file_name[1]))
 		{
-			if (pBootCfg->ConfigFlags & BOOT_WRITE_MASK(BOOT_WRITE_EPSON | BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT))
+			EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
+			EPDOutputString("+++ Nand Flash Format All\r\n");
+			EPDOutputFlush();
+			VFL_Close();
+			WMR_Format_FIL();
+			EdbgOutputDebugString("--- Nand Flash Format All\r\n");
+			EPDOutputString("--- Nand Flash Format All\r\n");
+			EPDOutputFlush();
+
+			pSelFile = file_name[3];
 			{
-				EdbgOutputDebugString("+++ NK.bin Read\r\n");
-				EPDOutputString("+++ NK.bin Read\r\n");
+				BLOB blob = {0,};
+				EdbgOutputDebugString("+++ DispEink.bin Read\r\n");
+				EPDOutputString("+++ DispEink.bin Read\r\n");
 				EPDOutputFlush();
-				pSelFile = file_name[2];
-				bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
-				EdbgOutputDebugString("+++ NK.bin Write\r\n");
-				EPDOutputString("+++ NK.bin Write\r\n");
+				blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
+				blob.pBlobData = (PBYTE)readPtIndex;
+				EdbgOutputDebugString("--- DispEink.bin Read\r\n");
+				EPDOutputString("--- DispEink.wbf bin\r\n");
 				EPDOutputFlush();
-				//pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_NK);
-				pBootCfg->ConfigFlags &= ~BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT | BOOT_WRITE_NK | BOOT_WRITE_EPSON);
-				return bRet;
+
+				EdbgOutputDebugString("+++ DispEink.bin Write\r\n");
+				EPDOutputString("+++ DispEink.bin Write\r\n");
+				EPDOutputFlush();
+				bRet = EPDSerialFlashWrite((void *)&blob);
+				EdbgOutputDebugString("--- DispEink.bin Write\r\n");
+				EPDOutputString("--- DispEink.bin Write\r\n");
+				EPDOutputFlush();
 			}
-			else	// Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin
-			{
-				EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
-				EPDOutputString("+++ Nand Flash Format All\r\n");
-				EPDOutputFlush();
-				VFL_Close();
-				WMR_Format_FIL();
-				EdbgOutputDebugString("--- Nand Flash Format All\r\n");
-				EPDOutputString("--- Nand Flash Format All\r\n");
-				EPDOutputFlush();
-				pBootCfg->ConfigFlags &= ~BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0 | BOOT_WRITE_EBOOT | BOOT_WRITE_NK | BOOT_WRITE_EPSON);
 
-				pSelFile = file_name[3];
-				{
-					BLOB blob = {0,};
-					EdbgOutputDebugString("+++ DispEink.bin Read\r\n");
-					EPDOutputString("+++ DispEink.bin Read\r\n");
-					EPDOutputFlush();
-					blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
-					blob.pBlobData = (PBYTE)readPtIndex;
-					EdbgOutputDebugString("--- DispEink.bin Read\r\n");
-					EPDOutputString("--- DispEink.wbf bin\r\n");
-					EPDOutputFlush();
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+			pSelFile = file_name[0];
+			EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
+			EPDOutputString("+++ Block0.nb0 Write\r\n");
+			EPDOutputFlush();
+			parsingImageFromSD(IMAGE_NB0, pSelFile);
+			writeImage();
+			EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
+			EPDOutputString("--- Block0.nb0 Write\r\n");
+			EPDOutputFlush();
 
-					EdbgOutputDebugString("+++ DispEink.bin Write\r\n");
-					EPDOutputString("+++ DispEink.bin Write\r\n");
-					EPDOutputFlush();
-					bRet = EPDSerialFlashWrite((void *)&blob);
-					EdbgOutputDebugString("--- DispEink.bin Write\r\n");
-					EPDOutputString("--- DispEink.bin Write\r\n");
-					EPDOutputFlush();
-					pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EPSON);
-				}
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+			pSelFile = file_name[1];
+			EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
+			EPDOutputString("+++ Eboot.bin Write\r\n");
+			EPDOutputFlush();
+			parsingImageFromSD(IMAGE_BIN, pSelFile);
+			writeImage();
+			EdbgOutputDebugString("--- Eboot.bin Write\r\n");
+			EPDOutputString("--- Eboot.bin Write\r\n");
+			EPDOutputFlush();
 
-				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-				pSelFile = file_name[0];
-				EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
-				EPDOutputString("+++ Block0.nb0 Write\r\n");
-				EPDOutputFlush();
-				parsingImageFromSD(IMAGE_NB0, pSelFile);
-				writeImage();
-				EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
-				EPDOutputString("--- Block0.nb0 Write\r\n");
-				EPDOutputFlush();
-				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_BLOCK0);
-
-				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
-				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-				pSelFile = file_name[1];
-				EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
-				EPDOutputString("+++ Eboot.bin Write\r\n");
-				EPDOutputFlush();
-				parsingImageFromSD(IMAGE_BIN, pSelFile);
-				writeImage();
-				EdbgOutputDebugString("--- Eboot.bin Write\r\n");
-				EPDOutputString("--- Eboot.bin Write\r\n");
-				EPDOutputFlush();
-				pBootCfg->ConfigFlags |= BOOT_WRITE_MASK(BOOT_WRITE_EBOOT);
-
-				TOC_Write();	// pBootCfg->ConfigFlags
-				HALT(0);
-			}
+			HALT(0);
 		}
 		else
 			HALT(-800);
