@@ -293,7 +293,12 @@ ENDIF IMGHIVEREG
    "Prefix"="DSK"
    "Dll"="ONDisk.dll"
    "Order"=dword:1
+IF BSP_USBFNCLASS == MASS_STORAGE
+	"Index"=dword:3
+ELSE
 ;   "Index"=dword:1
+ENDIF BSP_USBFNCLASS
+   "Index"=dword:3
    "IClass"=multi_sz:"{A4E7EDDA-E575-4252-9D6B-4195D48BB865}"
    "Profile"="FDSK1"
    "BmlVolumeId"=dword:0		; BML volume ID = 0
@@ -301,26 +306,34 @@ ENDIF IMGHIVEREG
    "WMRStartSector"=dword:10000
    "WMRNumOfSector"=dword:ffffffff	; last location
    "ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
-IF IMGHIVEREG
-   "Flags"=dword:1000
-ENDIF IMGHIVEREG
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1]
     "DefaultFileSystem"="FATFS"
     "PartitionDriver"="mspart.dll"
     "Name"="PocketMory MLC Disk1"
+IF BSP_USBFNCLASS == MASS_STORAGE
+IF OMNIBOOK_VER
+	"Folder"="eBook Store"
+ELSE
+	"Folder"="PocketMory1"
+ENDIF OMNIBOOK_VER
+ELSE
 ;    "Folder"="PocketMory1"
+ENDIF BSP_USBFNCLASS
     "AutoMount"=dword:1
     "AutoPart"=dword:1
     "AutoFormat"=dword:1
 ;    "MountFlags"=dword:0
 ;    "Ioctl"=dword:4
 
+IF BSP_USBFNCLASS == MASS_STORAGE
+ELSE
 [HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\FDSK1]
     "DriverPath"="Drivers\\BuiltIn\\FDSK1"
     ; LoadFlags 0x01 == load synchronously
     "LoadFlags"=dword:1
     "BootPhase"=dword:0
+ENDIF BSP_USBFNCLASS
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS]
     "FriendlyName"="PocketMory FAT FileSystem1"
@@ -633,9 +646,6 @@ IF BSP_USBFNCLASS == MASS_STORAGE
 ENDIF BSP_USBFNCLASS
 
 IF OMNIBOOK_VER
-
-[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\FDSK1]
-	"Index"=dword:3
 
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
 	"Index"=dword:1
