@@ -66,9 +66,18 @@ BOOL fatReadBin(PUCHAR FileName, PULONG JumpAddress, PULONG pulSize, PULONG pulI
 static void cardBoot(void);
 #endif
 
-BOOL InitializeSDMMC(void)
+BOOL InitializeSDMMC(const char *sFileName)
 {
-	return SDHC_INIT();
+	BOOL bRet;
+
+	bRet = SDHC_INIT();
+	if (FALSE == bRet)
+		return FALSE;
+
+	if (sFileName)
+		bRet = fatFileExist(sFileName);
+
+	return bRet;
 }
 
 #pragma optimize ("",off)

@@ -760,9 +760,9 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 		WORD wData=0;
 
 		if (WAVEFORM_DU == g_WaveformMode)
-			loop = 26 + 20;	//delay(260);
+			loop = 26*2 + 20;	//delay(260);
 		else if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
-			loop = 78 + 20;	//delay(780);
+			loop = 78*2 + 20;	//delay(780);
 
 		for (i=0; i<loop; i++)
 		{

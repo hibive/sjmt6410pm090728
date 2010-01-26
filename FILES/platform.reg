@@ -1183,31 +1183,19 @@ ENDIF BSP_DISPLAY_BROADSHEET
 			"Infbeg","Infend","Infintr","","","","",""
 		;	"Infbeg","Infend","Infintr","startup","","","",""
 
-IF BSP_IROMBOOT
+
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-;Default	"AppStartup"="\\Omnibook Store\\eBook_MainApp.exe"
-IF OMNIBOOK_VER_DEMO
-	"AppStartup"="\\Storage Card\\DemoEBook2\\DemoEBook2.exe"
-ENDIF OMNIBOOK_VER_DEMO
+;Default	"AppStartup"="\\eBook Store\\eBook_MainApp.exe"
 ;Default	"AppUpdate"="\\Storage Card\\eBook_UpdateApp.exe"
 ;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
-
-IF OMNIBOOK_VER_DEMO
-[HKEY_LOCAL_MACHINE\System\Explorer\Shell Folders]
-	"Favorites"="\\PocketMory\\Favorites"
-ENDIF OMNIBOOK_VER_DEMO
-ENDIF BSP_IROMBOOT
-
+;Default	"CfgKeypadWakeup"=dword:0
 IF APPS_COMMAND
-[HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
-
 IF BSP_NOWIFI !
-[HKEY_LOCAL_MACHINE\Software\Omnibook]
-;Default	"WifiDefaultCM"=dword:0
+;Default	"CfgWifiDefCM"=dword:0
 ENDIF BSP_NOWIFI !
 
 IF MODEL_BOOKCUBE_B612

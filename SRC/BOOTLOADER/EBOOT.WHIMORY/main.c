@@ -59,7 +59,7 @@ extern void IICReadByte(unsigned long slvAddr, unsigned long addr, unsigned char
 #endif	DISPLAY_BROADSHEET
 
 // +++ sdmmc settings +++
-extern BOOL InitializeSDMMC(void);
+extern BOOL InitializeSDMMC(const char *sFileName);
 extern BOOL ChooseImageFromSDMMC(BYTE bUpdateIdx);
 extern BOOL SDMMCReadData(DWORD cbData, LPBYTE pbData);
 // --- sdmmc settings ---
@@ -931,7 +931,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			break;
 		case 'S':
 		case 's':
-			if (FALSE == InitializeSDMMC())
+			if (FALSE == InitializeSDMMC(NULL))
 			{
 				OALMSG(OAL_ERROR, (L"ERROR: InitializeSDMMC call failed\r\n"));;
 				SpinForever();
@@ -1025,6 +1025,7 @@ BOOL OEMPlatformInit(void)
 #ifdef	OMNIBOOK_VER
 	UINT8 data[2];
 	volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+	BOOL bNKUpdate = FALSE;
 #endif	OMNIBOOK_VER
 
 	OALMSG(OAL_FUNC, (TEXT("+OEMPlatformInit.\r\n")));
@@ -1182,17 +1183,24 @@ BOOL OEMPlatformInit(void)
 	dwCurrTime  = dwStartTime;
 	KeySelect   = 0;
 
-#ifndef	OMNIBOOK_VER
-        if (!InitializeUSB())
-        {
-            DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
-            return(FALSE);
-        }
-#endif	//!OMNIBOOK_VER
-
 #ifdef	OMNIBOOK_VER
 	InitializeKeypad();
-#endif	OMNIBOOK_VER
+
+	if (IMAGE_TYPE_RAMIMAGE == g_pTOC->id[1].dwImageType &&
+		!g_pTOC->id[1].dwLoadAddress &&	!g_pTOC->id[1].dwJumpAddress &&
+		!g_pTOC->id[1].dwStoreOffset && !g_pTOC->id[1].dwTtlSectors)
+	{
+		if (TRUE == InitializeSDMMC("NK      BIN"))	// "NK      BIN"
+			bNKUpdate = TRUE;
+		RETAILMSG(1, (TEXT("=== bNKUpdate(%d) ===\r\n"), bNKUpdate));
+	}
+#else	//!OMNIBOOK_VER
+    if (!InitializeUSB())
+    {
+        DEBUGMSG(1, (TEXT("OEMPlatformInit: Failed to initialize USB.\r\n")));
+        return(FALSE);
+    }
+#endif	//!OMNIBOOK_VER
 
 	// Allow the user to break into the bootloader menu.
 	while((dwCurrTime - dwStartTime) < g_pBootCfg->BootDelay)
@@ -1219,7 +1227,7 @@ BOOL OEMPlatformInit(void)
 				KeySelect = 0x20;
 				g_bSDMMCUpdateKey = 'E';	// Eboot.bin
 			}
-			else if (KeyData == (KEY_HOLD | KEY_N))
+			else if ((KeyData == (KEY_HOLD | KEY_N)) || bNKUpdate)
 			{
 				KeySelect = 0x20;
 				g_bSDMMCUpdateKey = 'N';	// NK.bin

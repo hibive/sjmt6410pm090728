@@ -147,7 +147,6 @@ static void S3C6410_WakeUpSource_Configure(void)
 #endif
 #ifdef	OMNIBOOK_VER
 	volatile BSP_ARGS *pArgs = (BSP_ARGS *)OALPAtoVA(IMAGE_SHARE_ARGS_PA_START, FALSE);
-	#define	REMOVE_KBD_WAKEUP_SRC	1
 #endif	OMNIBOOK_VER
 
     pSysConReg = (S3C6410_SYSCON_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_SYSCON, FALSE);
@@ -176,7 +175,13 @@ static void S3C6410_WakeUpSource_Configure(void)
                             |(0<<8)        // Keypad        (Enabled)
 #endif
                             |(1<<7);        // Battery Fault    (Disabled)
+
 #ifdef	OMNIBOOK_VER
+	if (pArgs->bKeypadWakeup)
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<8)) | (0<<8);		// Keypad (Enabled)
+	else
+		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<8)) | (1<<8);		// Keypad (Disabled)
+
 	if (pArgs->dwBatteryFault)
 	{
 		pSysConReg->PWR_CFG = (pSysConReg->PWR_CFG & ~(1<<10)) | (1<<10);	// RTC ALARM (Disabled)

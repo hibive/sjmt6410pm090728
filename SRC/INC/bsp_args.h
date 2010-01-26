@@ -64,6 +64,8 @@ typedef struct
 
 	DWORD	dwLEDCheck;
 
+	BOOL	bKeypadWakeup;
+
 	// ...
 
 #else	//!OMNIBOOK_VER
