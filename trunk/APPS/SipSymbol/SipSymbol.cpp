@@ -335,6 +335,7 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 					CloseHandle(pi.hProcess);
 				}
 			}
+			bIsRet = FALSE;
 		}
 		else if (bIsVisible)
 		{

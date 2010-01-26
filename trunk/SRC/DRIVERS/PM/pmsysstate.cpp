@@ -376,11 +376,21 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 
 			if (g_pArgs && (0 == g_pArgs->dwBatteryFault))
 			{
+				HKEY hKey;
 				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 				PROCESS_INFORMATION pi;
 
 				RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SUSPEND)\r\n")));
 				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SUSPEND")), 0, 0);
+
+				g_pArgs->bKeypadWakeup = FALSE;
+				if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Omnibook"), 0, KEY_ALL_ACCESS, &hKey))
+				{
+					DWORD dwType = REG_DWORD, cbData = sizeof(g_pArgs->bKeypadWakeup);
+					RegQueryValueEx(hKey, _T("CfgKeypadWakeup"), NULL, &dwType, (LPBYTE)&g_pArgs->bKeypadWakeup, &cbData);
+					RegCloseKey(hKey);
+				}
+				RETAILMSG(1, (_T("\tg_pArgs->bKeypadWakeup(%d)\r\n"), g_pArgs->bKeypadWakeup));
 
 				ZeroMemory(&pi,sizeof(pi));
 				if (CreateProcess(lpszPathName,
