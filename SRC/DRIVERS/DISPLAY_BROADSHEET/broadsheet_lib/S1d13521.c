@@ -54,7 +54,8 @@ DWORD	g_dwDebugLevel = 0;
 
 static BOOL			g_bDirtyRect = FALSE;
 static DSPUPDSTATE	g_DspUpdState = DSPUPD_FULL;//DSPUPD_PART;//DSPUPD_FULL;
-static BOOL			g_bBorder = TRUE;
+static BOOL			g_bBorder = FALSE;
+static BOOL			g_bOldBorder = FALSE;
 static WAVEFORMMODE	g_WaveformMode = WAVEFORM_GU;
 static POWERSTATE	g_PowerState = POWER_SLEEP;
 static BYTE			g_sfmBuffer[FLASH_PAGE_SIZE];
@@ -65,7 +66,6 @@ static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 // Sleep Status
 static BOOL			g_bSleepDirtyRect = FALSE;
 static DSPUPDSTATE	g_SleepDspUpdState = DSPUPD_FULL;
-static BOOL			g_bSleepBorder = TRUE;
 static WAVEFORMMODE	g_SleepWaveformMode = WAVEFORM_GU;
 
 
@@ -145,6 +145,8 @@ static void initChip(void)
 #ifdef	USE_S1D13521_BIGENDIAN
 	RegWrite(0x0020, (1<<1));	// Bigendian mode
 #endif	USE_S1D13521_BIGENDIAN
+
+	RegWrite(0x0326, ((g_bBorder ? 0x00 : 0xFF)<<0));
 }
 static void initDisplay(BOOL bClean)
 {
@@ -233,7 +235,7 @@ static void initDisplay(BOOL bClean)
 	{
 		MYMSG((_T("[S1D13521] UPD_FULL\r\n")));
 		CmdArg.bCmd = 0x33;
-		CmdArg.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (WAVEFORM_INIT<<8);
+		CmdArg.pArgv[0] = (1<<14) | (WAVEFORM_INIT<<8);
 		CmdArg.nArgc = 1;
 		Command(CmdArg);
 	}
@@ -723,7 +725,7 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 		MYMSG((_T("[S1D13521] UPD_FULL or UPD_PART\r\n")));
 		// 0x33(UPD_FULL), 0x35(UPD_PART)
 		CmdArg.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x33 : 0x35;
-		CmdArg.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (g_WaveformMode<<8);
+		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8);
 		CmdArg.nArgc = 1;
 		Command(CmdArg);
 	}
@@ -735,7 +737,7 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 		MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
 		// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
 		CmdArg.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x34 : 0x36;
-		CmdArg.pArgv[0] = ((g_bBorder ? 1 : 0)<<14) | (g_WaveformMode<<8);
+		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8);
 		CmdArg.pArgv[1] = Area.x;
 		CmdArg.pArgv[2] = Area.y;
 		CmdArg.pArgv[3] = Area.w;
@@ -1135,7 +1137,6 @@ void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
 	initChip();
 	initDisplay(TRUE);
 #else	FOR_EBOOT
-	g_bBorder = FALSE;
 	Sleep(1000);
 #endif	FOR_EBOOT
 }
@@ -1157,7 +1158,6 @@ void S1d13521PowerHandler(BOOL bOff)
 	{
 		g_bDirtyRect = g_bSleepDirtyRect;
 		g_DspUpdState = g_SleepDspUpdState;
-		g_bBorder = g_bSleepBorder;
 		g_WaveformMode = g_SleepWaveformMode;
 	}
 }
@@ -1208,7 +1208,6 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		{
 			g_bSleepDirtyRect = g_bDirtyRect;
 			g_SleepDspUpdState = g_DspUpdState;
-			g_bSleepBorder = g_bBorder;
 			g_SleepWaveformMode = g_WaveformMode;
 
 			g_bDirtyRect = FALSE;
@@ -1225,6 +1224,11 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	{
 		psOld = g_PowerState;
 		g_PowerState = SetPowerState(POWER_RUN, g_PowerState);
+	}
+	if (g_bOldBorder != g_bBorder)
+	{
+		RegWrite(0x0326, ((g_bBorder ? 0x00 : 0xFF)<<0));
+		g_bOldBorder = g_bBorder;
 	}
 	switch (iEsc)
 	{
