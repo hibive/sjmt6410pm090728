@@ -186,6 +186,8 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			_tcscpy_s(szShutdown, _countof(szShutdown), BMP_SHUTDOWN_REG_DEFAULT);
 		}
 		bRet = dispShutdown(hDC, szShutdown);
+		if (FALSE == bRet)
+			dispShutdown(hDC, BMP_SHUTDOWN_REG_DEFAULT);
 		RETAILMSG(1, (_T("App_Command => SHUTDOWN(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
@@ -201,6 +203,8 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 			_tcscpy_s(szLowbattery, _countof(szLowbattery), BMP_LOWBATTERY_REG_DEFAULT);
 		}
 		bRet = dispShutdown(hDC, szLowbattery);
+		if (FALSE == bRet)
+			dispShutdown(hDC, BMP_LOWBATTERY_REG_DEFAULT);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
 	}
 
