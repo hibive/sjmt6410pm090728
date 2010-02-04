@@ -616,9 +616,14 @@ IF BSP_USBFNCLASS == SERIAL
 
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers\Serial_Class]
 	"FriendlyName"=LOC_USBFN_SERIAL_NAME			; "USB Cable:"
-	"idVendor"=dword:0547
 	"Manufacturer"=LOC_USBFN_SERIAL_MANUFACTURER	; "Samsung"
-	"idProduct"=dword:2720
+IF OMNIBOOK_VER
+	"idVendor"=dword:045E	; Microsoft USB Sync
+	"idProduct"=dword:00CE	; Microsoft USB Sync
+ELSE OMNIBOOK_VER
+	"idVendor"=dword:0547	; Samsung SYSLSI USB Sync
+	"idProduct"=dword:2720	; Samsung SYSLSI USB Sync
+ENDIF OMNIBOOK_VER
 	"Product"=LOC_USBFN_SERIAL_PRODUCT				; "Generic USB Serial"
 	"Index"=dword:5
 

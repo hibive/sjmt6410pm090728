@@ -174,7 +174,7 @@ static BOOL CheckWifiMacAddress(void)
 		goto goto_Cleanup;
 	}
 
-	if (0 == memcmp(abInfo, "SJMT", 4))
+	if (0 == memcmp(abInfo, "SJMT", 4) && 0 == memcmp(&abInfo[30], "MAC ", 4))
 	{
 		UINT8 szUUID[16]={0,};
 		memcpy(szUUID, abInfo, 16);
@@ -255,6 +255,8 @@ goto_Retry:
 				DeviceIoControl(hEtc, IOCTL_SET_BOARD_UUID, szUUID, sizeof(szUUID), NULL, 0, NULL, NULL);
 
 				memcpy(abInfo, szUUID, 16);
+				szUUID[0] = 'M'; szUUID[1] = 'A'; szUUID[2] = 'C'; szUUID[3] = ' ';
+				memcpy(&abInfo[30], szUUID, 16);
 				bRet = DeviceIoControl(hEtc, IOCTL_SET_BOARD_INFO, abInfo, sizeof(abInfo), NULL, 100, NULL, NULL);
 				if (FALSE == bRet)
 				{
