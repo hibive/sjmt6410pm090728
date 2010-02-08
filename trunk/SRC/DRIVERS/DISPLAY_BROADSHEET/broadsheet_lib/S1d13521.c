@@ -31,7 +31,7 @@
 #define S1D13521_ORI_WIDTH		S1D13521_FB_HEIGHT
 #define S1D13521_ORI_HEIGHT		S1D13521_FB_WIDTH
 #endif
-#define	S1D13521_HRDY_TIMEOUT	300
+#define	S1D13521_HRDY_TIMEOUT	600
 #define FLASH_WFM_ADDR			0x0886
 #define FLASH_PAGE_SIZE			0x100	// 256 bytes
 
@@ -57,7 +57,7 @@ static DSPUPDSTATE	g_DspUpdState = DSPUPD_FULL;//DSPUPD_PART;//DSPUPD_FULL;
 static BOOL			g_bBorder = FALSE;
 static BOOL			g_bOldBorder = FALSE;
 static WAVEFORMMODE	g_WaveformMode = WAVEFORM_GU;
-static POWERSTATE	g_PowerState = POWER_SLEEP;
+static POWERSTATE	g_PowerState = POWER_RUN;
 static BYTE			g_sfmBuffer[FLASH_PAGE_SIZE];
 static LPBYTE		g_lpFrameBuffer = NULL;
 static volatile S1D13521_REG *g_pS1D13521Reg = NULL;
@@ -250,10 +250,14 @@ static void initDisplay(BOOL bClean)
 	CmdArg.bCmd = 0x28;
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
-	MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
-	CmdArg.bCmd = 0x29;
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
+
+	if (TRUE == bClean)
+	{
+		MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+		CmdArg.bCmd = 0x29;
+		CmdArg.nArgc = 0;
+		Command(CmdArg);
+	}
 }
 
 
@@ -423,6 +427,7 @@ static BOOL WaitHrdy(int nDebug)
 
 static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
 {
+#if	0
 	CMDARG CmdArg;
 
 	if (POWER_RUN == ps)
@@ -447,6 +452,21 @@ static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
 	}
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
+#else
+	if (POWER_SLEEP == psOld)
+	{
+		RegWrite(0x000A, (1<<12));
+		delay(4);	// Wait 4ms
+	}
+
+	if (POWER_RUN == ps)
+		OUTREG16(&g_pS1D13521Reg->CMD, 0x02);
+	else if (POWER_STANDBY == ps)
+		OUTREG16(&g_pS1D13521Reg->CMD, 0x04);
+	else //if (POWER_SLEEP == ps)
+		OUTREG16(&g_pS1D13521Reg->CMD, 0x05);
+	WaitHrdy(6);
+#endif
 
 	if (DRVESC_SET_POWERSTATE == g_dwDebugLevel
 		|| DRVESC_GET_POWERSTATE == g_dwDebugLevel)
@@ -751,19 +771,30 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 
-	MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
-	CmdArg.bCmd = 0x29;
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
+	//if (NULL == pRect && (DSPUPD_FULL == g_DspUpdState))
+	{
+		MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+		CmdArg.bCmd = 0x29;
+		CmdArg.nArgc = 0;
+		Command(CmdArg);
+	}
+
 #ifndef	FOR_EBOOT
 	if (bIsWait)
 	{
 		DWORD i=0, loop=0;
 		WORD wData=0;
 
+#if	0
+		MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+		CmdArg.bCmd = 0x29;
+		CmdArg.nArgc = 0;
+		Command(CmdArg);
+#endif
+
 		if (WAVEFORM_DU == g_WaveformMode)
 			loop = 26*2 + 20;	//delay(260);
-		else if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
+		else// if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
 			loop = 78*2 + 20;	//delay(780);
 
 		for (i=0; i<loop; i++)
@@ -855,20 +886,21 @@ static BOOL DispUpdate(PDISPUPDATE pdu, BOOL bIsWait)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 
-	MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
-	CmdArg.bCmd = 0x29;
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
 #ifndef	FOR_EBOOT
 	if (bIsWait)
 	{
 		DWORD i=0, loop=0;
 		WORD wData=0;
 
+		MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+		CmdArg.bCmd = 0x29;
+		CmdArg.nArgc = 0;
+		Command(CmdArg);
+
 		if (WAVEFORM_DU == g_WaveformMode)
-			loop = 26 + 20; //delay(260);
-		else if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
-			loop = 78 + 20; //delay(780);
+			loop = 26*2 + 20;	//delay(260);
+		else// if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
+			loop = 78*2 + 20;	//delay(780);
 
 		for (i=0; i<loop; i++)
 		{
@@ -880,7 +912,6 @@ static BOOL DispUpdate(PDISPUPDATE pdu, BOOL bIsWait)
 		MYERR((_T("[S1D13521] i == %d\r\n"), i));
 	}
 #endif	FOR_EBOOT
-
 
 	if (DRVESC_DISP_UPDATE == g_dwDebugLevel)
 	{
@@ -1020,6 +1051,31 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 
+	if (pdi->bIsWait)
+	{
+		DWORD i=0, loop=0;
+		WORD wData=0;
+
+		MYMSG((_T("[S1D13521] WAIT_DSPE_FREND\r\n")));
+		CmdArg.bCmd = 0x29;
+		CmdArg.nArgc = 0;
+		Command(CmdArg);
+
+		if (WAVEFORM_DU == g_WaveformMode)
+			loop = 26*2 + 20;	//delay(260);
+		else// if (WAVEFORM_GU == g_WaveformMode || WAVEFORM_GC == g_WaveformMode)
+			loop = 78*2 + 20;	//delay(780);
+
+		for (i=0; i<loop; i++)
+		{
+			wData = RegRead2(0x0338, FALSE);
+			if (0 == (wData & (1<<3)))	// [3] Display Frame Busy
+				break;
+			delay(10);
+		}
+		MYERR((_T("[S1D13521] i == %d\r\n"), i));
+	}
+
 	if (pdi->pUpdate)
 		bRet = DispUpdate(pdi->pUpdate, pdi->bIsWait);
 	else
@@ -1035,97 +1091,6 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 	return bRet;
 }
 
-static int SfmReadWaveform(BLOB *pBlob)
-{
-	/*int spage, epage, offset, i;
-	PBYTE pData = pBlob->pBlobData;
-
-	init_spi();
-	spage = FLASH_WFM_ADDR / FLASH_PAGE_SIZE;
-	epage = (FLASH_WFM_ADDR + pBlob->cbSize - 1) / FLASH_PAGE_SIZE;
-	for (i=spage; i<=epage; i++)
-	{
-		read_flash(i, g_sfmBuffer);
-		if (spage == i)
-		{
-			offset = FLASH_WFM_ADDR % FLASH_PAGE_SIZE;
-			memcpy(pData, g_sfmBuffer+offset, FLASH_PAGE_SIZE-offset);
-			pData += (FLASH_PAGE_SIZE-offset);
-		}
-		else if (epage == i)
-		{
-			offset = (FLASH_WFM_ADDR + pBlob->cbSize) % FLASH_PAGE_SIZE;
-			memcpy(pData, g_sfmBuffer, offset);
-			pData += offset;
-		}
-		else
-		{
-			memcpy(pData, g_sfmBuffer, FLASH_PAGE_SIZE);
-			pData += FLASH_PAGE_SIZE;
-		}
-	}
-	exit_spi();
-
-	if (DRVESC_WRITE_WAVEFORM == g_dwDebugLevel)
-	{
-		MYERR((_T(" SfmReadWaveform(%d)\r\n"), pBlob->cbSize));
-	}*/
-
-	return pBlob->cbSize;
-}
-static int SfmWriteWaveform(BLOB *pBlob)
-{
-	/*int spage, epage, offset, i;
-	BYTE tmpBuf[FLASH_PAGE_SIZE];
-	PBYTE pData = pBlob->pBlobData;
-
-	init_spi();
-	spage = FLASH_WFM_ADDR / FLASH_PAGE_SIZE;
-	epage = (FLASH_WFM_ADDR + pBlob->cbSize - 1) / FLASH_PAGE_SIZE;
-	MYERR((_T(" size === %d \r\n"), pBlob->cbSize));
-	for (i=spage; i<=epage; i++)
-	{
-		if (spage == i)
-		{
-			read_flash(i, tmpBuf);
-			offset = (FLASH_WFM_ADDR % FLASH_PAGE_SIZE);
-			memcpy(g_sfmBuffer, tmpBuf, offset);
-			memcpy(g_sfmBuffer+offset, pData, (FLASH_PAGE_SIZE-offset));
-			pData += (FLASH_PAGE_SIZE-offset);
-			MYERR((_T(" spage === %d \r\n"), (FLASH_PAGE_SIZE-offset)));
-		}
-		else if (epage == i)
-		{
-			memset(g_sfmBuffer, 0, FLASH_PAGE_SIZE);
-			offset = (FLASH_WFM_ADDR + pBlob->cbSize) % FLASH_PAGE_SIZE;
-			memcpy(g_sfmBuffer, pData, offset);
-			pData += offset;
-			MYERR((_T(" epage === %d \r\n"), offset));
-		}
-		else
-		{
-			memcpy(g_sfmBuffer, pData, FLASH_PAGE_SIZE);
-			pData += FLASH_PAGE_SIZE;
-		}
-		erase_flash(i);
-		write_flash(i, g_sfmBuffer);
-	}
-	MYERR((_T(" pBlob->pBlobData(%X) === pData(%X) \r\n"), pBlob->pBlobData, pData-pBlob->cbSize));
-	exit_spi();
-
-	if (DRVESC_READ_WAVEFORM == g_dwDebugLevel)
-	{
-		MYERR((_T(" SfmWriteWaveform(%d)\r\n"), pBlob->cbSize));
-	}*/
-
-	return pBlob->cbSize;
-}
-
-
-
-
-
-
 
 
 void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
@@ -1137,6 +1102,7 @@ void S1d13521Initialize(void *pS1d13521, void *pGPIOReg)
 	initChip();
 	initDisplay(TRUE);
 #else	FOR_EBOOT
+	g_PowerState = POWER_SLEEP;
 	Sleep(1000);
 #endif	FOR_EBOOT
 }
@@ -1218,6 +1184,15 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 
 	case DRVESC_WAIT_HRDY:
 		return WaitHrdy(9);
+
+	case DRVESC_REG16_CMD:
+		OUTREG16(&g_pS1D13521Reg->CMD, (USHORT)cjIn);
+		return TRUE;
+	case DRVESC_REG16_OUTPUT:
+		OUTREG16(&g_pS1D13521Reg->DATA, (USHORT)cjIn);
+		return TRUE;
+	case DRVESC_REG16_INPUT:
+		return INREG16(&g_pS1D13521Reg->DATA);
 	}
 
 	if (POWER_RUN != g_PowerState)
@@ -1283,15 +1258,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 			nRetVal = DispUpdate((PDISPUPDATE)pvIn, FALSE);
 		break;
 
-	case DRVESC_WRITE_WAVEFORM:
-		if ((sizeof(BLOB) == cjIn) && pvIn)
-			nRetVal = SfmWriteWaveform((BLOB *)pvIn);
-		break;
-	case DRVESC_READ_WAVEFORM:
-		if ((sizeof(BLOB) == cjOut) && pvOut)
-			nRetVal = SfmReadWaveform((BLOB *)pvOut);
-		break;
-
+	// ...
 	}
 	if (psOld != g_PowerState)
 		g_PowerState = SetPowerState(psOld, g_PowerState);

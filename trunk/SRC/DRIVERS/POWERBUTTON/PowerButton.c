@@ -100,19 +100,10 @@ INT WINAPI BatteryFaultThread(void)
 			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
 			PROCESS_INFORMATION pi;
 
-			ZeroMemory(&pi,sizeof(pi));
-			if (CreateProcess(lpszPathName,
-							  _T("LOWBATTERY"),	// pszCmdLine
-							  NULL,	// psaProcess
-							  NULL,	// psaThread
-							  FALSE,// fInheritHandle
-							  0,	// fdwCreate
-							  NULL,	// pvEnvironment
-							  NULL,	// pszCurDir
-							  NULL,	// psiStartInfo
-							  &pi))	// pProcInfo
+			ZeroMemory(&pi, sizeof(pi));
+			if (CreateProcess(lpszPathName, _T("LOWBATTERY"), 0, 0, 0, 0, 0, 0, 0, &pi))
 			{
-				WaitForSingleObject(pi.hThread, 1000);
+				WaitForSingleObject(pi.hThread, 5000);
 				CloseHandle(pi.hThread);
 				CloseHandle(pi.hProcess);
 			}
@@ -135,19 +126,10 @@ INT WINAPI ShutdownThread(void)
 		RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_SHUTDOWN)\r\n")));
 		PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_SHUTDOWN")), 0, 0);
 
-		ZeroMemory(&pi,sizeof(pi));
-		if (CreateProcess(lpszPathName,
-						  _T("SHUTDOWN"),	// pszCmdLine
-						  NULL,	// psaProcess
-						  NULL,	// psaThread
-						  FALSE,// fInheritHandle
-						  0,	// fdwCreate
-						  NULL,	// pvEnvironment
-						  NULL,	// pszCurDir
-						  NULL,	// psiStartInfo
-						  &pi))	// pProcInfo
+		ZeroMemory(&pi, sizeof(pi));
+		if (CreateProcess(lpszPathName, _T("SHUTDOWN"), 0, 0, 0, 0, 0, 0, 0, &pi))
 		{
-			WaitForSingleObject(pi.hThread, 1000);
+			WaitForSingleObject(pi.hThread, 5000);
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}
@@ -156,7 +138,7 @@ INT WINAPI ShutdownThread(void)
 		RegFlushKey(HKEY_CURRENT_USER);
 		RegFlushKey(HKEY_LOCAL_MACHINE);
 
-		Sleep(1000);
+		Sleep(0);
 		SetSystemPowerState(NULL, POWER_STATE_OFF, POWER_FORCE);
 		KernelIoControl(IOCTL_HAL_OMNIBOOK_SHUTDOWN, NULL, 0, NULL, 0, NULL);
 	}
@@ -186,7 +168,9 @@ INT WINAPI PowerButtonThread(void)
         Button_pwrbtn_disable_interrupt();              // Mask EINT
         Button_pwrbtn_clear_interrupt_pending();        // Clear Interrupt Pending
 
+#ifndef	OMNIBOOK_VER
         InterruptDone(g_dwSysIntrPowerBtn);
+#endif	OMNIBOOK_VER
 
 #if !(SLEEP_AGING_TEST)
         // Normal Button Push/Release Operation
@@ -218,6 +202,9 @@ INT WINAPI PowerButtonThread(void)
         // In the Windows Mobile, "PowerPolicyNotify(PPN_POWERBUTTONPRESSED, 0);" can be used
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 
+#ifdef	OMNIBOOK_VER
+		InterruptDone(g_dwSysIntrPowerBtn);
+#endif	OMNIBOOK_VER
         Button_pwrbtn_enable_interrupt();            // UnMask EINT
 #if (SLEEP_AGING_TEST)
         // To do Sleep/Wakeup aging test 

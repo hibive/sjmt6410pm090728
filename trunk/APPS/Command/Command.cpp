@@ -59,6 +59,7 @@ static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DW
 	return bRet;
 }
 
+#if	0
 static BOOL drawImage(HDC hDC, LPCTSTR lpszFileName)
 {
 	IImagingFactory* pImageFactory = NULL;
@@ -95,7 +96,7 @@ static BOOL drawShutDown(HDC hDC, LPCTSTR lpszFileName)
 
 	return bRet;
 }
-
+#endif
 static BOOL dispBitmap(HDC hDC, LPCTSTR lpszFileName)
 {
 	HANDLE hFile = CreateFile(lpszFileName,
@@ -156,11 +157,10 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	if (2 > argc)
 		return 0;
 
-	/*for (int i=1; i<argc; i++)
-		RETAILMSG(1, (_T("App_Command => argv : %s\r\n"), argv[i]));*/
-
+#if	0
 	if (FAILED(CoInitializeEx(0, COINIT_MULTITHREADED)))
 		return FALSE;
+#endif
 
 	hDC = GetDC(HWND_DESKTOP);
 	if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
@@ -253,7 +253,9 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	// ...
 	ReleaseDC(HWND_DESKTOP, hDC);
 
+#if	0
 	CoUninitialize();
+#endif
 	return 0;
 }
 
