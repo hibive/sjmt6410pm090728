@@ -392,19 +392,10 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 				}
 				RETAILMSG(1, (_T("\tg_pArgs->bKeypadWakeup(%d)\r\n"), g_pArgs->bKeypadWakeup));
 
-				ZeroMemory(&pi,sizeof(pi));
-				if (CreateProcess(lpszPathName,
-								  _T("SLEEP"),	// pszCmdLine
-								  NULL, // psaProcess
-								  NULL, // psaThread
-								  FALSE,// fInheritHandle
-								  0,	// fdwCreate
-								  NULL, // pvEnvironment
-								  NULL, // pszCurDir
-								  NULL, // psiStartInfo
-								  &pi)) // pProcInfo
+				ZeroMemory(&pi, sizeof(pi));
+				if (CreateProcess(lpszPathName, _T("SLEEP"), 0, 0, 0, 0, 0, 0, 0, &pi))
 				{
-					WaitForSingleObject(pi.hThread, 1000);
+					WaitForSingleObject(pi.hThread, 1500);	// ???
 					CloseHandle(pi.hThread);
 					CloseHandle(pi.hProcess);
 				}

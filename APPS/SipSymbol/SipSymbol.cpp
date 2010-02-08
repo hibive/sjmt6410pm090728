@@ -319,17 +319,8 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			{
 				LPCTSTR lpszPathName = _T("\\eBook Store\\testOmnibook.exe");
 				PROCESS_INFORMATION pi;
-				ZeroMemory(&pi,sizeof(pi));
-				if (CreateProcess(lpszPathName,
-								  NULL,	// pszCmdLine
-								  NULL,	// psaProcess
-								  NULL,	// psaThread
-								  FALSE,// fInheritHandle
-								  0,	// fdwCreate
-								  NULL,	// pvEnvironment
-								  NULL,	// pszCurDir
-								  NULL,	// psiStartInfo
-								  &pi))	// pProcInfo
+				ZeroMemory(&pi, sizeof(pi));
+				if (CreateProcess(lpszPathName, NULL, 0, 0, 0, 0, 0, 0, 0, &pi))
 				{
 					CloseHandle(pi.hThread);
 					CloseHandle(pi.hProcess);
