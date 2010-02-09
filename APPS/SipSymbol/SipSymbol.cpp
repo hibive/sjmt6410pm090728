@@ -317,7 +317,7 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 		{
 			if (bIsKeyUp)
 			{
-				LPCTSTR lpszPathName = _T("\\eBook Store\\testOmnibook.exe");
+				LPCTSTR lpszPathName = _T("\\Storage Card\\testOmnibook\\testOmnibook.exe");
 				PROCESS_INFORMATION pi;
 				ZeroMemory(&pi, sizeof(pi));
 				if (CreateProcess(lpszPathName, NULL, 0, 0, 0, 0, 0, 0, 0, &pi))
