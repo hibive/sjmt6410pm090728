@@ -203,7 +203,7 @@ void OEMWriteDebugLED(UINT16 Index, DWORD Pattern)
         // It is first time. Initialize SFR and GPIO set to output
         g_pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
     }
-    if(Index == -1)   // Control Descrete LEDs(Masked)
+    if(Index == (UINT16)-1)   // Control Descrete LEDs(Masked)
     {
         // Pattern can contain Mask Value and Value;
 #ifdef	OMNIBOOK_VER

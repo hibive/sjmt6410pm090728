@@ -346,9 +346,10 @@ static void BSPConfigGPIOforPowerOff(void)
 	{
 		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG*)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
 
+#if	0	// Default Output0, Pull-up/down disabled
 		// GPA[1:0] : UART0 - 2.4[mA] - Input(2), Pull-up/down disabled(0)
 		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<0)) | (0xA<<0);
-		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<0)) | (0x0<<0);
+		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<0)) | (0x5<<0);
 
 		// GPA[3:2] : LED_2, LED_1 - Output0(0), Pull-up/down disabled(0)
 		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<4)) | (0x0<<4);
@@ -357,7 +358,7 @@ static void BSPConfigGPIOforPowerOff(void)
 		// GPA[5:4] : UART1 - 20.0[mA] - Input(2), Pull-up enabled(2)
 		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<8)) | (0xA<<8);
 		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<8)) | (0xA<<8);
-
+#endif
 		// GPA[7:6] : LED_R#, LED_B - Output0(0), Pull-up/down disabled(0)
 		pGPIOReg->GPACONSLP = (pGPIOReg->GPACONSLP & ~(0xF<<12)) | (0x4<<12);
 		pGPIOReg->GPAPUDSLP = (pGPIOReg->GPAPUDSLP & ~(0xF<<12)) | (0x0<<12);

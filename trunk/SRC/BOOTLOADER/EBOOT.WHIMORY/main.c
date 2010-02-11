@@ -536,7 +536,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
-		EPDOutputString("X) Epson Instruction byte code update(Default)\r\n");
+		EPDOutputString("X) Epson Instruction byte code clear\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
 		if (g_bSDMMCUpdateKey)
