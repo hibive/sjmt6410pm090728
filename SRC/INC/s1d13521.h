@@ -108,6 +108,8 @@ enum {
 	DRVESC_REG16_OUTPUT,		// USHORT		[set]
 	DRVESC_REG16_INPUT,			// USHORT		[ret]
 
+	DRVESC_AUTO_WAVEFORM,		// BOOL			[in]
+
 	DRVESC_MAX
 };
 //////////////////////////////////////////////////////////////////////////////////

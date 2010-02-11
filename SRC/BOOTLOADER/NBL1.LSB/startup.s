@@ -164,7 +164,7 @@ ResetHandler
 	IF :DEF: OMNIBOOK_VER
         ldr          r10, =GPCPUD
         ldr          r11, [r10]
-        bic          r11, r11, #0x0000C000	; Pull-Up-Down Disable
+        bic          r11, r11, #0x000000C0	; Pull-Up-Down Disable
         str          r11, [r10]
 
         ldr          r10, =GPCDAT

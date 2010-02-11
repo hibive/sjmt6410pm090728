@@ -7,8 +7,6 @@
 #include "..\\Drivers\\Display_Broadsheet\\broadsheet_lib\\S1d13521.c"
 // const unsigned char Eng_Font_8x16[128][16];
 #include "display_epd_eng_font_8x16.h"
-// const unsigned char Instruction_Byte_Code[];
-#include "display_epd_instructionbytecode.h"
 // const unsigned char Rle_Image_BootUp[];
 #ifdef	MODEL_OMNIBOOK_GW610
 #include "display_epd_rle_image_bootup.h"
@@ -439,15 +437,10 @@ int EPDSerialFlashWrite(void *pBlob)
 
 	if (NULL == pBlob)
 	{
-#if	1
-		sfmd.cbSize = sizeof(Instruction_Byte_Code) / sizeof(Instruction_Byte_Code[0]);
-		sfmd.pBlobData = (PBYTE)Instruction_Byte_Code;
-#else
 		UINT8 *pBuffer = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 		memset(pBuffer, 0x00, 512*1024);
 		sfmd.cbSize = 512*1024;
 		sfmd.pBlobData = (PBYTE)pBuffer;
-#endif
 	}
 	else
 	{

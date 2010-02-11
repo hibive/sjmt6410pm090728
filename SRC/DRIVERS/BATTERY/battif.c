@@ -147,9 +147,9 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 		{
 #if	1
 			if (fCharging)	// LED_R#[7] : ON
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<7)) | (0x0<<7);
 			else			// LED_R#[7] : OFF
-				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x0<<7);
+				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT & ~(0x1<<7)) | (0x1<<7);
 #else
 			if (fChgDone)	// LED_R#[7] : ON
 				g_pGPIOReg->GPADAT = (g_pGPIOReg->GPADAT | (0x1<<7)) & ~(0x1<<7);

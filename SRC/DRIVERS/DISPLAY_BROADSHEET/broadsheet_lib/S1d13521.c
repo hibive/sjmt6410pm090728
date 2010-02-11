@@ -435,7 +435,7 @@ static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
 		RegWrite(0x0006, 0x0);
 		//RegWrite(0x000A, (1<<12));
 		if (POWER_SLEEP == psOld)
-			delay(20);
+			delay(4);//delay(20);
 
 		MYMSG((_T("[S1D13521] RUN_SYS\r\n")));
 		CmdArg.bCmd = 0x02;
@@ -453,19 +453,34 @@ static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 #else
+#if	0
+	// Sleep Current 4.3mA
 	if (POWER_SLEEP == psOld)
 	{
-		RegWrite(0x000A, (1<<12));
-		delay(4);	// Wait 4ms
+		RegWrite(0x000A, (1<<12));	// OSC is always enable
+		delay(4);
 	}
-
+	else if (POWER_SLEEP == ps)
+	{
+		RegWrite(0x000A, (0<<12));	// OSC is controlled by internal logic
+	}
+#else
+	// Sleep Current 3.6mA
+	if (POWER_RUN == ps)
+	{
+		RegWrite(0x0006, 0x0);
+		if (POWER_SLEEP == psOld)
+			delay(4);//delay(20);
+	}
+#endif
+	WaitHrdy(6);
 	if (POWER_RUN == ps)
 		OUTREG16(&g_pS1D13521Reg->CMD, 0x02);
 	else if (POWER_STANDBY == ps)
 		OUTREG16(&g_pS1D13521Reg->CMD, 0x04);
 	else //if (POWER_SLEEP == ps)
 		OUTREG16(&g_pS1D13521Reg->CMD, 0x05);
-	WaitHrdy(6);
+	WaitHrdy(7);
 #endif
 
 	if (DRVESC_SET_POWERSTATE == g_dwDebugLevel
@@ -1132,6 +1147,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 {
 	int nRetVal = 0;
 	POWERSTATE psOld = g_PowerState;
+	DWORD dwStart = 0;
 
 	MYMSG((_T("[S1D13521] DrvEscape(iEsc(0x%08X), cjIn(%d), cjOut(%d))\r\n"), iEsc, cjIn, cjOut));
 	switch (iEsc)
@@ -1195,6 +1211,9 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return INREG16(&g_pS1D13521Reg->DATA);
 	}
 
+#ifndef	FOR_EBOOT
+	dwStart = GetTickCount();
+#endif	FOR_EBOOT
 	if (POWER_RUN != g_PowerState)
 	{
 		psOld = g_PowerState;
@@ -1259,9 +1278,23 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		break;
 
 	// ...
+
+	case DRVESC_AUTO_WAVEFORM:
+		{
+			WORD wData = RegRead(0x0330);
+			if (cjIn)
+				wData |=  (1<<6);
+			else
+				wData &= ~(1<<6);
+			RegWrite(0x0330, wData);
+		}
+		break;
 	}
 	if (psOld != g_PowerState)
 		g_PowerState = SetPowerState(psOld, g_PowerState);
+#ifndef	FOR_EBOOT
+	MYMSG((_T("-> %d\r\n"), GetTickCount()-dwStart));
+#endif	FOR_EBOOT
 
 	return nRetVal;
 }
