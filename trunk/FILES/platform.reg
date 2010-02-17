@@ -1202,5 +1202,11 @@ IF MODEL_OMNIBOOK_GW610
 ENDIF MODEL_OMNIBOOK_GW610
 ENDIF BSP_NOWIFI !
 
+[HKEY_CURRENT_USER\Software\Changeon\PrimeDic]
+	"Name"="Data"
+	"ROOT"="\\eBook Store\\PrimeDic\\"
+	"DB"="\\eBook Store\\PrimeDic\\DB\\"
+	"WORDBOOK"="\\eBook Store\\PrimeDic\\WORDB\\"
+
 ENDIF OMNIBOOK_VER
 
