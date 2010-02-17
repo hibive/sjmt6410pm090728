@@ -1194,17 +1194,13 @@ IF APPS_COMMAND
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
+
 IF BSP_NOWIFI !
 ;Default	"CfgWifiDefCM"=dword:0
+IF MODEL_OMNIBOOK_GW610
+	"CfgWifiDefCM"=dword:1
+ENDIF MODEL_OMNIBOOK_GW610
 ENDIF BSP_NOWIFI !
-
-IF MODEL_BOOKCUBE_B612
-[HKEY_CURRENT_USER\Software\Changeon\PrimeDic]
-	"Name"="Data"
-	"ROOT"="\\eBook Store\\PrimeDic\\"
-	"DB"="\\eBook Store\\PrimeDic\\DB\\"
-	"WORDBOOK"="\\eBook Store\\PrimeDic\\WORDB\\"
-ENDIF MODEL_BOOKCUBE_B612
 
 ENDIF OMNIBOOK_VER
 

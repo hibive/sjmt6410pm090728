@@ -14,11 +14,7 @@ ELSE
 Directory(LOC_DIRWINDOWSSTARTUP):-File("TouchCalibration.exe","\windows\TouchCalibration.exe")
 ENDIF APP_STARTUP
 
-IF OMNIBOOK_VER
-IF BSP_IROMBOOT
-IF OMNIBOOK_VER_DEMO
-Root:-Directory("PocketMory\Favorites")
-ENDIF OMNIBOOK_VER_DEMO
-ENDIF BSP_IROMBOOT
-ENDIF OMNIBOOK_VER
+; +++ User Directory Sample +++
+;Root:-Directory("PocketMory\Favorites")
+; --- User Directory Sample ---
 
