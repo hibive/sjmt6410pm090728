@@ -21,6 +21,7 @@
 #include "Pmplatform.h"
 static HANDLE g_hEventBatFlt = NULL;
 static volatile BSP_ARGS *g_pArgs = NULL;
+static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 #endif	OMNIBOOK_VER
 #include <pmimpl.h>
 #include "PmSysReg.h"
@@ -328,6 +329,9 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 {
     TCHAR szStateName[MAX_PATH];
     DWORD dwStatus = ERROR_SUCCESS;
+#ifdef	OMNIBOOK_VER
+	BOOL bIsShutdown = FALSE;
+#endif	OMNIBOOK_VER
     SETFNAME(_T("PmSetSystemPowerState_I"));
 
     PMLOGMSG(ZONE_API, (_T("+%s: name %s, hint 0x%08x, options 0x%08x, fInternal %d\r\n"),
@@ -369,7 +373,7 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 		{
 			if (NULL == g_pArgs)
 			{
-				PHYSICAL_ADDRESS    ioPhysicalBase = {0,0};
+				PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
 				ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;
 				g_pArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
 			}
@@ -419,6 +423,31 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 			}
 			else
 			{
+				if (NULL == g_pGPIOReg)
+				{
+					PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
+					ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
+					g_pGPIOReg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
+				}
+
+				if (g_pGPIOReg)
+				{
+					#define	TIMEOUT_POWEROFF	2000	//[mSec]
+					DWORD dwTickStart = GetTickCount();
+
+					while ((FALSE == bIsShutdown) && (g_pGPIOReg->GPNDAT & (0x1<<9)))
+					{
+						RETAILMSG(1, (_T(".")));
+						// Wait for Button Released...
+						Sleep(10);
+						if (TIMEOUT_POWEROFF <= (GetTickCount() - dwTickStart))
+						{
+							RETAILMSG(1, (_T("\r\n")));
+							bIsShutdown = TRUE;
+						}
+					}
+				}
+
 				RETAILMSG(1, (_T("\tPostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_RESUME)\r\n")));
 				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_RESUME")), 0, 0);
 			}
@@ -431,6 +460,19 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 #endif	OMNIBOOK_VER
         dwStatus = PlatformSetSystemPowerState(szStateName, fForce, fInternal);
     }
+
+#ifdef	OMNIBOOK_VER
+	if (bIsShutdown)
+	{
+		HANDLE hEventShutdown = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("OMNIBOOK_EVENT_SHUTDOWN"));
+		if (hEventShutdown)
+		{
+			SetEvent(hEventShutdown);
+			CloseHandle(hEventShutdown);
+			Sleep(10000);
+		}
+	}
+#endif	OMNIBOOK_VER
 
     PMLEAVEUPDATE();
 

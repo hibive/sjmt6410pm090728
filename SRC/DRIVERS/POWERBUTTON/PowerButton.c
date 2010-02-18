@@ -151,8 +151,8 @@ INT WINAPI PowerButtonThread(void)
 {
     DWORD nBtnCount = 0;
 #ifdef	OMNIBOOK_VER
-#define	TIMEOUT_POWEROFF	2000	//[mSec]
-	DWORD dwTickStart, dwTickCount;
+	#define	TIMEOUT_POWEROFF	2000	//[mSec]
+	DWORD dwTickStart;
 #endif	OMNIBOOK_VER
 
     RETAILMSG(PWR_ZONE_ENTER, (_T("[PWR:INF] ++%s()\r\n"), _T(__FUNCTION__)));
@@ -181,13 +181,12 @@ INT WINAPI PowerButtonThread(void)
 #ifdef	OMNIBOOK_VER
 		dwTickStart = GetTickCount();
 #endif	OMNIBOOK_VER
-        while(Button_pwrbtn_is_pushed())
+        while (Button_pwrbtn_is_pushed())
         {
             // Wait for Button Released...
             Sleep(10);
 #ifdef	OMNIBOOK_VER
-			dwTickCount = GetTickCount() - dwTickStart;
-			if (TIMEOUT_POWEROFF <= dwTickCount)	// GPC[3] - PWRHOLD(3)
+			if (TIMEOUT_POWEROFF <= (GetTickCount() - dwTickStart))
 			{
 				SetEvent(g_hEventShutdown);
 				Sleep(10000);
@@ -203,18 +202,6 @@ INT WINAPI PowerButtonThread(void)
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 
 #ifdef	OMNIBOOK_VER
-		dwTickStart = GetTickCount();
-		while(Button_pwrbtn_is_pushed())
-		{
-			// Wait for Button Released...
-			Sleep(10);
-			dwTickCount = GetTickCount() - dwTickStart;
-			if (TIMEOUT_POWEROFF <= dwTickCount)	// GPC[3] - PWRHOLD(3)
-			{
-				SetEvent(g_hEventShutdown);
-				Sleep(10000);
-			}
-		}
 		InterruptDone(g_dwSysIntrPowerBtn);
 #endif	OMNIBOOK_VER
         Button_pwrbtn_enable_interrupt();            // UnMask EINT
