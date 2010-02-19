@@ -65,8 +65,10 @@ static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 
 // Sleep Status
 static BOOL			g_bSleepDirtyRect = FALSE;
+static POWERSTATE	g_SleepPowerState = POWER_SLEEP;
 static DSPUPDSTATE	g_SleepDspUpdState = DSPUPD_FULL;
 static WAVEFORMMODE	g_SleepWaveformMode = WAVEFORM_GU;
+static BOOL			g_bSleepWakeup = FALSE;
 
 
 static WORD RegRead(WORD wReg);
@@ -1133,13 +1135,32 @@ void S1d13521PowerHandler(BOOL bOff)
 	{
 		if (POWER_SLEEP != g_PowerState)
 		{
+			volatile DWORD dwScaledSecs, i;
+
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x05);
+			for (i=0; i<S1D13521_HRDY_TIMEOUT; i++)
+			{
+				if ((g_pGPIOPReg->GPNDAT & (1<<8)))
+					break;
+
+				//delay(5);
+				dwScaledSecs = (5 * (133000000 / 1200/*1585*/));
+				while (dwScaledSecs--);
+			}
+
+			g_PowerState = POWER_SLEEP;
 		}
+
+		g_bSleepWakeup = FALSE;
 	}
 	else
 	{
 		g_bDirtyRect = g_bSleepDirtyRect;
+		//g_PowerState = g_SleepPowerState;
 		g_DspUpdState = g_SleepDspUpdState;
 		g_WaveformMode = g_SleepWaveformMode;
+
+		g_bSleepWakeup = TRUE;
 	}
 }
 
@@ -1189,6 +1210,7 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		if (100 == cjIn)
 		{
 			g_bSleepDirtyRect = g_bDirtyRect;
+			g_SleepPowerState = g_PowerState;
 			g_SleepDspUpdState = g_DspUpdState;
 			g_SleepWaveformMode = g_WaveformMode;
 
@@ -1210,6 +1232,14 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	case DRVESC_REG16_INPUT:
 		return INREG16(&g_pS1D13521Reg->DATA);
 	}
+
+	if (g_bSleepWakeup)
+	{
+		if (g_SleepPowerState != g_PowerState)
+			g_PowerState = SetPowerState(g_SleepPowerState, g_PowerState);
+		g_bSleepWakeup = FALSE;
+	}
+	psOld = g_PowerState;
 
 #ifndef	FOR_EBOOT
 	dwStart = GetTickCount();
