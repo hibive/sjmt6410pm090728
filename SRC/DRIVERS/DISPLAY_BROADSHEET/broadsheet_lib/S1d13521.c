@@ -1168,7 +1168,6 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 {
 	int nRetVal = 0;
 	POWERSTATE psOld = g_PowerState;
-	DWORD dwStart = 0;
 
 	MYMSG((_T("[S1D13521] DrvEscape(iEsc(0x%08X), cjIn(%d), cjOut(%d))\r\n"), iEsc, cjIn, cjOut));
 	switch (iEsc)
@@ -1223,6 +1222,8 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	case DRVESC_WAIT_HRDY:
 		return WaitHrdy(9);
 
+
+	// +++ DRVESC_TEST +++
 	case DRVESC_REG16_CMD:
 		OUTREG16(&g_pS1D13521Reg->CMD, (USHORT)cjIn);
 		return TRUE;
@@ -1231,7 +1232,29 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return TRUE;
 	case DRVESC_REG16_INPUT:
 		return INREG16(&g_pS1D13521Reg->DATA);
+	case DRVESC_COMMAND2:
+		if ((sizeof(CMDARG) == cjIn) && pvIn)
+		{
+			PCMDARG pCmdArg = (PCMDARG)pvIn;
+			int i;
+			OUTREG16(&g_pS1D13521Reg->CMD, pCmdArg->bCmd);
+			for (i=0; i<pCmdArg->nArgc; i++)
+				OUTREG16(&g_pS1D13521Reg->DATA, pCmdArg->pArgv[i]);
+			nRetVal = TRUE;
+		}
+		return nRetVal;
+	case DRVESC_WRITE_REG2:
+		OUTREG16(&g_pS1D13521Reg->CMD, 0x11);
+		OUTREG16(&g_pS1D13521Reg->DATA, HIWORD((DWORD)cjIn));
+		OUTREG16(&g_pS1D13521Reg->DATA, LOWORD((DWORD)cjIn));
+		return TRUE;
+	case DRVESC_READ_REG2:
+		OUTREG16(&g_pS1D13521Reg->CMD, 0x10);
+		OUTREG16(&g_pS1D13521Reg->DATA, (WORD)cjIn);
+		return INREG16(&g_pS1D13521Reg->DATA);
+	// --- DRVESC_TEST ---
 	}
+
 
 	if (g_bSleepWakeup)
 	{
@@ -1241,9 +1264,6 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	}
 	psOld = g_PowerState;
 
-#ifndef	FOR_EBOOT
-	dwStart = GetTickCount();
-#endif	FOR_EBOOT
 	if (POWER_RUN != g_PowerState)
 	{
 		psOld = g_PowerState;
@@ -1307,24 +1327,14 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 			nRetVal = DispUpdate((PDISPUPDATE)pvIn, FALSE);
 		break;
 
-	// ...
 
-	case DRVESC_AUTO_WAVEFORM:
-		{
-			WORD wData = RegRead(0x0330);
-			if (cjIn)
-				wData |=  (1<<6);
-			else
-				wData &= ~(1<<6);
-			RegWrite(0x0330, wData);
-		}
-		break;
+	// +++ DRVESC_TEST +++
+
+	// --- DRVESC_TEST ---
+
 	}
 	if (psOld != g_PowerState)
 		g_PowerState = SetPowerState(psOld, g_PowerState);
-#ifndef	FOR_EBOOT
-	MYMSG((_T("-> %d\r\n"), GetTickCount()-dwStart));
-#endif	FOR_EBOOT
 
 	return nRetVal;
 }
