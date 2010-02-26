@@ -293,12 +293,10 @@ ENDIF IMGHIVEREG
    "Prefix"="DSK"
    "Dll"="ONDisk.dll"
    "Order"=dword:1
-IF BSP_USBFNCLASS == MASS_STORAGE
+IF OMNIBOOK_VER
 	"Index"=dword:3
-ELSE
+ENDIF OMNIBOOK_VER
 ;   "Index"=dword:1
-ENDIF BSP_USBFNCLASS
-   "Index"=dword:3
    "IClass"=multi_sz:"{A4E7EDDA-E575-4252-9D6B-4195D48BB865}"
    "Profile"="FDSK1"
    "BmlVolumeId"=dword:0		; BML volume ID = 0
@@ -311,29 +309,24 @@ ENDIF BSP_USBFNCLASS
     "DefaultFileSystem"="FATFS"
     "PartitionDriver"="mspart.dll"
     "Name"="PocketMory MLC Disk1"
-IF BSP_USBFNCLASS == MASS_STORAGE
 IF OMNIBOOK_VER
 	"Folder"="eBook Store"
-ELSE
-	"Folder"="PocketMory1"
 ENDIF OMNIBOOK_VER
-ELSE
 ;    "Folder"="PocketMory1"
-ENDIF BSP_USBFNCLASS
     "AutoMount"=dword:1
     "AutoPart"=dword:1
     "AutoFormat"=dword:1
 ;    "MountFlags"=dword:0
 ;    "Ioctl"=dword:4
 
-IF BSP_USBFNCLASS == MASS_STORAGE
+IF OMNIBOOK_VER
 ELSE
 [HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\FDSK1]
     "DriverPath"="Drivers\\BuiltIn\\FDSK1"
     ; LoadFlags 0x01 == load synchronously
     "LoadFlags"=dword:1
     "BootPhase"=dword:0
-ENDIF BSP_USBFNCLASS
+ENDIF OMNIBOOK_VER
 
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS]
     "FriendlyName"="PocketMory FAT FileSystem1"
@@ -616,9 +609,9 @@ IF BSP_USBFNCLASS == SERIAL
 
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers\Serial_Class]
 	"FriendlyName"=LOC_USBFN_SERIAL_NAME			; "USB Cable:"
+	"idVendor"=dword:0547
 	"Manufacturer"=LOC_USBFN_SERIAL_MANUFACTURER	; "Samsung"
-	"idVendor"=dword:0547							; Samsung SYSLSI USB Sync, dword:045E; Microsoft USB Sync
-	"idProduct"=dword:2720							; Samsung SYSLSI USB Sync, dword:00CE; Microsoft USB Sync
+	"idProduct"=dword:2720
 	"Product"=LOC_USBFN_SERIAL_PRODUCT				; "Generic USB Serial"
 	"Index"=dword:5
 
