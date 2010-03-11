@@ -1134,6 +1134,7 @@ ENDIF SAMPLES_DSHOWFILTERS
 
 #include "$(_TARGETPLATROOT)\FILES\rasbook.reg"
 
+
 IF OMNIBOOK_VER
 
 IF BSP_DISPLAY_BROADSHEET
@@ -1182,24 +1183,31 @@ ENDIF BSP_DISPLAY_BROADSHEET
 ;Default	"AppUpdate"="\\Storage Card\\eBook_UpdateApp.exe"
 ;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 ;Default	"CfgKeypadWakeup"=dword:0
+;Default	"CfgWifiDefCM"=dword:0
 IF APPS_COMMAND
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
 ENDIF APPS_COMMAND
 
-IF BSP_NOWIFI !
-;Default	"CfgWifiDefCM"=dword:0
+
 IF MODEL_OMNIBOOK_GW610
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
 	"CfgWifiDefCM"=dword:1
 ENDIF MODEL_OMNIBOOK_GW610
-ENDIF BSP_NOWIFI !
 
+
+IF MODEL_BOOKCUBE_B612
 [HKEY_CURRENT_USER\Software\Changeon\PrimeDic]
 	"Name"="Data"
 	"ROOT"="\\eBook Store\\PrimeDic\\"
 	"DB"="\\eBook Store\\PrimeDic\\DB\\"
 	"WORDBOOK"="\\eBook Store\\PrimeDic\\WORDB\\"
+[HKEY_LOCAL_MACHINE\Software\Omnibook]
+	"BmpSleep"="\\eBook Store\\bookcube\\image\\Sleep.bmp"
+	"BmpLowbattery"="\\eBook Store\\bookcube\\image\\Lowbattery.bmp"
+	"BmpShutdown"="\\eBook Store\\bookcube\\image\\Shutdown.bmp"
+ENDIF MODEL_BOOKCUBE_B612
 
 ENDIF OMNIBOOK_VER
 
