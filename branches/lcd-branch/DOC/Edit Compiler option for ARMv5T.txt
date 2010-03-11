@@ -1,0 +1,13 @@
+
+edit makefile.def in C:\WINCE600\PUBLIC\COMMON\OAK\MISC\,
+find '-QRarch' then you can search compiler options to build image
+
+change this
+!  ELSEIF "$(TGTCPUISANAME)"=="ARMV4I"
+ARM_ARCH_C_CMD_LINE=-QRarch4T
+ARM_ARCH_ASSEMBLER_CMD_LINE=-arch 4T
+
+to this
+!  ELSEIF "$(TGTCPUISANAME)"=="ARMV4I"
+ARM_ARCH_C_CMD_LINE=-QRarch5T
+ARM_ARCH_ASSEMBLER_CMD_LINE=-arch 5T

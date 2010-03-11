@@ -1,0 +1,16 @@
+
+!if "$(BSP_DISPLAY_BROADSHEET)" != "1"
+SKIPBUILD=1
+!endif
+
+TARGETNAME=broadsheet_lib
+TARGETTYPE=LIBRARY
+
+RELEASETYPE=PLATFORM
+WINCEOEM=1
+
+SOURCES=\
+	dispdrvr.cpp\
+	dirtyrect.cpp\
+	s1d13521.c\
+

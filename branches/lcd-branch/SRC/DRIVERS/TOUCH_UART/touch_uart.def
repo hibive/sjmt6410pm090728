@@ -1,0 +1,9 @@
+LIBRARY 	TSP
+
+EXPORTS TSP_Init
+	TSP_Deinit
+	TSP_Open
+	TSP_Close
+	TSP_IOControl
+	TSP_PowerDown
+	TSP_PowerUp
