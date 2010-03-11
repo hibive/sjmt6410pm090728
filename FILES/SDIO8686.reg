@@ -132,8 +132,11 @@ ENDIF OMNIBOOK_VER
 
 	;RegsionCode:
 	; (0x10, 0x20, 0x30, 0x31, 0x32, 0x40)=(USA FCC, Canada IC, Europe ETSI, Spain, France, JP MKK)
+IF OMNIBOOK_VER
+	"RegionCode"=dword:30
+ELSE
 	"RegionCode"=dword:10
-
+ENDIF OMNIBOOK_VER
 
     ; default TCPIP settings for this instance
 [HKEY_LOCAL_MACHINE\Comm\SDIO86861\Parms\TcpIp]

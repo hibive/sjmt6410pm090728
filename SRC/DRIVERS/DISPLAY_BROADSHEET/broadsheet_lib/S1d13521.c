@@ -63,6 +63,8 @@ static LPBYTE		g_lpFrameBuffer = NULL;
 static volatile S1D13521_REG *g_pS1D13521Reg = NULL;
 static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 
+static POWERSTATE	g_psCurrent = POWER_RUN;
+
 // Sleep Status
 static BOOL			g_bSleepDirtyRect = FALSE;
 static POWERSTATE	g_SleepPowerState = POWER_SLEEP;
@@ -237,7 +239,7 @@ static void initDisplay(BOOL bClean)
 	{
 		MYMSG((_T("[S1D13521] UPD_FULL\r\n")));
 		CmdArg.bCmd = 0x33;
-		CmdArg.pArgv[0] = (1<<14) | (WAVEFORM_INIT<<8);
+		CmdArg.pArgv[0] = (1<<14) | (WAVEFORM_INIT<<8) | (0<<4);
 		CmdArg.nArgc = 1;
 		Command(CmdArg);
 	}
@@ -427,68 +429,32 @@ static BOOL WaitHrdy(int nDebug)
 	return TRUE;
 }
 
-static POWERSTATE SetPowerState(POWERSTATE ps, POWERSTATE psOld)
+static POWERSTATE SetPowerState(POWERSTATE ps)
 {
-#if	0
-	CMDARG CmdArg;
+	if (g_psCurrent != ps)
+	{
+		if (POWER_RUN == ps)
+		{
+			RegWrite(0x0006, 0x0);
+			if (POWER_SLEEP == g_psCurrent)
+				delay(4);//delay(20);
+		}
 
-	if (POWER_RUN == ps)
-	{
-		RegWrite(0x0006, 0x0);
-		//RegWrite(0x000A, (1<<12));
-		if (POWER_SLEEP == psOld)
-			delay(4);//delay(20);
-
-		MYMSG((_T("[S1D13521] RUN_SYS\r\n")));
-		CmdArg.bCmd = 0x02;
+		WaitHrdy(6);
+		if (POWER_RUN == ps)
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x02);
+		else if (POWER_STANDBY == ps)
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x04);
+		else //if (POWER_SLEEP == ps)
+			OUTREG16(&g_pS1D13521Reg->CMD, 0x05);
+		WaitHrdy(7);
 	}
-	else if (POWER_STANDBY == ps)
-	{
-		MYMSG((_T("[S1D13521] STBY\r\n")));
-		CmdArg.bCmd = 0x04;
-	}
-	else //if (POWER_SLEEP == ps)
-	{
-		MYMSG((_T("[S1D13521] SLP\r\n")));
-		CmdArg.bCmd = 0x05;
-	}
-	CmdArg.nArgc = 0;
-	Command(CmdArg);
-#else
-#if	0
-	// Sleep Current 4.3mA
-	if (POWER_SLEEP == psOld)
-	{
-		RegWrite(0x000A, (1<<12));	// OSC is always enable
-		delay(4);
-	}
-	else if (POWER_SLEEP == ps)
-	{
-		RegWrite(0x000A, (0<<12));	// OSC is controlled by internal logic
-	}
-#else
-	// Sleep Current 3.6mA
-	if (POWER_RUN == ps)
-	{
-		RegWrite(0x0006, 0x0);
-		if (POWER_SLEEP == psOld)
-			delay(4);//delay(20);
-	}
-#endif
-	WaitHrdy(6);
-	if (POWER_RUN == ps)
-		OUTREG16(&g_pS1D13521Reg->CMD, 0x02);
-	else if (POWER_STANDBY == ps)
-		OUTREG16(&g_pS1D13521Reg->CMD, 0x04);
-	else //if (POWER_SLEEP == ps)
-		OUTREG16(&g_pS1D13521Reg->CMD, 0x05);
-	WaitHrdy(7);
-#endif
+	g_psCurrent = ps;
 
 	if (DRVESC_SET_POWERSTATE == g_dwDebugLevel
 		|| DRVESC_GET_POWERSTATE == g_dwDebugLevel)
 	{
-		MYERR((_T(" SetPowerState(%d, %d)\r\n"), ps, psOld));
+		MYERR((_T(" SetPowerState(%d)\r\n"), ps));
 	}
 
 	return ps;
@@ -753,6 +719,7 @@ static BOOL ImageWrite(PIMAGERECT pir)
 static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 {
 	CMDARG CmdArg;
+	BOOL bSelectLUT = 1;
 #ifndef	FOR_EBOOT
 	DWORD dwStart = GetTickCount();
 #endif	FOR_EBOOT
@@ -762,7 +729,7 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 		MYMSG((_T("[S1D13521] UPD_FULL or UPD_PART\r\n")));
 		// 0x33(UPD_FULL), 0x35(UPD_PART)
 		CmdArg.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x33 : 0x35;
-		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8);
+		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8) | (bSelectLUT<<4);
 		CmdArg.nArgc = 1;
 		Command(CmdArg);
 	}
@@ -774,7 +741,7 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 		MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
 		// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
 		CmdArg.bCmd = (DSPUPD_FULL == g_DspUpdState) ? 0x34 : 0x36;
-		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8);
+		CmdArg.pArgv[0] = (1<<14) | (g_WaveformMode<<8) | (bSelectLUT<<4);
 		CmdArg.pArgv[1] = Area.x;
 		CmdArg.pArgv[2] = Area.y;
 		CmdArg.pArgv[3] = Area.w;
@@ -890,7 +857,7 @@ static BOOL DispUpdate(PDISPUPDATE pdu, BOOL bIsWait)
 	MYMSG((_T("[S1D13521] UPD_FULL_AREA or UPD_PART_AREA\r\n")));
 	// 0x34(UPD_FULL_AREA), 0x36(UPD_PART_AREA)
 	CmdArg.bCmd = (DSPUPD_FULL == pdu->duState) ? 0x34 : 0x36;
-	CmdArg.pArgv[0] = ((pdu->bBorder ? 1 : 0)<<14) | (pdu->wfMode<<8);
+	CmdArg.pArgv[0] = ((pdu->bBorder ? 1 : 0)<<14) | (pdu->wfMode<<8) | (0<<4);
 	CmdArg.pArgv[1] = Area.x;
 	CmdArg.pArgv[2] = Area.y;
 	CmdArg.pArgv[3] = Area.w;
@@ -1167,7 +1134,6 @@ void S1d13521PowerHandler(BOOL bOff)
 ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID pvOut)
 {
 	int nRetVal = 0;
-	POWERSTATE psOld = g_PowerState;
 
 	MYMSG((_T("[S1D13521] DrvEscape(iEsc(0x%08X), cjIn(%d), cjOut(%d))\r\n"), iEsc, cjIn, cjOut));
 	switch (iEsc)
@@ -1200,8 +1166,8 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		return g_WaveformMode;
 
 	case DRVESC_SET_POWERSTATE:
-		if (POWER_LAST > (POWERSTATE)cjIn && g_PowerState != (POWERSTATE)cjIn)
-			g_PowerState = SetPowerState((POWERSTATE)cjIn, g_PowerState);
+		if (POWER_LAST > (POWERSTATE)cjIn)
+			g_PowerState = SetPowerState((POWERSTATE)cjIn);
 	case DRVESC_GET_POWERSTATE:
 		return g_PowerState;
 
@@ -1259,21 +1225,19 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 	if (g_bSleepWakeup)
 	{
 		if (g_SleepPowerState != g_PowerState)
-			g_PowerState = SetPowerState(g_SleepPowerState, g_PowerState);
+			g_PowerState = SetPowerState(g_SleepPowerState);
 		g_bSleepWakeup = FALSE;
 	}
-	psOld = g_PowerState;
 
 	if (POWER_RUN != g_PowerState)
-	{
-		psOld = g_PowerState;
-		g_PowerState = SetPowerState(POWER_RUN, g_PowerState);
-	}
+		SetPowerState(POWER_RUN);
+
 	if (g_bOldBorder != g_bBorder)
 	{
 		RegWrite(0x0326, ((g_bBorder ? 0x00 : 0xFF)<<0));
 		g_bOldBorder = g_bBorder;
 	}
+
 	switch (iEsc)
 	{
 	case DRVESC_COMMAND:
@@ -1329,12 +1293,12 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 
 
 	// +++ DRVESC_TEST +++
-
+	// ...
 	// --- DRVESC_TEST ---
-
 	}
-	if (psOld != g_PowerState)
-		g_PowerState = SetPowerState(psOld, g_PowerState);
+
+	if (POWER_RUN != g_PowerState)
+		SetPowerState(g_PowerState);
 
 	return nRetVal;
 }

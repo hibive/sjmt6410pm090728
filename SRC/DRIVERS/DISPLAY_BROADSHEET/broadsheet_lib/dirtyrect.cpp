@@ -12,7 +12,7 @@ using namespace std;
 typedef queue<RECT> QDIRTYRECT;
 typedef struct
 {
-	HANDLE		hEvnet;
+	HANDLE		hEvent;
 	BOOL		bThread;
 	HANDLE		hThread;
 	QDIRTYRECT	qDirtyRect;
@@ -33,17 +33,15 @@ static int queueSize(HDIRTYRECT hDR)
 	LeaveCriticalSection(&g_CS);
 	return nSize;
 }
-static int queuePush(HDIRTYRECT hDR, RECT rect)
+static void queuePush(HDIRTYRECT hDR, RECT rect)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
 
 	EnterCriticalSection(&g_CS);
 	pDR->qDirtyRect.push(rect);
-	int nSize = (int)pDR->qDirtyRect.size();
 	LeaveCriticalSection(&g_CS);
-	return nSize;
 }
-static int queuePop(HDIRTYRECT hDR, PRECT pdr)
+static void queuePop(HDIRTYRECT hDR, PRECT pdr)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
 
@@ -53,12 +51,10 @@ static int queuePop(HDIRTYRECT hDR, PRECT pdr)
 		*pdr = pDR->qDirtyRect.front();
 		pDR->qDirtyRect.pop();
 	}
-	int nSize = (int)pDR->qDirtyRect.size();
 	LeaveCriticalSection(&g_CS);
-	return nSize;
 }
 
-DWORD wqThreadProc(LPVOID lpParameter)
+static DWORD wqThreadProc(LPVOID lpParameter)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)lpParameter;
 	DWORD dwStatus, dwTimeout = INFINITE;
@@ -67,7 +63,7 @@ DWORD wqThreadProc(LPVOID lpParameter)
 
 	while (pDR->bThread)
 	{
-		dwStatus = WaitForSingleObject(pDR->hEvnet, dwTimeout);
+		dwStatus = WaitForSingleObject(pDR->hEvent, dwTimeout);
 		switch (dwStatus)
 		{
         case WAIT_OBJECT_0:
@@ -106,10 +102,10 @@ HDIRTYRECT DirtyRect_Init(CBWORK cbWork)
 {
 	PSDIRTYRECT pDR = &g_DirtyRect;
 
-	pDR->hEvnet = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (NULL == pDR->hEvnet)
+	pDR->hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (NULL == pDR->hEvent)
 	{
-		MYERR((_T("NULL == pDR->hEvnet\r\n")));
+		MYERR((_T("NULL == pDR->hEvent\r\n")));
 		goto goto_err;
 	}
 
@@ -137,17 +133,17 @@ void DirtyRect_Add(HDIRTYRECT hDR, RECT rect)
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
 
 	queuePush(hDR, rect);
-	SetEvent(pDR->hEvnet);
+	SetEvent(pDR->hEvent);
 }
 
 void DirtyRect_Destroy(HDIRTYRECT hDR)
 {
 	PSDIRTYRECT pDR = (PSDIRTYRECT)hDR;
 
-	if (pDR->hEvnet)
+	if (pDR->hEvent)
 	{
 		pDR->bThread = FALSE;
-		SetEvent(pDR->hEvnet);
+		SetEvent(pDR->hEvent);
 	}
 
 	if (pDR->hThread)
@@ -157,10 +153,10 @@ void DirtyRect_Destroy(HDIRTYRECT hDR)
 		pDR->hThread = NULL;
 	}
 
-	if (pDR->hEvnet)
+	if (pDR->hEvent)
 	{
-		CloseHandle(pDR->hEvnet);
-		pDR->hEvnet = NULL;
+		CloseHandle(pDR->hEvent);
+		pDR->hEvent = NULL;
 	}
 }
 

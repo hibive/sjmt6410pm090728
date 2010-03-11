@@ -64,7 +64,11 @@ USE_DMC1_CHIP1        SETL    {FALSE}
 ; Memory Burst: 3'b000 (Burst1), 3'b001(Burst2), 3'b010(Burst4), 3'b011(Burst8), 3'b100(Burst16)
 
 ; 31th register in P1MEMCFG shoud be set as '0' to support one cke control
+	IF :DEF: OMNIBOOK_VER
+DMC1_MEM_CFG        EQU    ((1<<30)+(0<<21)+(0<<18)+(2<<15)+(1<<14)+(1<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))    ; colum A0~A9
+	ELSE	;!OMNIBOOK_VER
 DMC1_MEM_CFG        EQU    ((1<<30)+(0<<21)+(0<<18)+(2<<15)+(0<<14)+(0<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))    ; colum A0~A9
+	ENDIF	;OMNIBOOK_VER
 ;DMC1_MEM_CFG        EQU    0x80010012
 
 ;-------------------------------------------------------------------------------
