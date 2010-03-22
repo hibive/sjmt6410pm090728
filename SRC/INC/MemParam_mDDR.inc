@@ -65,8 +65,10 @@ USE_DMC1_CHIP1        SETL    {FALSE}
 
 ; 31th register in P1MEMCFG shoud be set as '0' to support one cke control
 	IF :DEF: OMNIBOOK_VER
-DMC1_MEM_CFG        EQU    ((1<<30)+(0<<21)+(0<<18)+(2<<15)+(1<<14)+(0<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))    ; colum A0~A9
-;DMC1_MEM_CFG        EQU    ((1<<30)+(0<<21)+(0<<18)+(2<<15)+(1<<14)+(1<<13)+(2<<7)+(0<<6)+(2<<3)+(2<<0))    ; colum A0~A9
+;DMC1_MEM_CFG	EQU	((1<<30)+(0<<21)+(0<<18)+(2<<15)+(1<<14)+(0<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))	; Stop_mem_clock(1)
+;DMC1_MEM_CFG	EQU	((1<<30)+(0<<21)+(0<<18)+(2<<15)+(0<<14)+(1<<13)+(3<<7)+(0<<6)+(2<<3)+(2<<0))	; Auto_power_down(1), Pwr_down_prd(3)
+DMC1_MEM_CFG	EQU	((1<<30)+(0<<21)+(0<<18)+(2<<15)+(1<<14)+(1<<13)+(3<<7)+(0<<6)+(2<<3)+(2<<0))	; Stop_mem_clock(1), Auto_power_down(1), Pwr_down_prd(3)
+;DMC1_MEM_CFG	EQU	((1<<30)+(0<<21)+(0<<18)+(2<<15)+(0<<14)+(0<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))	; Default
 	ELSE	;!OMNIBOOK_VER
 DMC1_MEM_CFG        EQU    ((1<<30)+(0<<21)+(0<<18)+(2<<15)+(0<<14)+(0<<13)+(0<<7)+(0<<6)+(2<<3)+(2<<0))    ; colum A0~A9
 	ENDIF	;OMNIBOOK_VER
