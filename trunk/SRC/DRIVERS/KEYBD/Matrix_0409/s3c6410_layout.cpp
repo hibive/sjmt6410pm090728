@@ -513,12 +513,15 @@ static const VirtualKeyMapping g_rgvkMapFn[] =
     {  '9', VK_F9 },
     {  '0', VK_F10 },
 #ifdef OMNIBOOK_VER
-	{ VK_HANGUL,	VK_HANJA },		// 한/영
-	{ VK_F20,		VK_CAPITAL },	// Aa
-	{ VK_F21,		VK_TAB },		// Sym
-	{ VK_RETURN,	VK_TAB },		// ENTER
-	{ VK_BACK,		VK_DELETE },	// DEL
-	{ 'T',			VK_F22 },		// Test Program...
+	{ VK_HANGUL,		VK_HANJA },		// 한/영
+	{ VK_F20,			VK_CAPITAL },	// Aa
+	{ VK_F21,			VK_TAB },		// Sym
+	{ VK_RETURN,		VK_TAB },		// ENTER
+	{ VK_BACK,			VK_DELETE },	// DEL
+	{ 'T',				VK_F22 },		// Test Program...
+	{ 'W',				VK_BROWSER_REFRESH },	// Wifi OnOff
+	{ VK_VOLUME_DOWN,	VK_BROWSER_BACK },		// System Volume Down
+	{ VK_VOLUME_UP,		VK_BROWSER_FORWARD },	// System Volume Up
 #else //!OMNIBOOK_VER
     { VK_HYPHEN, VK_NUMLOCK },
     { VK_EQUAL, VK_CANCEL },

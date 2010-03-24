@@ -1184,6 +1184,8 @@ ENDIF BSP_DISPLAY_BROADSHEET
 ;Default	"AppSipSymbol"="\\Windows\\Omnibook_SipSymbol.exe"
 ;Default	"CfgKeypadWakeup"=dword:0
 ;Default	"CfgWifiDefCM"=dword:0
+;Default	"CfgWifiOnOff"=dword:0
+;Default	"CfgSysVolCtrl"=dword:0
 IF APPS_COMMAND
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
@@ -1194,6 +1196,8 @@ ENDIF APPS_COMMAND
 IF MODEL_OMNIBOOK_GW610
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 	"CfgWifiDefCM"=dword:1
+	"CfgWifiOnOff"=dword:1
+	"CfgSysVolCtrl"=dword:1
 ENDIF MODEL_OMNIBOOK_GW610
 
 

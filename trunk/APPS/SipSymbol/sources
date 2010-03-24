@@ -20,6 +20,7 @@ TARGETTYPE=PROGRAM
 RELEASETYPE=LOCAL
 
 INCLUDES=\
+	$(INCLUDES); \
 	$(_WINCEROOT)\public\common\oak\inc; \
 	$(_WINCEROOT)\public\common\sdk\inc; \
 

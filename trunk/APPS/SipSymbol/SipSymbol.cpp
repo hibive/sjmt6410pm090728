@@ -2,6 +2,7 @@
 #include <windows.h>	// For all that Windows stuff
 #include "resource.h"
 #include "SipSymbol.h"	// Program-specific stuff
+#include "ETC.h"
 
 
 //----------------------------------------------------------------------
@@ -27,7 +28,10 @@ const static RECT rcBtn[9] = {
 	{ 155, 4, 176, 25 }, { 178, 4, 199, 25 },
 	{ 201, 4, 222, 25 }
 };
-HBITMAP		g_hBMCand, g_hBMCandNum, g_hBMCandArr[2];
+HBITMAP	g_hBMCand, g_hBMCandNum, g_hBMCandArr[2];
+
+BOOL	g_bWifiOnOff = FALSE;
+BOOL	g_bSysVolCtrl = FALSE;
 
 static struct _CANDLIST {
 	TCHAR	szKey[3];
@@ -209,6 +213,22 @@ void DrawBitmap(HDC hDC, long xStart, long yStart, HBITMAP hBitmap)
 	return;
 }
 
+BOOL CheckOmnibookRegistry(LPCTSTR lpValueName)
+{
+	BOOL bRet = FALSE;
+	HKEY hKey;
+
+	if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Omnibook"), 0, KEY_ALL_ACCESS, &hKey))
+	{
+		DWORD dwType = REG_DWORD, cbData = sizeof(bRet);
+		RegQueryValueEx(hKey, lpValueName, NULL, &dwType, (LPBYTE)&bRet, &cbData);
+
+		RegCloseKey(hKey);
+	}
+
+	return bRet;
+}
+
 //======================================================================
 // Message handling procedures for main window
 //----------------------------------------------------------------------
@@ -269,6 +289,9 @@ LRESULT DoCreate(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 	g_hBMCandNum    = LoadBitmap(lpcs->hInstance, MAKEINTRESOURCE(IDB_CANDNUMBER));
 	g_hBMCandArr[0] = LoadBitmap(lpcs->hInstance, MAKEINTRESOURCE(IDB_CANDARROW1));
 	g_hBMCandArr[1] = LoadBitmap(lpcs->hInstance, MAKEINTRESOURCE(IDB_CANDARROW2));
+	g_bWifiOnOff	= CheckOmnibookRegistry(_T("CfgWifiOnOff"));
+	g_bSysVolCtrl	= CheckOmnibookRegistry(_T("CfgSysVolCtrl"));
+	RETAILMSG(1, (_T("g_bWifiOnOff(%d), g_bSysVolCtrl(%d)\r\n"), g_bWifiOnOff, g_bSysVolCtrl));
 	return 0;
 }
 //----------------------------------------------------------------------
@@ -327,6 +350,48 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			bIsRet = FALSE;
+		}
+		else if (g_bWifiOnOff
+			&& VK_BROWSER_REFRESH == key->vkCode)
+		{
+			if (bIsKeyUp)
+			{
+				HANDLE hEtc = CreateFile(ETC_DRIVER_NAME, GENERIC_READ | GENERIC_WRITE,
+					FILE_SHARE_READ | FILE_SHARE_WRITE,	NULL, OPEN_EXISTING, 0, 0);
+				if (INVALID_HANDLE_VALUE != hEtc)
+				{
+					BOOL bIsWifi = DeviceIoControl(hEtc, IOCTL_GET_POWER_WLAN, NULL, 0, NULL, 0, NULL, NULL);
+					RETAILMSG(0, (_T("IOCTL_GET_POWER_WLAN = %d\r\n"), bIsWifi));
+					bIsWifi = DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, !bIsWifi, NULL, 0, NULL, NULL);
+					RETAILMSG(0, (_T("IOCTL_SET_POWER_WLAN = %d\r\n"), bIsWifi));
+					CloseHandle(hEtc);
+				}
+			}
+		}
+		else if (g_bSysVolCtrl
+			&& (VK_BROWSER_BACK == key->vkCode || VK_BROWSER_FORWARD == key->vkCode))	// System Volume Down or Up
+		{
+			if (bIsKeyUp)
+			{
+				DWORD dwVolume;
+				int nSoundLevel;
+
+				waveOutGetVolume(NULL, &dwVolume);
+				nSoundLevel = dwVolume / 0x11111111;
+				RETAILMSG(0, (_T("waveOutGetVolume = %d, %X\r\n"), nSoundLevel, dwVolume));
+				if (VK_BROWSER_BACK == key->vkCode)
+					nSoundLevel--;
+				else //if (VK_BROWSER_FORWARD == key->vkCode)
+					nSoundLevel++;
+
+				if (15 < nSoundLevel)
+					nSoundLevel = 15;
+				else if (0 > nSoundLevel)
+					nSoundLevel = 0;
+				dwVolume = (0x11111111 * nSoundLevel);
+				waveOutSetVolume(NULL, dwVolume);
+				RETAILMSG(0, (_T("waveOutSetVolume = %d, %X\r\n"), nSoundLevel, dwVolume));
+			}
 		}
 		else if (bIsVisible)
 		{
@@ -394,3 +459,4 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 	return g_fnCallNextHookEx(g_hKeyHook, nCode, wParam, lParam);
 }
+
