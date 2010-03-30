@@ -1116,6 +1116,7 @@ void S1d13521PowerHandler(BOOL bOff)
 			}
 
 			g_PowerState = POWER_SLEEP;
+			g_psCurrent = POWER_SLEEP;
 		}
 
 		g_bSleepWakeup = FALSE;
