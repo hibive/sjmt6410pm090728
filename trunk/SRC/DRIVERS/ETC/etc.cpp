@@ -434,6 +434,9 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 				return FALSE;
 			}
 
+			//  0 (16 bytes) : SJMTxxxxxxxxxxxx
+			// 20 ( 8 bytes) : OMNIBOOK
+			// 30 (16 bytes) : MAC xxxxxxxxxxxx
 			bRet = KernelIoControl(IOCTL_HAL_OMNIBOOK_GET_INFO, NULL, nInBufSize, pMarshalledOutBuf, nOutBufSize, NULL);
 
 			if (FAILED(CeCloseCallerBuffer(pMarshalledOutBuf, pOutBuf, nOutBufSize, ARG_O_PTR)))

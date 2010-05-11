@@ -1155,6 +1155,18 @@ ENDIF BSP_DISPLAY_BROADSHEET
 	"Start Page"="http://www.google.com"
 	"Search Page"="http://www.google.com"
 
+[HKEY_LOCAL_MACHINE\Comm]
+	"Redir"=dword:0		; Network Folder Hidden
+
+IF LOCALE != 0412
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\FontLink\SystemLink]
+	"Tahoma"="\\Windows\\gulim.ac3,Gulim"
+	"Arial"="\\Windows\\gulim.ac3,Gulim"
+	"Courier New"="\\Windows\\gulim.ac3,Gulim"
+	"Times New Roman"="\\Windows\\gulim.ac3,Gulim"
+	"Symbol"="\\Windows\\gulim.ac3,Gulim"
+ENDIF
+
 [HKEY_LOCAL_MACHINE\Software\Microsoft\Shell\AutoHide]
 	@="1"
 
@@ -1195,7 +1207,7 @@ ENDIF APPS_COMMAND
 
 IF MODEL_OMNIBOOK_GW610
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
-	"CfgWifiDefCM"=dword:1
+;	"CfgWifiDefCM"=dword:1
 	"CfgWifiOnOff"=dword:1
 	"CfgSysVolCtrl"=dword:1
 ENDIF MODEL_OMNIBOOK_GW610
