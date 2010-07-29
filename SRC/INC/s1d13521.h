@@ -62,6 +62,14 @@ typedef struct {
 	PDISPUPDATE	pUpdate;
 	BOOL		bIsWait;
 } DISPBITMAP, *PDISPBITMAP;
+
+
+#define	MSGQUEUE_NAME	_T("MSGQUEUE_DIRTYRECT")
+typedef struct {
+	RECT	rect;
+	DWORD	time;
+} DIRTYRECTINFO, *PDIRTYRECTINFO;
+
 //////////////////////////////////////////////////////////////////////////////////
 // Microsoft reserves the range 0 to 0x10000 for its escape codes.
 enum {
@@ -111,6 +119,7 @@ enum {
 	DRVESC_COMMAND2,			//54 CMDARG			[set]
 	DRVESC_WRITE_REG2,			//55 DWORD			[in]	// wReg(hi), wData(lo)
 	DRVESC_READ_REG2,			//56 WORD			[in,ret]
+	DRVESC_DIRTYRECT_NOTIFY,	//57 BOOL			[in,ret]
 	// --- DRVESC_TEST ---
 
 	DRVESC_MAX

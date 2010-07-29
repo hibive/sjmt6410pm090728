@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 extern DWORD	g_dwDebugLevel;
+extern BOOL		g_bDirtyRect;
+extern BOOL		g_bDirtyRectNotify;
 extern void S1d13521Initialize(void *pS1d13521, void *pGPIOReg);
 extern void S1d13521SetDibBuffer(void *pv);
 extern void S1d13521PowerHandler(BOOL bOff);
@@ -31,8 +33,9 @@ static volatile S3C6410_GPIO_REG *g_pGPIOPReg = NULL;
 static volatile S3C6410_SROMCON_REG *g_pSROMReg = NULL;
 
 static void workDirtyRect(RECT rect);
-static HDIRTYRECT g_hDirtyRect = NULL;
 static CRITICAL_SECTION	g_CS;
+static HDIRTYRECT g_hDirtyRect = NULL;
+static HANDLE g_hMQ = NULL;
 
 
 void *DispDrvrPhysicalFrameBuffer = (void *)0;    
@@ -110,6 +113,16 @@ void DispDrvrInitialize(void)
 	InitializeCriticalSection(&g_CS);
 	g_hDirtyRect = DirtyRect_Init(workDirtyRect);
 	S1d13521Initialize((void *)g_pS1D13521Reg, (void *)g_pGPIOPReg);
+
+	MSGQUEUEOPTIONS msgopts;
+	memset(&msgopts, 0, sizeof(msgopts));
+	msgopts.dwSize = sizeof(msgopts);
+	msgopts.dwFlags = 0;	//MSGQUEUE_ALLOW_BROKEN;
+	msgopts.dwMaxMessages = 0;	// no max number of messages
+	msgopts.cbMaxMessage = sizeof(DIRTYRECTINFO);	// max size of each msg
+	msgopts.bReadAccess = FALSE;
+	g_hMQ = CreateMsgQueue(MSGQUEUE_NAME, &msgopts);
+	MYMSG((_T("[S1D13521_MSG] CreateMsgQueue(Write) == 0x%X\r\n"), g_hMQ));
 }
 
 void DispDrvrSetDibBuffer(void *pv)
@@ -182,22 +195,51 @@ ULONG DispDrvrDrvEscape(SURFOBJ *pso, ULONG iEsc,
 
 static void workDirtyRect(RECT rect)
 {
-	BOOL bDirtyRect;
-	IMAGERECT imgRect;
+	if (g_bDirtyRect)
+	{
+		IMAGERECT imgRect = {NULL, &rect};	// NULL(GPE BUFFER), rect(DIRTY RECT)
 
-	EnterCriticalSection(&g_CS);
-	bDirtyRect = S1d13521DrvEscape(DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-	if (bDirtyRect)
-	{
-		imgRect.pBuffer = NULL;	// GPE BUFFER
-		imgRect.pRect = &rect;	// DIRTY RECT
+		EnterCriticalSection(&g_CS);
 		S1d13521DrvEscape(DRVESC_IMAGE_UPDATE, sizeof(IMAGERECT), (PVOID)&imgRect, 0, NULL);
+		LeaveCriticalSection(&g_CS);
 	}
-	if (DRVESC_SET_DIRTYRECT == g_dwDebugLevel || DRVESC_GET_DIRTYRECT == g_dwDebugLevel)
+	if (g_bDirtyRectNotify)
 	{
-		MYERR((_T("%d workDirtyRect(%d, %d, %d, %d)\r\n"),
-			bDirtyRect, rect.left, rect.top, rect.right, rect.bottom));
+		DIRTYRECTINFO dri = {0,};
+		DWORD dwFlags = 0;	// MSGQUEUE_MSGALERT;
+
+		memcpy(&dri.rect, &rect, sizeof(rect));
+		dri.time = GetTickCount();
+		if (FALSE == WriteMsgQueue(g_hMQ, (LPVOID)&dri, sizeof(dri), 0, dwFlags))
+		{
+			DWORD dwError = GetLastError();
+
+			MYERR((_T("[S1D13521_ERR] WriteMsgQueue() == %d, "), dwError));
+			switch (dwError)
+			{
+			case ERROR_OUTOFMEMORY:
+				MYERR((_T("ERROR_OUTOFMEMORY\r\n")));
+				break;
+			case ERROR_INSUFFICIENT_BUFFER:
+				MYERR((_T("ERROR_INSUFFICIENT_BUFFER\r\n")));
+				break;
+			case ERROR_PIPE_NOT_CONNECTED:
+				MYERR((_T("ERROR_PIPE_NOT_CONNECTED. Notify Stop.\r\n")));
+				g_bDirtyRectNotify = FALSE;
+				break;
+			case ERROR_TIMEOUT:
+				MYERR((_T("ERROR_TIMEOUT\r\n")));
+				break;
+			default:
+				MYERR((_T("ERROR_UNKNOWN ???\r\n")));
+				break;
+			}
+		}
 	}
-	LeaveCriticalSection(&g_CS);
+	if (g_dwDebugLevel)
+	{
+		RETAILMSG((DRVESC_SET_DIRTYRECT==g_dwDebugLevel || DRVESC_GET_DIRTYRECT==g_dwDebugLevel),
+			(_T("%d workDirtyRect(%d, %d, %d, %d)\r\n"), g_bDirtyRect, rect.left, rect.top, rect.right, rect.bottom));
+	}
 }
 
