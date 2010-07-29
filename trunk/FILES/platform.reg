@@ -1155,8 +1155,8 @@ ENDIF BSP_DISPLAY_BROADSHEET
 	"Start Page"="http://www.google.com"
 	"Search Page"="http://www.google.com"
 
-[HKEY_LOCAL_MACHINE\Comm]
-	"Redir"=dword:0		; Network Folder Hidden
+[HKEY_LOCAL_MACHINE\Comm\Redir]
+	"RegisterFSRoot"=dword:0	; Network Folder Hidden
 
 IF LOCALE != 0412
 [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\FontLink\SystemLink]

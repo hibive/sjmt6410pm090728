@@ -51,8 +51,9 @@ static DWORD	g_dwSWResetCount = 0;
 #endif	FOR_EBOOT
 
 DWORD	g_dwDebugLevel = 0;
+BOOL	g_bDirtyRect = FALSE;
+BOOL	g_bDirtyRectNotify = FALSE;
 
-static BOOL			g_bDirtyRect = FALSE;
 static DSPUPDSTATE	g_DspUpdState = DSPUPD_FULL;//DSPUPD_PART;//DSPUPD_FULL;
 static BOOL			g_bBorder = FALSE;
 static BOOL			g_bOldBorder = FALSE;
@@ -396,10 +397,8 @@ static BOOL WaitHrdy(int nDebug)
 		delay(5);
 	}
 
-	if (DRVESC_WAIT_HRDY == g_dwDebugLevel)
-	{
-		MYERR((_T(" WaitHrdy(%d, %d)\r\n"), nDebug, i));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WAIT_HRDY==g_dwDebugLevel), (_T("WaitHrdy(%d, %d)\r\n"), nDebug, i));
 
 	if (S1D13521_HRDY_TIMEOUT == i)
 	{
@@ -451,11 +450,9 @@ static POWERSTATE SetPowerState(POWERSTATE ps)
 	}
 	g_psCurrent = ps;
 
-	if (DRVESC_SET_POWERSTATE == g_dwDebugLevel
-		|| DRVESC_GET_POWERSTATE == g_dwDebugLevel)
-	{
-		MYERR((_T(" SetPowerState(%d)\r\n"), ps));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_SET_POWERSTATE==g_dwDebugLevel || DRVESC_GET_POWERSTATE==g_dwDebugLevel),
+			(_T("SetPowerState(%d)\r\n"), ps));
 
 	return ps;
 }
@@ -474,12 +471,9 @@ static BOOL Command(CMDARG CmdArg)
 			OUTREG16(&g_pS1D13521Reg->DATA, CmdArg.pArgv[i]);
 	}
 
-	if (DRVESC_COMMAND == g_dwDebugLevel)
-	{
-		MYERR((_T(" Command(%d, %d, %d, %d, %d, %d, %d)\r\n"),
-			CmdArg.bCmd, CmdArg.nArgc, CmdArg.pArgv[0], CmdArg.pArgv[1],
-			CmdArg.pArgv[2], CmdArg.pArgv[3], CmdArg.pArgv[4]));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_COMMAND==g_dwDebugLevel), (_T("Command(%d, %d, %d, %d, %d, %d, %d)\r\n"),
+			CmdArg.bCmd, CmdArg.nArgc, CmdArg.pArgv[0], CmdArg.pArgv[1], CmdArg.pArgv[2], CmdArg.pArgv[3], CmdArg.pArgv[4]));
 
 	return bRet;
 }
@@ -491,10 +485,8 @@ static WORD DataRead(void)
 	WaitHrdy(3);
 	wData = INREG16(&g_pS1D13521Reg->DATA);
 
-	if (DRVESC_READ_DATA == g_dwDebugLevel)
-	{
-		MYERR((_T(" DataRead(%d)\r\n"), wData));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_READ_DATA==g_dwDebugLevel), (_T("DataRead(%d)\r\n"), wData));
 
 	return wData;
 }
@@ -510,10 +502,8 @@ static BOOL BurstWrite(BLOB *pBlob)
 		OUTREG16(&g_pS1D13521Reg->DATA, wData);
 	}
 
-	if (DRVESC_WRITE_BURST == g_dwDebugLevel)
-	{
-		MYERR((_T(" BurstWrite(%d)\r\n"), pBlob->cbSize));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WRITE_BURST==g_dwDebugLevel), (_T("BurstWrite(%d)\r\n"), pBlob->cbSize));
 
 	return TRUE;
 }
@@ -527,10 +517,8 @@ static WORD RegRead(WORD wReg)
 	OUTREG16(&g_pS1D13521Reg->DATA, wReg);
 	wData = INREG16(&g_pS1D13521Reg->DATA);
 
-	if (DRVESC_READ_REG == g_dwDebugLevel)
-	{
-		MYERR((_T(" RegRead(%d, %d)\r\n"), wReg, wData));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_READ_REG==g_dwDebugLevel), (_T("RegRead(%d, %d)\r\n"), wReg, wData));
 
 	return wData;
 }
@@ -544,10 +532,8 @@ static WORD RegRead2(WORD wReg, BOOL bWaitHrdy)
 	OUTREG16(&g_pS1D13521Reg->DATA, wReg);
 	wData = INREG16(&g_pS1D13521Reg->DATA);
 
-	if (DRVESC_READ_REG == g_dwDebugLevel)
-	{
-		MYERR((_T(" RegRead2(%d, %d)\r\n"), wReg, wData));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_READ_REG==g_dwDebugLevel), (_T("RegRead2(%d, %d)\r\n"), wReg, wData));
 
 	return wData;
 }
@@ -561,10 +547,8 @@ static BOOL RegWrite(WORD wReg, WORD wData)
 	OUTREG16(&g_pS1D13521Reg->DATA, wReg);
 	OUTREG16(&g_pS1D13521Reg->DATA, wData);
 
-	if (DRVESC_WRITE_REG == g_dwDebugLevel)
-	{
-		MYERR((_T(" RegWrite(%d, %d)\r\n"), wReg, wData));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WRITE_REG==g_dwDebugLevel), (_T("RegWrite(%d, %d)\r\n"), wReg, wData));
 
 	return bRet;
 }
@@ -588,10 +572,8 @@ static int SfmRead(BLOB *pBlob)
 	}
 	exit_spi();
 
-	if (DRVESC_READ_SFM == g_dwDebugLevel)
-	{
-		MYERR((_T(" SfmRead(%d)\r\n"), pBlob->cbSize));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_READ_SFM==g_dwDebugLevel), (_T("SfmRead(%d)\r\n"), pBlob->cbSize));
 
 	return pBlob->cbSize;
 }
@@ -615,10 +597,8 @@ static int SfmWrite(BLOB *pBlob)
 	}
 	exit_spi();
 
-	if (DRVESC_WRITE_SFM == g_dwDebugLevel)
-	{
-		MYERR((_T(" SfmWrite(%d)\r\n"), pBlob->cbSize));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WRITE_SFM==g_dwDebugLevel), (_T("SfmWrite(%d)\r\n"), pBlob->cbSize));
 
 	return pBlob->cbSize;
 }
@@ -708,11 +688,9 @@ static BOOL ImageWrite(PIMAGERECT pir)
 	CmdArg.nArgc = 0;
 	Command(CmdArg);
 
-	if (DRVESC_WRITE_IMAGE == g_dwDebugLevel)
-	{
-		MYERR((_T(" ImageWrite(0x%x, %d, %d, %d)\r\n"),
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WRITE_IMAGE==g_dwDebugLevel), (_T("ImageWrite(%d)\r\n"),
 			(pBuffer ? pBuffer : 0), sy, ey, sx, ex));
-	}
 
 	return TRUE;
 }
@@ -792,12 +770,9 @@ static BOOL UpdateWrite(PRECT pRect, BOOL bIsWait)
 	}
 #endif	FOR_EBOOT
 
-	if (DRVESC_WRITE_UPDATE == g_dwDebugLevel)
-	{
-		MYERR((_T(" UpdateWrite(%d, %d, %d, %d)\r\n"),
-			(pRect ? (pRect->left, pRect->top, pRect->right, pRect->bottom)
-			: (0, 0, 0, 0))));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_WRITE_UPDATE==g_dwDebugLevel), (_T("UpdateWrite(%d, %d, %d, %d)\r\n"),
+			(pRect ? (pRect->left, pRect->top, pRect->right, pRect->bottom) : (0, 0, 0, 0))));
 
 #ifndef	FOR_EBOOT
 	MYMSG((_T("\tUpdateWrite %d mSec\r\n"), GetTickCount()-dwStart));
@@ -812,13 +787,10 @@ static BOOL ImageUpdate(PIMAGERECT pir)
 	if (bRet)
 		bRet = UpdateWrite(pir->pRect, FALSE);
 
-	if (DRVESC_IMAGE_UPDATE == g_dwDebugLevel)
-	{
-		MYERR((_T(" ImageUpdate(0x%x, %d, %d, %d, %d)\r\n"),
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_IMAGE_UPDATE==g_dwDebugLevel), (_T("ImageUpdate(0x%x, %d, %d, %d, %d)\r\n"),
 			(pir->pBuffer ? pir->pBuffer : 0),
-			(pir->pRect ? (pir->pRect->left, pir->pRect->top, pir->pRect->right, pir->pRect->bottom)
-			: (0, 0, 0, 0))));
-	}
+			(pir->pRect ? (pir->pRect->left, pir->pRect->top, pir->pRect->right, pir->pRect->bottom) : (0, 0, 0, 0))));
 
 	return bRet;
 }
@@ -897,13 +869,10 @@ static BOOL DispUpdate(PDISPUPDATE pdu, BOOL bIsWait)
 	}
 #endif	FOR_EBOOT
 
-	if (DRVESC_DISP_UPDATE == g_dwDebugLevel)
-	{
-		MYERR((_T(" DispUpdate(%d, (%d,%d,%d,%d), %d, %d, %d)\r\n"),
-			pdu->bWriteImage,
-			rect.left, rect.top, rect.right, rect.bottom,
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_DISP_UPDATE==g_dwDebugLevel), (_T("DispUpdate(%d, (%d,%d,%d,%d), %d, %d, %d)\r\n"),
+			pdu->bWriteImage, rect.left, rect.top, rect.right, rect.bottom,
 			pdu->duState, pdu->bBorder, pdu->wfMode));
-	}
 
 	return TRUE;
 }
@@ -918,12 +887,9 @@ static BOOL DispBitmap(PDISPBITMAP pdi)
 	CMDARG CmdArg;
 	BOOL bRet;
 
-	if (DRVESC_DISP_BITMAP == g_dwDebugLevel)
-	{
-		MYERR((_T(" DispBitmap(0x%x, %d, %d, %d)\r\n"),
-			(pdi->pBuffer ? pdi->pBuffer : 0),
-			pdi->nCount, pdi->x, pdi->y));
-	}
+	if (g_dwDebugLevel)
+		RETAILMSG((DRVESC_DISP_BITMAP==g_dwDebugLevel), (_T("DispBitmap(0x%x, %d, %d, %d)\r\n"),
+			(pdi->pBuffer ? pdi->pBuffer : 0), pdi->nCount, pdi->x, pdi->y));
 
 	memcpy(&bfh, pBuffer, sizeof(BITMAPFILEHEADER));
 	MYMSG((_T("bfh.bfType      = (0x%x)\r\n"), bfh.bfType));
@@ -1219,6 +1185,9 @@ ULONG S1d13521DrvEscape(ULONG iEsc,	ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID p
 		OUTREG16(&g_pS1D13521Reg->CMD, 0x10);
 		OUTREG16(&g_pS1D13521Reg->DATA, (WORD)cjIn);
 		return INREG16(&g_pS1D13521Reg->DATA);
+	case DRVESC_DIRTYRECT_NOTIFY:
+		g_bDirtyRectNotify = (BOOL)cjIn;
+		return g_bDirtyRectNotify;
 	// --- DRVESC_TEST ---
 	}
 
