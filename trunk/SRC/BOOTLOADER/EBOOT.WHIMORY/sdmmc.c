@@ -542,12 +542,14 @@ static void HALT(DWORD dwReason)
 {
 	EdbgOutputDebugString("SpinForever... (%d)\r\n", dwReason);
 
-	EPDOutputString("SpinForever... (%d)\r\n", dwReason);
+	EPDOutputString("\r\n\tSystem HALT (%d)\r\n", dwReason);
 	EPDOutputFlush();
 
 	VFL_Sync();
 	{
 		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+		volatile int delay = 5000000;
+		while (delay--);
 		pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);	// GPC[3] PWRHOLD
 	}
 	while (1);

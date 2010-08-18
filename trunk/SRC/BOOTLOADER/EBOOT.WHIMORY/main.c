@@ -522,9 +522,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #endif	OMNIBOOK_VER
         EdbgOutputDebugString ( "U) DOWNLOAD image now(USB)\r\n");
         EdbgOutputDebugString ( "W) Write Configuration Right Now\r\n");
-#ifdef	DISPLAY_BROADSHEET
-		EdbgOutputDebugString ( "X) Epson Instruction byte code update\r\n");
-#endif	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
+		EdbgOutputDebugString ( "X) System Power Off\r\n");
+#endif	OMNIBOOK_VER
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
 
 #ifdef	OMNIBOOK_VER
@@ -536,7 +536,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
-		EPDOutputString("X) Epson Instruction byte code clear\r\n");
+		EPDOutputString("X) System Power Off\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
 		if (g_bSDMMCUpdateKey)
@@ -561,9 +561,9 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                    ( (KeySelect == 'S') || (KeySelect == 's') ) ||
 #endif	OMNIBOOK_VER
                    ( (KeySelect == 'U') || (KeySelect == 'u') ) ||
-#ifdef	DISPLAY_BROADSHEET
+#ifdef	OMNIBOOK_VER
                    ( (KeySelect == 'X') || (KeySelect == 'x') ) ||
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
                    ( (KeySelect == 'W') || (KeySelect == 'w') ) ))
         {
             KeySelect = OEMReadDebugByte();
@@ -981,16 +981,12 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
                 bConfigChanged = FALSE;
             }
             break;
-#ifdef	DISPLAY_BROADSHEET
-		case 'X':	// BroadSheet(Epson) Instruction byte code update
+#ifdef	OMNIBOOK_VER
+		case 'X':	// System Power Off
 		case 'x':
-			if (EPDSerialFlashWrite(NULL))
-			{
-				EdbgOutputDebugString("Successfully Written\r\n");
-				SpinForever();
-			}
+			SpinForever();
 			break;
-#endif	DISPLAY_BROADSHEET
+#endif	OMNIBOOK_VER
         default:
             break;
         }
@@ -1063,7 +1059,7 @@ BOOL OEMPlatformInit(void)
 	IICWriteByte(PMIC_ADDR, 0x04, data[0]);
 	data[0] = 0xB6;	// DVSARM4[7:4]=1.30V, DVSARM3[3:0]=1.05V
 	IICWriteByte(PMIC_ADDR, 0x05, data[0]);
-	data[0] = 0x9B;	// DVSINT2[7:4]=1.20V, DVSINT1[3:0]=1.30V
+	data[0] = 0x6A;	// DVSINT2[7:4]=1.05V, DVSINT1[3:0]=1.25V
 	IICWriteByte(PMIC_ADDR, 0x06, data[0]);
 	// Turn Battery Monitor Setting
 	data[0] = 0x90;	// Turn Battery Monitor Off
@@ -1082,7 +1078,7 @@ BOOL OEMPlatformInit(void)
 #if (APLL_CLK == CLK_1332MHz)
     LTC3714_Init();
     LTC3714_VoltageSet(1,1200,100);     // ARM
-    LTC3714_VoltageSet(2,1300,100);     // INT
+    LTC3714_VoltageSet(2,1250,100);     // INT
 #endif
 #if (TARGET_ARM_CLK == CLK_800MHz)
     LTC3714_Init();
@@ -2280,10 +2276,9 @@ static void SpinForever(void)
 {
 	EdbgOutputDebugString("SpinForever...\r\n");
 #ifdef	OMNIBOOK_VER
-	if (1 >= g_dwBatteryFaultCount)
-		EPDOutputString("SpinForever...\r\n");
-	else
-		EPDOutputString("Low Battery...\r\n");
+	if (1 < g_dwBatteryFaultCount)
+		EPDOutputString("System LOW BATTERY...\r\n");
+	EPDOutputString("\r\n\tSystem HALT\r\n");
 	EPDOutputFlush();
 #endif	OMNIBOOK_VER
 
@@ -2291,6 +2286,8 @@ static void SpinForever(void)
 	VFL_Sync();
 	{
 		volatile S3C6410_GPIO_REG *pGPIOReg = (S3C6410_GPIO_REG *)OALPAtoVA(S3C6410_BASE_REG_PA_GPIO, FALSE);
+		volatile int delay = 5000000;
+		while (delay--);
 		// GPC[3] PWRHOLD
 		pGPIOReg->GPCDAT = (pGPIOReg->GPCDAT & ~(0xF<<0)) | (0x0<<3);
 	}

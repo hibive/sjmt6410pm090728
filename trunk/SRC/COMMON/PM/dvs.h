@@ -39,7 +39,11 @@ Notes:
 //#define DVS_LEVEL_PROFILE
 
 #define DVS_UPDATE_PERIOD_FINE      (100)
+#ifdef	OMNIBOOK_VER
+#define DVS_UPDATE_PERIOD_COARSE    (200)
+#else	//!OMNIBOOK_VER
 #define DVS_UPDATE_PERIOD_COARSE    (1000)
+#endif	OMNIBOOK_VER
 
 typedef struct
 {
@@ -86,12 +90,21 @@ DWORD g_aTransitionTable[SYS_LEVEL_MAX][11] =
     {SYS_L5,        100, SYS_L5,        20, SYS_L0,    8,    4,    2,    1,    1050, 1000},    //  66,  66, 66, 133
 
 #elif (TARGET_ARM_CLK == CLK_666MHz)
+#ifdef	OMNIBOOK_VER
+	{SYS_L0,		 50, SYS_L1,		 0, SYS_L0,    2,	 5,    4,	 2,    1200, 1250},    // 666, 133, 66, 133 (Sync)
+	{SYS_L1,		 40, SYS_L2,		10, SYS_L0,    2,	 1,    4,	 2,    1100, 1250},    // 333, 133, 66, 133 (Async)
+	{SYS_L2,		 40, SYS_L3,		20, SYS_L0,    3,	 1,    4,	 2,    1050, 1250},    // 222, 133, 66, 133 (Async)
+	{SYS_L3,		 50, SYS_L4,		20, SYS_L0,    5,	 1,    4,	 2,    1050, 1250},    // 133, 133, 66, 133 (Async)
+	{SYS_L4,		 60, SYS_L5,		20, SYS_L0,    5,	 2,    2,	 1,    1050, 1050},    // 133,	66, 66, 133 (Async)
+	{SYS_L5,		100, SYS_L5,		20, SYS_L0,   10,	 2,    2,	 1,    1050, 1050},    //  66,	66, 66, 133 (Async)
+#else	//!OMNIBOOK_VER
     {SYS_L0,         50, SYS_L1,         0, SYS_L0,    2,    5,    4,    2,    1200, 1300},    // 666, 133, 66, 133 (Sync)
     {SYS_L1,         40, SYS_L2,        10, SYS_L0,    2,    1,    4,    2,    1100, 1200},    // 333, 133, 66, 133 (Async)
     {SYS_L2,         40, SYS_L3,        20, SYS_L0,    3,    1,    4,    2,    1050, 1200},    // 222, 133, 66, 133 (Async)
     {SYS_L3,        100, SYS_L4,        20, SYS_L0,    5,    1,    4,    2,    1050, 1200},    // 133, 133, 66, 133 (Async)
     {SYS_L4,         60, SYS_L5,        20, SYS_L0,    5,    2,    2,    1,    1050, 1000},    // 133,  66, 66, 133 (Async)
     {SYS_L5,        100, SYS_L5,        20, SYS_L0,   10,    2,    2,    1,    1050, 1000},    //  66,  66, 66, 133 (Async)
+#endif	OMNIBOOK_VER
 
 #elif (TARGET_ARM_CLK == CLK_800MHz)
     {SYS_L0,         50, SYS_L1,         0, SYS_L0,    1,    3,    4,    2,    1300, 1200},    // 800, 133, 66, 133
