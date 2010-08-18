@@ -59,7 +59,7 @@ DWORD ACC_Init(LPCTSTR pContext)
 	g_pGPIOReg = (S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
 	if (g_pGPIOReg == NULL)
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : pGPIOReg MmMapIoSpace() Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : pGPIOReg MmMapIoSpace() Failed \r\n"), _T(__FUNCTION__)));
 		return 0;
 	}
 
@@ -69,7 +69,7 @@ DWORD ACC_Init(LPCTSTR pContext)
 
 	if (!KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &dwIRQ, sizeof(DWORD), &g_dwSysIntrAcc, sizeof(DWORD), NULL))
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : IOCTL_HAL_REQUEST_SYSINTR Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : IOCTL_HAL_REQUEST_SYSINTR Failed \r\n"), _T(__FUNCTION__)));
 		g_dwSysIntrAcc = SYSINTR_UNDEFINED;
 		return FALSE;
 	}
@@ -77,19 +77,19 @@ DWORD ACC_Init(LPCTSTR pContext)
 	g_hEventAcc = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if(NULL == g_hEventAcc)
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \r\n"), _T(__FUNCTION__)));
 		return FALSE;
 	}
 	g_hEventAccNotify = CreateEvent(NULL, TRUE, FALSE, ACC_NOTIFY_EVENT);
 	if(NULL == g_hEventAccNotify)
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateEvent() Failed \r\n"), _T(__FUNCTION__)));
 		return FALSE;
 	}
 
 	if (!(InterruptInitialize(g_dwSysIntrAcc, g_hEventAcc, 0, 0)))
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : InterruptInitialize() Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : InterruptInitialize() Failed \r\n"), _T(__FUNCTION__)));
 		return FALSE;
 	}
 
@@ -104,13 +104,14 @@ DWORD ACC_Init(LPCTSTR pContext)
 	g_hThreadAcc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AccelerationThread, NULL, 0, NULL);
 	if (g_hThreadAcc == NULL)
 	{
-		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateThread() Failed \n\r"), _T(__FUNCTION__)));
+		RETAILMSG(1, (_T("[ACC:ERR] %s() : CreateThread() Failed \r\n"), _T(__FUNCTION__)));
 		return FALSE;
 	}
 
 #ifdef	DoInitInDriverLoad
 	if (0 != bma150_init(&bma150))
 		return 0;
+	bma150_set_mode(2);	// BMA150_MODE_NORMAL(0), BMA150_MODE_SLEEP(2), BMA150_MODE_WAKE_UP(3)
 #endif	DoInitInDriverLoad
 
 #if	0

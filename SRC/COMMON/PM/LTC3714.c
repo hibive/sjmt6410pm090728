@@ -87,7 +87,10 @@ void LTC3714_VoltageSet(UINT32 uPwr, UINT32 uVoltage, UINT32 uDelay)
 
     if(!CHECK_IN_PA(LTC3714_VoltageSet))
     {
+#ifdef	OMNIBOOK_VER
+#else	//!OMNIBOOK_VER
         OALMSG(TRUE, (_T("%s(%d,%d,%d)\r\n"), _T(__FUNCTION__), uPwr, uVoltage, uDelay));
+#endif	OMNIBOOK_VER
     }
 
 #ifdef	OMNIBOOK_VER
@@ -121,13 +124,13 @@ void LTC3714_VoltageSet(UINT32 uPwr, UINT32 uVoltage, UINT32 uDelay)
 		uRegValue = g_pGPIOReg->GPCDAT;	// GPCDAT Register
 		switch (uvtg)
 		{
-		case 1300:
+		case 1250:
 			uRegValue = (uRegValue & ~(0x1<<2)) | (0<<2);
 			break;
-		case 1200:
+		case 1050:
 			uRegValue = (uRegValue & ~(0x1<<2)) | (1<<2);
 			break;
-		default:	// 1.30V
+		default:	// 1.25V
 			uRegValue = (uRegValue & ~(0x1<<2)) | (0<<2);
 			break;
 		}

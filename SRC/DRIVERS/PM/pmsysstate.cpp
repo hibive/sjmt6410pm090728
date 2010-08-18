@@ -20,6 +20,7 @@
 #include <bsp.h>
 #include "Pmplatform.h"
 static HANDLE g_hEventBatFlt = NULL;
+static HANDLE g_hEventKeybd = NULL;
 static volatile BSP_ARGS *g_pArgs = NULL;
 static volatile S3C6410_GPIO_REG *g_pGPIOReg = NULL;
 #endif	OMNIBOOK_VER
@@ -423,27 +424,41 @@ PmSetSystemPowerState_I(LPCWSTR pwsState, DWORD dwStateHint, DWORD dwOptions,
 			}
 			else
 			{
-				if (NULL == g_pGPIOReg)
+				if (OEMWAKE_KEYPAD == dwWakeSrc)
 				{
-					PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
-					ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
-					g_pGPIOReg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
-				}
+					if (NULL == g_hEventKeybd)
+						g_hEventKeybd = OpenEvent(EVENT_ALL_ACCESS, FALSE, _T("OMNIBOOK_EVENT_KEYBOARD"));
 
-				if (g_pGPIOReg)
-				{
-					#define	TIMEOUT_POWEROFF	2000	//[mSec]
-					DWORD dwTickStart = GetTickCount();
-
-					while ((FALSE == bIsShutdown) && (g_pGPIOReg->GPNDAT & (0x1<<9)))
+					if (g_hEventKeybd)
 					{
-						RETAILMSG(1, (_T(".")));
-						// Wait for Button Released...
-						Sleep(10);
-						if (TIMEOUT_POWEROFF <= (GetTickCount() - dwTickStart))
+						RETAILMSG(1, (_T("SetEvent(OMNIBOOK_EVENT_KEYBOARD)\r\n")));
+						SetEvent(g_hEventKeybd);
+					}
+				}
+				else if (SYSWAKE_POWER_BUTTON == dwWakeSrc)
+				{
+					if (NULL == g_pGPIOReg)
+					{
+						PHYSICAL_ADDRESS ioPhysicalBase = {0,0};
+						ioPhysicalBase.LowPart = S3C6410_BASE_REG_PA_GPIO;
+						g_pGPIOReg = (volatile S3C6410_GPIO_REG *)MmMapIoSpace(ioPhysicalBase, sizeof(S3C6410_GPIO_REG), FALSE);
+					}
+
+					if (g_pGPIOReg)
+					{
+						#define	TIMEOUT_POWEROFF	2000	//[mSec]
+						DWORD dwTickStart = GetTickCount();
+
+						while ((FALSE == bIsShutdown) && (g_pGPIOReg->GPNDAT & (0x1<<9)))
 						{
-							RETAILMSG(1, (_T("\r\n")));
-							bIsShutdown = TRUE;
+							RETAILMSG(1, (_T(".")));
+							// Wait for Button Released...
+							Sleep(10);
+							if (TIMEOUT_POWEROFF <= (GetTickCount() - dwTickStart))
+							{
+								RETAILMSG(1, (_T("\r\n")));
+								bIsShutdown = TRUE;
+							}
 						}
 					}
 				}

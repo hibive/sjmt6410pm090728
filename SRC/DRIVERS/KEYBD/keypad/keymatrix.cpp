@@ -685,7 +685,11 @@ BOOL KeyMatrix::IsrThreadProc()
         return(FALSE);
     }
 
+#ifdef	OMNIBOOK_VER
+	gEventIntr = CreateEvent(NULL, FALSE, FALSE, _T("OMNIBOOK_EVENT_KEYBOARD"));
+#else	//!OMNIBOOK_VER
     gEventIntr = CreateEvent(NULL, FALSE, FALSE, NULL);
+#endif	OMNIBOOK_VER
     if( NULL == gEventIntr )
     {
         ERRORMSG( 1, (TEXT("Event is not created\r\n")));
