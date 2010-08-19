@@ -102,11 +102,17 @@ static BOOL CheckUSBinUse(void)
     {
         if (g_bDVSEN == TRUE)
         {
+#ifdef	OMNIBOOK_VER
+			if (g_CurrentLevel != SYS_L0)
+				ChangeDVSLevel(SYS_L0);
+			g_bDVSEN = FALSE;	// Disable DVS
+#else	//!OMNIBOOK_VER
             g_bDVSEN = FALSE;     // Disable DVS
             if (g_CurrentLevel != SYS_L0)
             {
                 ChangeDVSLevel(SYS_L0);
             }
+#endif	OMNIBOOK_VER
             OALMSG(OAL_POWER && OAL_FUNC, (L"[DVS] DVS disabled by USB\r\n"));
         }
         return TRUE;    // Do not apply DVS, when USB is in Use
