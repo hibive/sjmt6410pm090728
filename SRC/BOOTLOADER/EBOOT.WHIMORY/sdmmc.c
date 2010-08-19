@@ -114,13 +114,14 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 		"CHAIN   LST",	// 4 : chain.lst = (XIPKER.bin(XIPKERNEL.bin) + NK.bin + chain.bin) or nk.bin("NK      BIN")
 	}, *pSelFile;
 	BYTE KeySelect = bUpdateKey;
-	BOOL bRet = TRUE;
+	BOOL bRet = FALSE;
 
 	EdbgOutputDebugString("\r\nChoose Download Image:\r\n\r\n");
 	EdbgOutputDebugString("B) BLOCK0.NB0\r\n");
 	EdbgOutputDebugString("E) EBOOT.BIN\r\n");
 	EdbgOutputDebugString("N) NK.BIN\r\n");
 	EdbgOutputDebugString("D) DISPEINK.BIN\r\n");
+	EdbgOutputDebugString("R) Repair Update(Nand Format And Image Update)\r\n");
 	EdbgOutputDebugString("F) Factory Update(Nand Format And Image Update)\r\n");
 	EdbgOutputDebugString("C) CHAIN.LST\r\n");
 	EdbgOutputDebugString("\r\nEnter your selection: ");
@@ -130,6 +131,7 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 	EPDOutputString("E) EBOOT.BIN\r\n");
 	EPDOutputString("N) NK.BIN\r\n");
 	EPDOutputString("D) DISPEINK.BIN\r\n");
+	EPDOutputString("R) Repair Update(Nand Format And Image Update)\r\n");
 	EPDOutputString("F) Factory Update(Nand Format And Image Update)\r\n");
 	EPDOutputString("C) CHAIN.LST\r\n");
 	EPDOutputString("\r\nEnter your selection: ");
@@ -139,6 +141,7 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 				( (KeySelect == 'E') || (KeySelect == 'e') ) ||
 				( (KeySelect == 'N') || (KeySelect == 'n') ) ||
 				( (KeySelect == 'D') || (KeySelect == 'd') ) ||
+				( (KeySelect == 'R') || (KeySelect == 'r') ) ||
 				( (KeySelect == 'F') || (KeySelect == 'f') ) ||
 				( (KeySelect == 'C') || (KeySelect == 'c') ) ))
     {
@@ -230,6 +233,91 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 			HALT(0);
 		}
 		return FALSE;
+	case 'R':	// NK.BIN
+	case 'r':	// NK.BIN
+		pSelFile = file_name[2];
+		if (fatFileExist(pSelFile))
+		{
+			EdbgOutputDebugString("+++ Nand Flash Format All\r\n");
+			EPDOutputString("+++ Nand Flash Format All\r\n");
+			EPDOutputFlush();
+			FTL_Close();
+			VFL_Close();
+			WMR_Format_VFL();
+			TOC_Init(DEFAULT_IMAGE_DESCRIPTOR, (IMAGE_TYPE_RAMIMAGE), 0, 0, 0);
+			TOC_Write();
+			EdbgOutputDebugString("--- Nand Flash Format All\r\n");
+			EPDOutputString("--- Nand Flash Format All\r\n");
+			EPDOutputFlush();
+
+#if	0
+			EdbgOutputDebugString("+++ NK.bin Read\r\n");
+			EPDOutputString("+++ NK.bin Read\r\n");
+			EPDOutputFlush();
+			bRet = parsingImageFromSD(IMAGE_BIN, pSelFile);
+			EdbgOutputDebugString("--- NK.bin Read\r\n");
+			EPDOutputString("--- NK.bin Read\r\n");
+			EPDOutputFlush();
+#else
+			pSelFile = file_name[3];
+			if (fatFileExist(pSelFile))
+			{
+				BLOB blob = {0,};
+				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+				EdbgOutputDebugString("+++ DispEink.bin Read\r\n");
+				EPDOutputString("+++ DispEink.bin Read\r\n");
+				EPDOutputFlush();
+				blob.cbSize = parsingImageFromSD(IMAGE_WBF, pSelFile);
+				blob.pBlobData = (PBYTE)readPtIndex;
+				EdbgOutputDebugString("--- DispEink.bin Read\r\n");
+				EPDOutputString("--- DispEink.wbf bin\r\n");
+				EPDOutputFlush();
+
+				EdbgOutputDebugString("+++ DispEink.bin Write\r\n");
+				EPDOutputString("+++ DispEink.bin Write\r\n");
+				EPDOutputFlush();
+				bRet = EPDSerialFlashWrite((void *)&blob);
+				EdbgOutputDebugString("--- DispEink.bin Write\r\n");
+				EPDOutputString("--- DispEink.bin Write\r\n");
+				EPDOutputFlush();
+			}
+
+			pSelFile = file_name[0];
+			if (fatFileExist(pSelFile))
+			{
+				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+				EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
+				EPDOutputString("+++ Block0.nb0 Write\r\n");
+				EPDOutputFlush();
+				parsingImageFromSD(IMAGE_NB0, pSelFile);
+				writeImage();
+				EdbgOutputDebugString("--- Block0.nb0 Write\r\n");
+				EPDOutputString("--- Block0.nb0 Write\r\n");
+				EPDOutputFlush();
+			}
+
+			pSelFile = file_name[1];
+			if (fatFileExist(pSelFile))
+			{
+				g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+				readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
+				EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
+				EPDOutputString("+++ Eboot.bin Write\r\n");
+				EPDOutputFlush();
+				parsingImageFromSD(IMAGE_BIN, pSelFile);
+				writeImage();
+				EdbgOutputDebugString("--- Eboot.bin Write\r\n");
+				EPDOutputString("--- Eboot.bin Write\r\n");
+				EPDOutputFlush();
+			}
+
+			EPDOutputString("INFO: Please Reboot.  Halting...\r\n");
+			HALT(0);
+#endif
+		}
+		break;
 	case 'F':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin)
 	case 'f':	// (Format All -> DispEink.bin -> Block0.nb0 -> Eboot.bin)
 		if (fatFileExist(file_name[3]) && fatFileExist(file_name[0]) && fatFileExist(file_name[1]))
@@ -244,6 +332,8 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 			EPDOutputFlush();
 
 			pSelFile = file_name[3];
+			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
+			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
 			{
 				BLOB blob = {0,};
 				EdbgOutputDebugString("+++ DispEink.bin Read\r\n");
@@ -264,9 +354,9 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 				EPDOutputFlush();
 			}
 
+			pSelFile = file_name[0];
 			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-			pSelFile = file_name[0];
 			EdbgOutputDebugString("+++ Block0.nb0 Write\r\n");
 			EPDOutputString("+++ Block0.nb0 Write\r\n");
 			EPDOutputFlush();
@@ -276,9 +366,9 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 			EPDOutputString("--- Block0.nb0 Write\r\n");
 			EPDOutputFlush();
 
+			pSelFile = file_name[1];
 			g_pDownPt = (UINT8 *)EBOOT_USB_BUFFER_CA_START;
 			readPtIndex = (UINT32)EBOOT_USB_BUFFER_CA_START;
-			pSelFile = file_name[1];
 			EdbgOutputDebugString("+++ Eboot.bin Write\r\n");
 			EPDOutputString("+++ Eboot.bin Write\r\n");
 			EPDOutputFlush();
@@ -288,6 +378,7 @@ BOOL ChooseImageFromSDMMC(BYTE bUpdateKey)
 			EPDOutputString("--- Eboot.bin Write\r\n");
 			EPDOutputFlush();
 
+			EPDOutputString("INFO: Please Reboot.  Halting...\r\n");
 			HALT(0);
 		}
 		else

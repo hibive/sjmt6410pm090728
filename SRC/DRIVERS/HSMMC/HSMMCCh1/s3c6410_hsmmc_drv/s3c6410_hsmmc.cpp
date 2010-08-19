@@ -30,7 +30,7 @@ BOOL CSDHControllerCh1::Init(LPCTSTR pszActiveKey) {
 }
 
 VOID CSDHControllerCh1::PowerUp() {
-    RETAILMSG(TRUE,(TEXT("[HSMMC1] Power Up the HSMMC Host Controller\n")));
+    RETAILMSG(FALSE,(TEXT("[HSMMC1] Power Up the HSMMC Host Controller\n")));
 
     // HSMMC Ch1 initialization for "WakeUp"
     if (!InitCh()) return;
@@ -59,7 +59,7 @@ BOOL CSDHControllerCh1::InitClkPwr() {
     }
 
 #ifdef _SRCCLK_48MHZ_
-    RETAILMSG(TRUE, (TEXT("[HSMMC1] Setting registers for the USB48MHz (EXTCLK for SDCLK) : SYSCon.\n")));
+    RETAILMSG(FALSE, (TEXT("[HSMMC1] Setting registers for the USB48MHz (EXTCLK for SDCLK) : SYSCon.\n")));
     // SCLK_HSMMC#_48 : CLK48M_PHY(OTH PHY 48MHz Clock Source from SYSCON block)
     // To use the USB clock, must be set the "USB_SIG_MASK" bit in the syscon register.
     pCLKPWR->OTHERS    |= (0x1<<16);  // set USB_SIG_MASK
@@ -91,7 +91,7 @@ BOOL CSDHControllerCh1::InitGPIO() {
         RETAILMSG(TRUE, (TEXT("[HSMMC1] GPIO registers is *NOT* mapped.\n")));
         return FALSE;
     }
-    RETAILMSG(TRUE, (TEXT("[HSMMC1] Setting registers for the GPIO.\n")));
+    RETAILMSG(FALSE, (TEXT("[HSMMC1] Setting registers for the GPIO.\n")));
 #ifdef _SMDK6410_CH1_8BIT_
     pIOPreg->GPHCON0 = (pIOPreg->GPHCON0 & ~(0xFFFFFFFF)) | (0x22222222);  // 4'b0010 for the MMC 1
     pIOPreg->GPHCON1 = (pIOPreg->GPHCON1 &~(0xFF)) | (0x22);               // 4'b0010 for the MMC 1
@@ -124,7 +124,7 @@ BOOL CSDHControllerCh1::InitHSMMC() {
     }
 
 #ifdef _SRCCLK_48MHZ_
-    RETAILMSG(TRUE, (TEXT("[HSMMC1] Setting registers for the USB48MHz (EXTCLK) : HSMMCCon.\n")));
+    RETAILMSG(FALSE, (TEXT("[HSMMC1] Setting registers for the USB48MHz (EXTCLK) : HSMMCCon.\n")));
     // Set the clock source to USB_PHY for CLKMMC1
     pHSMMC->CONTROL2 = (pHSMMC->CONTROL2 & ~(0xffffffff)) |
         (0x3<<9) |  // Debounce Filter Count 0x3=64 iSDCLK

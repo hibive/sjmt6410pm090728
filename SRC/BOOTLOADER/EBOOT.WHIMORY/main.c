@@ -464,22 +464,6 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 	EPDOutputString("\t[Board] Revision(%B)\r\n", pBSPArgs->bBoardRevision);
 	EPDOutputString("\t\tAPLL_CLK(%d), ACLK(%d)\r\n", APLL_CLK, S3C6410_ACLK);
 	EPDOutputString("\t\tHCLK(%d), PCLK(%d), ECLK(%d)\r\n", S3C6410_HCLK, S3C6410_PCLK, S3C6410_ECLK);
-	EPDOutputString("\t[Disp] Revision(%W), Product(%W)\r\n", pBSPArgs->BS_wRevsionCode, pBSPArgs->BS_wProductCode);
-	EPDOutputString("\t\t%W : Command Type\r\n", pBSPArgs->CMD_wType);
-	EPDOutputString("\t\t%B.%B : Command Version\r\n", pBSPArgs->CMD_bMajor, pBSPArgs->CMD_bMinor);
-	EPDOutputString("\t\t%X : Waveform File Size\r\n", pBSPArgs->WFM_dwFileSize);
-	EPDOutputString("\t\t%X : Waveform Serial Number\r\n", pBSPArgs->WFM_dwSerialNumber);
-	EPDOutputString("\t\t%B : Waveform Run Type\r\n", pBSPArgs->WFM_bRunType);
-	EPDOutputString("\t\t\t(0x00=[B]aseline,0x01=[T]est/trial,0x02=[P]roduction,0x03=[Q]ualification,0x04=V110[A])\r\n");
-	EPDOutputString("\t\t%B : Waveform FPL Platform\r\n", pBSPArgs->WFM_bFPLPlatform);
-	EPDOutputString("\t\t\t(0x00=2.0, 0x01=2.1, 0x02=2.3; 0x03=Vizplex 110, 0x04=V110A; other values undefined)\r\n");
-	EPDOutputString("\t\t%W : Waveform FPL Lot\r\n", pBSPArgs->WFM_wFPLLot);
-	EPDOutputString("\t\t%B : Waveform Mode Version(0x01 -> 0 INIT, 1 DU, 2 GC16, 3 GC4)\r\n", pBSPArgs->WFM_bModeVersion);
-	EPDOutputString("\t\t%B : Waveform Version\r\n", pBSPArgs->WFM_bWaveformVersion);
-	EPDOutputString("\t\t%B : Waveform Subversion\r\n", pBSPArgs->WFM_bWaveformSubVersion);
-	EPDOutputString("\t\t%B : Waveform Type(0x0B=TE, 0x0E=WE; other values undefined)\r\n", pBSPArgs->WFM_bWaveformType);
-	EPDOutputString("\t\t%B : Waveform FPL Size(0x32=5\", 0x3C=6\", 0x50=8\", 0x61=9.7\")\r\n", pBSPArgs->WFM_bFPLSize);
-	EPDOutputString("\t\t%B : Waveform MFG Code(0x01=PVI,0x02=LGD,0x03=P/H)\r\n", pBSPArgs->WFM_bMFGCode);
 	EPDOutputFlush();
 #endif	OMNIBOOK_VER
 
@@ -523,6 +507,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
         EdbgOutputDebugString ( "U) DOWNLOAD image now(USB)\r\n");
         EdbgOutputDebugString ( "W) Write Configuration Right Now\r\n");
 #ifdef	OMNIBOOK_VER
+		EdbgOutputDebugString ( "I) Information (E-Ink Paper Display)\r\n");
 		EdbgOutputDebugString ( "X) System Power Off\r\n");
 #endif	OMNIBOOK_VER
         EdbgOutputDebugString ( "\r\nEnter your selection: ");
@@ -536,6 +521,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 		EPDOutputString("L) LAUNCH existing Boot Media image\r\n");
 		EPDOutputString("S) DOWNLOAD image now(SDMMCCard)\r\n");
 		EPDOutputString("U) DOWNLOAD image now(USB)\r\n");
+		EPDOutputString("I) Information (E-Ink Paper Display)\r\n");
 		EPDOutputString("X) System Power Off\r\n");
 		EPDOutputString("\r\nEnter your selection: ");
 		EPDOutputFlush();
@@ -562,6 +548,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 #endif	OMNIBOOK_VER
                    ( (KeySelect == 'U') || (KeySelect == 'u') ) ||
 #ifdef	OMNIBOOK_VER
+                   ( (KeySelect == 'I') || (KeySelect == 'i') ) ||
                    ( (KeySelect == 'X') || (KeySelect == 'x') ) ||
 #endif	OMNIBOOK_VER
                    ( (KeySelect == 'W') || (KeySelect == 'w') ) ))
@@ -587,6 +574,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 					KeySelect = 'S';	break;
 				case KEY_U:
 					KeySelect = 'U';	break;
+				case KEY_I:
+					KeySelect = 'I';	break;
 				case KEY_X:
 					KeySelect = 'X';	break;
 				default:
@@ -726,6 +715,8 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			{
 				OALMSG(OAL_WARN, (TEXT("TOC_Write Failed!\r\n")));
 			}
+
+			SpinForever();
 #else	//OMNIBOOK_VER
 			if (VFL_Close() != VFL_SUCCESS)
 			{
@@ -765,6 +756,10 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 				OALMSG(TRUE, (TEXT("[ERR] FTL_Close() Failure\r\n")));
 				break;
 			}
+
+#ifdef	OMNIBOOK_VER
+			SpinForever();
+#endif	OMNIBOOK_VER
 
 			OALMSG(TRUE, (TEXT(" --Format FTL (Erase FTL Area + FTL Format)\r\n")));
 		}
@@ -934,6 +929,7 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
 			if (FALSE == InitializeSDMMC(NULL))
 			{
 				OALMSG(OAL_ERROR, (L"ERROR: InitializeSDMMC call failed\r\n"));;
+				EPDOutputString("ERROR: InitializeSDMMC call failed\r\n\r\n");
 				SpinForever();
 			}
 			g_bSDMMCDownload = TRUE;
@@ -982,6 +978,25 @@ static BOOL MainMenu(PBOOT_CFG pBootCfg)
             }
             break;
 #ifdef	OMNIBOOK_VER
+		case 'I':	// Information
+		case 'i':
+			EPDOutputString("[Disp] Revision(%W), Product(%W)\r\n", pBSPArgs->BS_wRevsionCode, pBSPArgs->BS_wProductCode);
+			EPDOutputString("\t%W : Command Type\r\n", pBSPArgs->CMD_wType);
+			EPDOutputString("\t%B.%B : Command Version\r\n", pBSPArgs->CMD_bMajor, pBSPArgs->CMD_bMinor);
+			EPDOutputString("\t%X : Waveform File Size\r\n", pBSPArgs->WFM_dwFileSize);
+			EPDOutputString("\t%X : Waveform Serial Number\r\n", pBSPArgs->WFM_dwSerialNumber);
+			EPDOutputString("\t%B : Waveform Run Type\r\n", pBSPArgs->WFM_bRunType);
+			EPDOutputString("\t\t(0x00=[B]aseline,0x01=[T]est/trial,0x02=[P]roduction,0x03=[Q]ualification,0x04=V110[A])\r\n");
+			EPDOutputString("\t%B : Waveform FPL Platform\r\n", pBSPArgs->WFM_bFPLPlatform);
+			EPDOutputString("\t\t(0x00=2.0, 0x01=2.1, 0x02=2.3; 0x03=Vizplex 110, 0x04=V110A; other values undefined)\r\n");
+			EPDOutputString("\t%W : Waveform FPL Lot\r\n", pBSPArgs->WFM_wFPLLot);
+			EPDOutputString("\t%B : Waveform Mode Version(0x01 -> 0 INIT, 1 DU, 2 GC16, 3 GC4)\r\n", pBSPArgs->WFM_bModeVersion);
+			EPDOutputString("\t%B : Waveform Version\r\n", pBSPArgs->WFM_bWaveformVersion);
+			EPDOutputString("\t%B : Waveform Subversion\r\n", pBSPArgs->WFM_bWaveformSubVersion);
+			EPDOutputString("\t%B : Waveform Type(0x0B=TE, 0x0E=WE; other values undefined)\r\n", pBSPArgs->WFM_bWaveformType);
+			EPDOutputString("\t%B : Waveform FPL Size(0x32=5\", 0x3C=6\", 0x50=8\", 0x61=9.7\")\r\n", pBSPArgs->WFM_bFPLSize);
+			EPDOutputString("\t%B : Waveform MFG Code(0x01=PVI,0x02=LGD,0x03=P/H)\r\n", pBSPArgs->WFM_bMFGCode);
+			break;
 		case 'X':	// System Power Off
 		case 'x':
 			SpinForever();
@@ -1237,6 +1252,11 @@ BOOL OEMPlatformInit(void)
 			{
 				KeySelect = 0x20;
 				g_bSDMMCUpdateKey = 'C';	// Chain.lst
+			}
+			else if (KeyData == (KEY_HOLD | KEY_R))
+			{
+				KeySelect = 0x20;
+				g_bSDMMCUpdateKey = 'R';	// Repair
 			}
 		}
 #endif	OMNIBOOK_VER
