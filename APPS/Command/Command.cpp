@@ -10,13 +10,19 @@
 
 #define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
 
+#define BMP_SLEEP_REG_STRING		_T("BmpSleep")
+
 #define BMP_SHUTDOWN_REG_STRING		_T("BmpShutdown")
 #define BMP_SHUTDOWN_REG_DEFAULT	_T("\\Windows\\Omnibook_Shutdown.bmp")
 
 #define BMP_LOWBATTERY_REG_STRING	_T("BmpLowbattery")
 #define BMP_LOWBATTERY_REG_DEFAULT	_T("\\Windows\\Omnibook_Lowbattery.bmp")
 
-#define BMP_SLEEP_REG_STRING		_T("BmpSleep")
+#define BMP_BATCHARGING_REG_STRING	_T("BmpBatCharging")
+#define BMP_BATCHARGING_REG_DEFAULT	_T("\\Windows\\Omnibook_BatCharging.bmp")
+
+#define BMP_BATCOMPLETE_REG_STRING	_T("BmpBatComplete")
+#define BMP_BATCOMPLETE_REG_DEFAULT	_T("\\Windows\\Omnibook_BatComplete.bmp")
 
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
@@ -153,6 +159,7 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 {
 	BOOL bRet = FALSE;
 	HDC hDC = NULL;
+	TCHAR szText[MAX_PATH] = {0,};
 
 	if (2 > argc)
 		return 0;
@@ -165,47 +172,70 @@ int _tmain(int argc, TCHAR *argv[], TCHAR *envp[])
 	hDC = GetDC(HWND_DESKTOP);
 	if (0 == _tcsnicmp(_T("SLEEP"), argv[1], _tcslen(_T("SLEEP"))))
 	{
-		TCHAR szSleep[MAX_PATH] = {0,};
 		// +++
 		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
 		// ---
-		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SLEEP_REG_STRING, szSleep, MAX_PATH, FALSE))
+		if (TRUE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SLEEP_REG_STRING, szText, MAX_PATH, FALSE))
 		{
-			RETAILMSG(1, (_T("SLEEP : RegOpenCreateStr(%s, %s)\r\n"), BMP_SLEEP_REG_STRING, szSleep));
-			bRet = dispShutdown(hDC, szSleep);
+			RETAILMSG(1, (_T("SLEEP : RegOpenCreateStr(%s, %s)\r\n"), BMP_SLEEP_REG_STRING, szText));
+			bRet = dispShutdown(hDC, szText);
 		}
 		RETAILMSG(1, (_T("App_Command => SLEEP(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("SHUTDOWN"), argv[1], _tcslen(_T("SHUTDOWN"))))
 	{
-		TCHAR szShutdown[MAX_PATH] = {0,};
-		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SHUTDOWN_REG_STRING, szShutdown, MAX_PATH, FALSE))
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_SHUTDOWN_REG_STRING, szText, MAX_PATH, FALSE))
 		{
 			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
 				BMP_SHUTDOWN_REG_STRING, BMP_SHUTDOWN_REG_DEFAULT));
-			_tcscpy_s(szShutdown, _countof(szShutdown), BMP_SHUTDOWN_REG_DEFAULT);
+			_tcscpy_s(szText, MAX_PATH, BMP_SHUTDOWN_REG_DEFAULT);
 		}
-		bRet = dispShutdown(hDC, szShutdown);
+		bRet = dispShutdown(hDC, szText);
 		if (FALSE == bRet)
 			dispShutdown(hDC, BMP_SHUTDOWN_REG_DEFAULT);
 		RETAILMSG(1, (_T("App_Command => SHUTDOWN(%d)\r\n"), bRet));
 	}
 	else if (0 == _tcsnicmp(_T("LOWBATTERY"), argv[1], _tcslen(_T("LOWBATTERY"))))
 	{
-		TCHAR szLowbattery[MAX_PATH] = {0,};
 		// +++
 		ExtEscape(hDC, DRVESC_SYSTEM_SLEEP, 100, NULL, 0, NULL);
 		// ---
-		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_LOWBATTERY_REG_STRING, szLowbattery, MAX_PATH, FALSE))
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_LOWBATTERY_REG_STRING, szText, MAX_PATH, FALSE))
 		{
 			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
 				BMP_LOWBATTERY_REG_STRING, BMP_LOWBATTERY_REG_DEFAULT));
-			_tcscpy_s(szLowbattery, _countof(szLowbattery), BMP_LOWBATTERY_REG_DEFAULT);
+			_tcscpy_s(szText, MAX_PATH, BMP_LOWBATTERY_REG_DEFAULT);
 		}
-		bRet = dispShutdown(hDC, szLowbattery);
+		bRet = dispShutdown(hDC, szText);
 		if (FALSE == bRet)
 			dispShutdown(hDC, BMP_LOWBATTERY_REG_DEFAULT);
 		RETAILMSG(1, (_T("App_Command => LOWBATTERY(%d)\r\n"), bRet));
+	}
+	else if (0 == _tcsnicmp(_T("BATCHARGING"), argv[1], _tcslen(_T("BATCHARGING"))))
+	{
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_BATCHARGING_REG_STRING, szText, MAX_PATH, FALSE))
+		{
+			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
+				BMP_BATCHARGING_REG_STRING, BMP_BATCHARGING_REG_DEFAULT));
+			_tcscpy_s(szText, MAX_PATH, BMP_BATCHARGING_REG_DEFAULT);
+		}
+		bRet = dispShutdown(hDC, szText);
+		if (FALSE == bRet)
+			dispShutdown(hDC, BMP_BATCHARGING_REG_DEFAULT);
+		RETAILMSG(1, (_T("App_Command => BATCHARGING(%d)\r\n"), bRet));
+	}
+	else if (0 == _tcsnicmp(_T("BATCOMPLETE"), argv[1], _tcslen(_T("BATCOMPLETE"))))
+	{
+		if (FALSE == RegOpenCreateStr(OMNIBOOK_REG_KEY, BMP_BATCOMPLETE_REG_STRING, szText, MAX_PATH, FALSE))
+		{
+			RETAILMSG(1, (_T("RegOpenCreateStr(%s), Default(%s)\r\n"),
+				BMP_BATCOMPLETE_REG_STRING, BMP_BATCOMPLETE_REG_DEFAULT));
+			_tcscpy_s(szText, MAX_PATH, BMP_BATCOMPLETE_REG_DEFAULT);
+		}
+		bRet = dispShutdown(hDC, szText);
+		if (FALSE == bRet)
+			dispShutdown(hDC, BMP_BATCOMPLETE_REG_DEFAULT);
+		RETAILMSG(1, (_T("App_Command => BATCOMPLETE(%d)\r\n"), bRet));
 	}
 
 

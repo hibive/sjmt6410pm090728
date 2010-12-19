@@ -198,6 +198,9 @@ INT WINAPI PowerButtonThread(void)
         nBtnCount++;
         RETAILMSG(PWR_ZONE_EVENT_HOOK, (_T("[PWR] Power Button Event [%d]\r\n"), nBtnCount));
 
+#ifdef	OMNIBOOK_VER
+		if (FALSE == g_pArgs->bIsAttachUfn)
+#endif	OMNIBOOK_VER
         // In the Windows Mobile, "PowerPolicyNotify(PPN_POWERBUTTONPRESSED, 0);" can be used
         SetSystemPowerState(NULL, POWER_STATE_SUSPEND, POWER_FORCE);
 

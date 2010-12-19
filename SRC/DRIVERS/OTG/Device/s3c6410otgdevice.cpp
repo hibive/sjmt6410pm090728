@@ -21,9 +21,7 @@
 
 #define USB_DD_VERSION 100
 
-#ifndef	OMNIBOOK_VER
 static volatile BSP_ARGS *v_gBspArgs;
-#endif	OMNIBOOK_VER
 
 // Caution: Turning on more debug zones can cause STALLs due
 // to corrupted setup packets.
@@ -1145,12 +1143,28 @@ HandleReset(
             pContext->pfnNotify(pContext->pvMddContext, UFN_MSG_BUS_EVENTS, UFN_ATTACH);
 
             RETAILMSG(UFN_ZONE_USB_EVENTS,(_T("[UFNPDD] OTG Cable Attached\r\n")));
+#ifdef	OMNIBOOK_VER
+			if (FALSE == v_gBspArgs->bIsAttachUfn)
+			{
+				v_gBspArgs->bIsAttachUfn = TRUE;
+				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_UFN)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN")), UFN_ATTACH, 0);
+			}
+#endif	OMNIBOOK_VER
         }
         else
         {
             pContext->pfnNotify(pContext->pvMddContext, UFN_MSG_BUS_EVENTS, UFN_DETACH);
             pContext->attachedState = UFN_DETACH;                
             RETAILMSG(UFN_ZONE_USB_EVENTS,(_T("[UFNPDD] RESET Exeption \r\n")));
+#ifdef	OMNIBOOK_VER
+			if (TRUE == v_gBspArgs->bIsAttachUfn)
+			{
+				v_gBspArgs->bIsAttachUfn = FALSE;
+				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_UFN)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN")), UFN_DETACH, 0);
+			}
+#endif	OMNIBOOK_VER
         }
     }
     else
@@ -1158,7 +1172,15 @@ HandleReset(
         if(!(dwGOTGCTL & (B_SESSION_VALID|A_SESSION_VALID)))
         {
             pContext->pfnNotify(pContext->pvMddContext, UFN_MSG_BUS_EVENTS, UFN_DETACH);
-            pContext->attachedState = UFN_DETACH;                
+            pContext->attachedState = UFN_DETACH;
+#ifdef	OMNIBOOK_VER
+			if (TRUE == v_gBspArgs->bIsAttachUfn)
+			{
+				v_gBspArgs->bIsAttachUfn = FALSE;
+				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_UFN)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN")), UFN_DETACH, 1);
+			}
+#endif	OMNIBOOK_VER
         }
         else
         {        
@@ -1254,6 +1276,14 @@ HandleUSBBusIrq(
             pContext->attachedState = UFN_DETACH;
             pContext->IsFirstReset = TRUE;
             pContext->bOutEPDMAStartFlag = FALSE;
+#ifdef	OMNIBOOK_VER
+			if (TRUE == v_gBspArgs->bIsAttachUfn)
+			{
+				v_gBspArgs->bIsAttachUfn = FALSE;
+				RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_UFN)\r\n")));
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN")), UFN_DETACH, 2);
+			}
+#endif	OMNIBOOK_VER
         }
         else
         {
@@ -1427,7 +1457,6 @@ DWORD MapRegisterSet(
     g_pUDCBase = pVMem + BASE_REGISTER_OFFSET;
     DEBUGMSG(UFN_ZONE_INIT, (_T("%s MmMapIoSpace, pVMem:%x\r\n"), pszFname, pVMem));
 
-#ifndef	OMNIBOOK_VER
     ioPhysicalBase.LowPart = IMAGE_SHARE_ARGS_PA_START;  
     v_gBspArgs = (volatile BSP_ARGS *)MmMapIoSpace(ioPhysicalBase, sizeof(BSP_ARGS), FALSE);
     if (v_gBspArgs == NULL)
@@ -1436,7 +1465,6 @@ DWORD MapRegisterSet(
         RETAILMSG(UFN_ZONE_ERROR, (_T("%s MmMapIoSpace: FAILED\r\n"), pszFname));
         goto CleanUp;
     }
-#endif	OMNIBOOK_VER
 
 CleanUp:
 
@@ -1454,13 +1482,11 @@ CleanUp:
             pVMem = NULL;
         }
 
-#ifndef	OMNIBOOK_VER
 		if (v_gBspArgs)
-            {
+        {
             MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
-               v_gBspArgs = NULL;
-            }
-#endif	OMNIBOOK_VER
+            v_gBspArgs = NULL;
+        }
     }
 
     FUNCTION_LEAVE_MSG();
@@ -1498,13 +1524,11 @@ UnmapRegisterSet(
         g_pUDCBase = NULL;
     }    
 
-#ifndef	OMNIBOOK_VER
     if (v_gBspArgs)
     {
         MmUnmapIoSpace((PVOID) v_gBspArgs, sizeof(BSP_ARGS));    
         v_gBspArgs = NULL;
     }
-#endif	OMNIBOOK_VER
 }
 
 
@@ -1564,9 +1588,16 @@ ISTMain(
 
         // Notify Detach Event to MDD
         pContext->pfnNotify(pContext->pvMddContext, UFN_MSG_BUS_EVENTS, UFN_DETACH);
-        
         pContext->fSpeedReported = FALSE;
         pContext->attachedState = UFN_DETACH;
+#ifdef	OMNIBOOK_VER
+		if (TRUE == v_gBspArgs->bIsAttachUfn)
+		{
+			v_gBspArgs->bIsAttachUfn = FALSE;
+			RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_UFN)\r\n")));
+			PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN")), UFN_DETACH, 3);
+		}
+#endif	OMNIBOOK_VER
 
         // Disable Device  interrupts - write Zeros to Disable
         WriteReg(GINTMSK, 0);

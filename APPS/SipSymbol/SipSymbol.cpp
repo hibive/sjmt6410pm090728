@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "SipSymbol.h"	// Program-specific stuff
 #include "ETC.h"
+#include "s1d13521.h"
 
 
 //----------------------------------------------------------------------
@@ -75,6 +76,18 @@ static struct _CANDLIST {
 const static DWORD CANDLISTCOUNT = dim(CandList);
 static DWORD g_dwCLSelect;
 
+
+UINT g_uMsgUfn = RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_UFN"));
+UINT g_uMsgBatState = RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_BATSTATE"));
+int g_nModeUfn = -1;
+BOOL g_bIsAttachUfn = FALSE;
+
+extern int ufnGetCurrentClientName(void);
+extern BOOL ufnChangeCurrentClient(int nMode);
+extern int ufnGetCurrentMassStorage(void);
+extern BOOL ufnChangeCurrentMassStorage(int nType);
+
+
 //======================================================================
 // Program entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -90,6 +103,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	hwndMain = InitInstance(hInstance, lpCmdLine, nCmdShow);
 	if (hwndMain == 0)
 		return 0x10;
+
+	g_nModeUfn = ufnGetCurrentClientName();
 
 	// Application message loop
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -232,6 +247,101 @@ BOOL CheckOmnibookRegistry(LPCTSTR lpValueName)
 //======================================================================
 // Message handling procedures for main window
 //----------------------------------------------------------------------
+LRESULT DoUfnMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
+{
+	// wParam : UFN_DETACH(0), UFN_ATTACH(1)
+	// lParam : ...
+	RETAILMSG(1, (_T("DoUfnMain(%d, %d)\r\n"), wParam, lParam));
+
+	if (0 == g_nModeUfn)		// Serial_Class
+	{
+	}
+	else if (1 == g_nModeUfn)	// Mass_Storage_Class
+	{
+		if (0 == wParam)		// UFN_DETACH
+		{
+			if (TRUE == g_bIsAttachUfn)
+			{
+				HDC hDC = GetDC(HWND_DESKTOP);
+
+				ExtEscape(hDC, DRVESC_SET_DSPUPDSTATE, DSPUPD_PART, NULL, 0, NULL);
+				ExtEscape(hDC, DRVESC_SET_WAVEFORMMODE, WAVEFORM_GC, NULL, 0, NULL);
+				ExtEscape(hDC, DRVESC_SET_DIRTYRECT, TRUE, NULL, 0, NULL);
+				{
+					DISPUPDATE du;
+					du.bWriteImage = TRUE;
+					du.pRect = NULL;
+					du.duState = DSPUPD_FULL;
+					du.bBorder = FALSE;
+					du.wfMode = WAVEFORM_GC;
+					ExtEscape(hDC, DRVESC_DISP_UPDATE, sizeof(du), (LPCSTR)&du, 0, NULL);
+				}
+
+				ReleaseDC(HWND_DESKTOP, hDC);
+			}
+
+			g_bIsAttachUfn = FALSE;
+		}
+		else if (1 == wParam)	// UFN_ATTACH
+		{
+			g_bIsAttachUfn = TRUE;
+
+			SYSTEM_POWER_STATUS_EX2	sps = {0,};
+			GetSystemPowerStatusEx2(&sps, sizeof(sps), TRUE);
+			BYTE fAcOn = !((1<<0) & sps.BatteryAverageCurrent);
+			BYTE fChgDone = !((1<<2) & sps.BatteryAverageCurrent);
+
+			//if (fAcOn)
+			{
+				TCHAR szCmdLine[MAX_PATH] = {0,};
+				_stprintf_s(szCmdLine, MAX_PATH, fChgDone ? _T("BATCOMPLETE") : _T("BATCHARGING"));
+
+				LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+				PROCESS_INFORMATION pi;
+				ZeroMemory(&pi, sizeof(pi));
+				if (CreateProcess(lpszPathName, szCmdLine, 0, 0, 0, 0, 0, 0, 0, &pi))
+				{
+					WaitForSingleObject(pi.hThread, 5000);
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+LRESULT DoBatStateMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
+{
+	BYTE fBatteryState = (BYTE)wParam;
+	BYTE fAcOn = !((1<<0) & fBatteryState);
+	BYTE fChgDone = !((1<<2) & fBatteryState);
+	RETAILMSG(1, (_T("DoBatStateMain(%d, %d, %d)\r\n"), fAcOn, fChgDone, g_bIsAttachUfn));
+
+	if (0 == g_nModeUfn)		// Serial_Class
+	{
+	}
+	else if (1 == g_nModeUfn)	// Mass_Storage_Class
+	{
+		if (g_bIsAttachUfn && fAcOn)
+		{
+			TCHAR szCmdLine[MAX_PATH] = {0,};
+			_stprintf_s(szCmdLine, MAX_PATH, fChgDone ? _T("BATCOMPLETE") : _T("BATCHARGING"));
+
+			LPCTSTR lpszPathName = _T("\\Windows\\Omnibook_Command.exe");
+			PROCESS_INFORMATION pi;
+			ZeroMemory(&pi, sizeof(pi));
+			if (CreateProcess(lpszPathName, szCmdLine, 0, 0, 0, 0, 0, 0, 0, &pi))
+			{
+				WaitForSingleObject(pi.hThread, 5000);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+			}
+		}
+	}
+
+	return 0;
+}
 LRESULT DoPaintMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
 	HDC hDC;
@@ -300,6 +410,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
 	// Message dispatch table for MainWindowProc
 	const struct decodeUINT MainMessages[] = {
+		g_uMsgUfn,			DoUfnMain,
+		g_uMsgBatState,		DoBatStateMain,
 		WM_PAINT,			DoPaintMain,
 		WM_LBUTTONDOWN,		DoLbuttonDown,
 		WM_DESTROY,			DoDestroy,
@@ -320,6 +432,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	static BOOL static_bIsNumSkip = FALSE;
+
+	if (g_bIsAttachUfn)
+	{
+		RETAILMSG(0, (_T("KeyHookProc() : g_bIsAttachUfn = %d\r\n"), g_bIsAttachUfn));
+		return 1;
+	}
 
 	if (HC_ACTION == nCode && (WM_KEYDOWN == wParam || WM_KEYUP == wParam))
 	{
@@ -445,7 +563,30 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			else
 			{
 				if (bIsKeyUp)
+				{
 					ShowWindow(g_hWndMain, SW_HIDE);
+
+					if (_T('U') == key->vkCode)
+					{
+						g_nModeUfn = ufnGetCurrentClientName();
+						if (0 == g_nModeUfn)		// Serial_Class
+						{
+							g_nModeUfn = 1;			// Mass_Storage_Class
+							ufnChangeCurrentClient(g_nModeUfn);
+							RETAILMSG(1, (_T("USB Mode Change : <<< Mass_Storage_Class >>>\r\n")));
+						}
+						else if (1 == g_nModeUfn)	// Mass_Storage_Class
+						{
+							g_nModeUfn = 0;			// Serial_Class
+							ufnChangeCurrentClient(g_nModeUfn);
+							RETAILMSG(1, (_T("USB Mode Change : <<< Serial_Class >>>\r\n")));
+						}
+						else
+						{
+							// ...
+						}
+					}
+				}
 				bIsRet = FALSE;
 			}
 		}

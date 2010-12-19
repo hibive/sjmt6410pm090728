@@ -9,6 +9,7 @@
 @ REM 08_Gray V110_B079_60_VD2001_BTC.wbf
 @ REM 08_Gray V110_B092_60_VD2701_BTC.wbf
 @ REM 08_Gray V110_B095_60_VD2901_BTC.wbf
+@ REM 08_Gray V110_B100_60_VD3101_BTC.wbf
 @ REM
 
 @ REM < Old_Instruction + 08_Gray >
@@ -30,5 +31,7 @@ copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_B079_60_VD2001_BTC.wbf /b Cmd
 copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_B092_60_VD2701_BTC.wbf /b Cmd0047c0fi250fo5d0300s00cd8d02_V110_B092_60_VD2701_BTC.bin
 @ REM < New_Instruction + 08_Gray >
 copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_B095_60_VD2901_BTC.wbf /b Cmd0047c0fi250fo5d0300s00cd8d02_V110_B095_60_VD2901_BTC.bin
+@ REM < New_Instruction + 08_Gray >
+copy Cmd0047c0fi250fo5d0300s00cd8d02.bin /b + V110_B100_60_VD3101_BTC.wbf /b Cmd0047c0fi250fo5d0300s00cd8d02_V110_B100_60_VD3101_BTC.bin
 
 copy Cmd0047c0fi250fo5d0300s00cd8d02_V110_B079_60_VD2001_BTC.bin DispEink.bin

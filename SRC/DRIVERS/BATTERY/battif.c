@@ -87,7 +87,7 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 {
 	int nAvgLevel, nLevel, i=0, nPercent, nLEDCount=0;
 	BOOL fAcOn, fUsbOn, fChgDone, fCharging;
-	BYTE fBatteryState = 0;
+	BYTE fOldBatteryState = (BYTE)-1, fBatteryState = 0;
 
 	do
 	{
@@ -170,6 +170,15 @@ static DWORD WINAPI GetADCThread(LPVOID lpParameter)
 #endif
 		}
 		nLEDCount++;
+
+		if (fOldBatteryState != fBatteryState)
+		{
+			fOldBatteryState = fBatteryState;
+
+			RETAILMSG(1, (_T("PostMessage(HWND_BROADCAST, OMNIBOOK_MESSAGE_BATSTATE)\r\n")));
+			if (IsAPIReady(SH_WMGR))
+				PostMessage(HWND_BROADCAST, RegisterWindowMessage(_T("OMNIBOOK_MESSAGE_BATSTATE")), fBatteryState, 0);
+		}
 
 		unlockBattery();
 	} while (WAIT_OBJECT_0 != WaitForSingleObject(g_hEventExit, 1000));
