@@ -285,7 +285,7 @@ ENDIF IMGHIVEREG
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
 
-IF OMNIBOOK_VER
+IF MODEL_OMNIBOOK_GW610
 
 ;----------------------------------------------------------------------------
 ; 2nd FAT Area : 128MB
@@ -307,7 +307,7 @@ IF OMNIBOOK_VER
 	"DefaultFileSystem"="FATFS"
 	"PartitionDriver"="mspart.dll"
 	"Name"="PocketMory MLC Disk1"
-	"Folder"="App Store"
+	"Folder"="eBook Store"
 	"AutoMount"=dword:1
 	"AutoPart"=dword:1
 	"AutoFormat"=dword:1
@@ -315,7 +315,7 @@ IF OMNIBOOK_VER
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS]
 	"FriendlyName"="PocketMory FAT FileSystem1"
 	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
-	"Folder"="App Store"
+	"Folder"="eBook Store"
 	"FormatExfat"=dword:1
 	"CheckForFormat"=dword:1
 	"EnableWriteBack"=dword:1
@@ -348,7 +348,7 @@ IF OMNIBOOK_VER
 	"DefaultFileSystem"="FATFS"
 	"PartitionDriver"="mspart.dll"
 	"Name"="PocketMory MLC Disk2"
-	"Folder"="eBook Store"
+	"Folder"="User Storage"
 	"AutoMount"=dword:1
 	"AutoPart"=dword:1
 	"AutoFormat"=dword:1
@@ -356,7 +356,7 @@ IF OMNIBOOK_VER
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK2\FATFS]
 	"FriendlyName"="PocketMory FAT FileSystem2"
 	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
-	"Folder"="eBook Store"
+	"Folder"="User Storage"
 	"FormatExfat"=dword:1
 	"CheckForFormat"=dword:1
 	"EnableWriteBack"=dword:1
@@ -369,7 +369,7 @@ IF OMNIBOOK_VER
 	"Dll"="cachefilt.dll"
 	"LockIOBuffers"=dword:1
 	
-ELSE	; OMNIBOOK_VER
+ELSE	; MODEL_OMNIBOOK_GW610
 
 ;----------------------------------------------------------------------------
 ; 2nd FAT Area
@@ -436,7 +436,7 @@ ENDIF OMNIBOOK_VER
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
 
-ENDIF OMNIBOOK_VER
+ENDIF MODEL_OMNIBOOK_GW610
 
 ENDIF BSP_POCKETMORY
 ENDIF BSP_IROM_SDMMC_CH1_BOOT !
