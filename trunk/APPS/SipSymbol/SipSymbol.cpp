@@ -255,6 +255,10 @@ LRESULT DoUfnMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 
 	if (0 == g_nModeUfn)		// Serial_Class
 	{
+		if (0 == wParam)		// UFN_DETACH
+			g_bIsAttachUfn = FALSE;
+		else if (1 == wParam)	// UFN_ATTACH
+			g_bIsAttachUfn = TRUE;
 	}
 	else if (1 == g_nModeUfn)	// Mass_Storage_Class
 	{
@@ -433,7 +437,7 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	static BOOL static_bIsNumSkip = FALSE;
 
-	if (g_bIsAttachUfn)
+	if (g_bIsAttachUfn && (1 == g_nModeUfn))	// Mass_Storage_Class
 	{
 		RETAILMSG(0, (_T("KeyHookProc() : g_bIsAttachUfn = %d\r\n"), g_bIsAttachUfn));
 		return 1;
