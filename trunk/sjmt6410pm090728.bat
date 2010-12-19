@@ -107,6 +107,9 @@ set BSP_NOUSBFN=
 @REM This select default function driver
 set BSP_USBFNCLASS=SERIAL
 @REM set BSP_USBFNCLASS=MASS_STORAGE
+if "%MODEL_OMNIBOOK_GW610%"=="1" (
+	set BSP_USBFNCLASS=MASS_STORAGE
+)
 
 @REM DVFS is not yet implemented.
 set BSP_USEDVS=1

@@ -31,4 +31,5 @@ TARGETLIBS=\
 SOURCES=\
 	SipSymbol.rc\
 	SipSymbol.cpp\
+	UsbMode.cpp\
 

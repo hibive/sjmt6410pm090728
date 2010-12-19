@@ -54,10 +54,10 @@ DWORD	g_dwDebugLevel = 0;
 BOOL	g_bDirtyRect = FALSE;
 BOOL	g_bDirtyRectNotify = FALSE;
 
-static DSPUPDSTATE	g_DspUpdState = DSPUPD_FULL;//DSPUPD_PART;//DSPUPD_FULL;
+static DSPUPDSTATE	g_DspUpdState = DSPUPD_PART;//DSPUPD_PART;//DSPUPD_FULL;
 static BOOL			g_bBorder = FALSE;
 static BOOL			g_bOldBorder = FALSE;
-static WAVEFORMMODE	g_WaveformMode = WAVEFORM_GU;
+static WAVEFORMMODE	g_WaveformMode = WAVEFORM_GC;
 static POWERSTATE	g_PowerState = POWER_RUN;
 static BYTE			g_sfmBuffer[FLASH_PAGE_SIZE];
 static LPBYTE		g_lpFrameBuffer = NULL;

@@ -121,7 +121,8 @@ CONFIG                  ; Other System Configuration for making image
     AUTOSIZE=ON         ; ROM and RAM size will be resizing automatically for padding region
 
 IF OMNIBOOK_VER
-	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
+	FSRAMPERCENT=0x00000008	; object store(8KB * 8 = 64KB)
+;	FSRAMPERCENT=0x0D0D0D0D	; object store(5%)
 ;	FSRAMPERCENT=0x30303030	; object store(12.5%)
 ENDIF OMNIBOOK_VER
 

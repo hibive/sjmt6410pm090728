@@ -285,6 +285,92 @@ ENDIF IMGHIVEREG
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
 
+IF OMNIBOOK_VER
+
+;----------------------------------------------------------------------------
+; 2nd FAT Area : 128MB
+;----------------------------------------------------------------------------
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\FDSK1]
+	"Prefix"="DSK"
+	"Dll"="ONDisk.dll"
+	"Order"=dword:1
+	"Index"=dword:2		; DSK2:
+	"IClass"=multi_sz:"{A4E7EDDA-E575-4252-9D6B-4195D48BB865}"
+	"Profile"="FDSK1"
+	"BmlVolumeId"=dword:0		; BML volume ID = 0
+	"BmlPartitionId"=dword:9	; BML parition ID = PARTITION_ID_FILESYSTEM1
+	"WMRStartSector"=dword:10000
+	"WMRNumOfSector"=dword:40000	; 128MB
+	"ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1]
+	"DefaultFileSystem"="FATFS"
+	"PartitionDriver"="mspart.dll"
+	"Name"="PocketMory MLC Disk1"
+	"Folder"="App Store"
+	"AutoMount"=dword:1
+	"AutoPart"=dword:1
+	"AutoFormat"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS]
+	"FriendlyName"="PocketMory FAT FileSystem1"
+	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
+	"Folder"="App Store"
+	"FormatExfat"=dword:1
+	"CheckForFormat"=dword:1
+	"EnableWriteBack"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\FDSK1\Filters\CacheFilt]
+	"Dll"="cachefilt.dll"
+	"LockIOBuffers"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS\Filters\CacheFilt]
+	"Dll"="cachefilt.dll"
+	"LockIOBuffers"=dword:1
+
+;----------------------------------------------------------------------------
+; 3th FAT Area
+;----------------------------------------------------------------------------
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\FDSK2]
+	"Prefix"="DSK"
+	"Dll"="ONDisk.dll"
+	"Order"=dword:2
+	"Index"=dword:3		; DSK3:
+	"IClass"=multi_sz:"{A4E7EDDA-E575-4252-9D6B-4195D48BB865}"
+	"Profile"="FDSK2"
+	"BmlVolumeId"=dword:0		; BML volume ID = 0
+	"BmlPartitionId"=dword:9	; BML parition ID = PARTITION_ID_FILESYSTEM1
+	"WMRStartSector"=dword:50000
+	"WMRNumOfSector"=dword:ffffffff	; last location
+	"ONDSectorShift"=dword:2     ; (512 << 2) : 2K Page
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK2]
+	"DefaultFileSystem"="FATFS"
+	"PartitionDriver"="mspart.dll"
+	"Name"="PocketMory MLC Disk2"
+	"Folder"="eBook Store"
+	"AutoMount"=dword:1
+	"AutoPart"=dword:1
+	"AutoFormat"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK2\FATFS]
+	"FriendlyName"="PocketMory FAT FileSystem2"
+	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
+	"Folder"="eBook Store"
+	"FormatExfat"=dword:1
+	"CheckForFormat"=dword:1
+	"EnableWriteBack"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\AutoLoad\FDSK2\Filters\CacheFilt]
+	"Dll"="cachefilt.dll"
+	"LockIOBuffers"=dword:1
+
+[HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK2\FATFS\Filters\CacheFilt]
+	"Dll"="cachefilt.dll"
+	"LockIOBuffers"=dword:1
+	
+ELSE	; OMNIBOOK_VER
+
 ;----------------------------------------------------------------------------
 ; 2nd FAT Area
 ;----------------------------------------------------------------------------
@@ -349,6 +435,8 @@ ENDIF OMNIBOOK_VER
 [HKEY_LOCAL_MACHINE\System\StorageManager\Profiles\FDSK1\FATFS\Filters\CacheFilt]
     "Dll"="cachefilt.dll"
     "LockIOBuffers"=dword:1
+
+ENDIF OMNIBOOK_VER
 
 ENDIF BSP_POCKETMORY
 ENDIF BSP_IROM_SDMMC_CH1_BOOT !
@@ -601,11 +689,14 @@ IF BSP_KITL != USBSERIAL
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers]
 	"DefaultClientDriver"=-			; erase previous default
 
-;------------ USB Function Serial Driver --------------------------------------
-IF BSP_USBFNCLASS == SERIAL
-
+;------------ USB Function Driver --------------------------------------
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers]
+IF BSP_USBFNCLASS == SERIAL
 	"DefaultClientDriver"="Serial_Class"
+ENDIF BSP_USBFNCLASS
+IF BSP_USBFNCLASS == MASS_STORAGE
+	"DefaultClientDriver"="Mass_Storage_Class"
+ENDIF BSP_USBFNCLASS
 
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers\Serial_Class]
 	"FriendlyName"=LOC_USBFN_SERIAL_NAME			; "USB Cable:"
@@ -614,15 +705,6 @@ IF BSP_USBFNCLASS == SERIAL
 	"idProduct"=dword:2720
 	"Product"=LOC_USBFN_SERIAL_PRODUCT				; "Generic USB Serial"
 	"Index"=dword:5
-
-ENDIF BSP_USBFNCLASS
-;-------------------------------------------------------------------------
-
-;------------ USB Function Mass Stroge Driver ---------------------------------
-IF BSP_USBFNCLASS == MASS_STORAGE
-
-[HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers]
-	"DefaultClientDriver"="Mass_Storage_Class"
 
 [HKEY_LOCAL_MACHINE\Drivers\USB\FunctionDrivers\Mass_Storage_Class]
 	"Dll"="usbmsfn.dll"
@@ -636,26 +718,21 @@ IF BSP_USBFNCLASS == MASS_STORAGE
 	"Product"="Generic Mass Storage (PROTOTYPE--Remember to change idVendor)"
 	"bcdDevice"=dword:0
 	"Removable"=dword:1
-ENDIF BSP_USBFNCLASS
 
 IF OMNIBOOK_VER
-
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
 	"Index"=dword:1
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class\High_Capacity]
 	"Index"=dword:1
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\MMC_Class]
 	"Index"=dword:1
-
 ELSE
-
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class]
 	"Index"=dword:3
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\SDMemory_Class\High_Capacity]
 	"Index"=dword:3
 [HKEY_LOCAL_MACHINE\Drivers\SDCARD\ClientDrivers\Class\MMC_Class]
 	"Index"=dword:3
-
 ENDIF OMNIBOOK_VER
 ;-------------------------------------------------------------------------
 
@@ -1202,13 +1279,15 @@ IF APPS_COMMAND
 ;Default	"BmpSleep"=""
 ;Default	"BmpShutdown"="\\Windows\\Omnibook_Shutdown.bmp"
 ;Default	"BmpLowbattery"="\\Windows\\Omnibook_Lowbattery.bmp"
+;Default	"BmpBatCharging"="\\Windows\\Omnibook_BatCharging.bmp"
+;Default	"BmpBatComplete"="\\Windows\\Omnibook_BatComplete.bmp"
 ENDIF APPS_COMMAND
 
 
 IF MODEL_OMNIBOOK_GW610
 [HKEY_LOCAL_MACHINE\Software\Omnibook]
 ;	"CfgWifiDefCM"=dword:1
-	"CfgWifiOnOff"=dword:1
+;	"CfgWifiOnOff"=dword:1
 	"CfgSysVolCtrl"=dword:1
 ENDIF MODEL_OMNIBOOK_GW610
 

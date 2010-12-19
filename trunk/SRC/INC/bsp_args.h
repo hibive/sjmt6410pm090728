@@ -66,6 +66,8 @@ typedef struct
 
 	BOOL	bKeypadWakeup;
 
+	BOOL	bIsAttachUfn;
+
 	// ...
 
 #else	//!OMNIBOOK_VER
