@@ -251,7 +251,7 @@ LRESULT DoUfnMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
 	// wParam : UFN_DETACH(0), UFN_ATTACH(1)
 	// lParam : ...
-	RETAILMSG(1, (_T("DoUfnMain(%d, %d)\r\n"), wParam, lParam));
+	RETAILMSG(0, (_T("DoUfnMain(%d, %d)\r\n"), wParam, lParam));
 
 	if (0 == g_nModeUfn)		// Serial_Class
 	{
@@ -320,7 +320,7 @@ LRESULT DoBatStateMain(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 	BYTE fBatteryState = (BYTE)wParam;
 	BYTE fAcOn = !((1<<0) & fBatteryState);
 	BYTE fChgDone = !((1<<2) & fBatteryState);
-	RETAILMSG(1, (_T("DoBatStateMain(%d, %d, %d)\r\n"), fAcOn, fChgDone, g_bIsAttachUfn));
+	RETAILMSG(0, (_T("DoBatStateMain(%d, %d, %d)\r\n"), fAcOn, fChgDone, g_bIsAttachUfn));
 
 	if (0 == g_nModeUfn)		// Serial_Class
 	{
