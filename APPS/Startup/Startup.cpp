@@ -6,6 +6,8 @@
 #include "s1d13521.h"
 #include "iphlpapi.h"
 #include "etc.h"
+#include <usbfnioctl.h>
+#include <devload.h>
 
 
 #define OMNIBOOK_REG_KEY			_T("Software\\Omnibook")
@@ -23,6 +25,41 @@
 #define	WIFI_CARDNAME_CHAR			"SDIO86861"
 #define	WIFI_CARDNAME_LEN			9
 
+#define	USB_FUN_DEV_NAME			_T("UFN1:")
+#define	ARRAY_COUNT(x)				(sizeof(x) / sizeof(x[0]))
+
+
+LPCTSTR	g_szUsbClassName[] = {
+	_T("Serial_Class"),
+	_T("Mass_Storage_Class"),
+};
+static int ufnGetCurrentClientName(void)
+{
+	HANDLE hUSBFn = INVALID_HANDLE_VALUE;
+
+	hUSBFn = CreateFile(USB_FUN_DEV_NAME, DEVACCESS_BUSNAMESPACE, 0, NULL,
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (INVALID_HANDLE_VALUE != hUSBFn)
+	{
+		UFN_CLIENT_INFO ufnInfo = {0,};
+		DWORD dwBytes;
+
+		DeviceIoControl(hUSBFn,	IOCTL_UFN_GET_CURRENT_CLIENT, NULL, 0, &ufnInfo, sizeof(ufnInfo), &dwBytes, NULL);
+		RETAILMSG(0, (_T("IOCTL_UFN_GET_CURRENT_CLIENT\r\n")));
+		RETAILMSG(0, (_T("    ClientName = %s\r\n"), ufnInfo.szName));
+		RETAILMSG(0, (_T("    Description = %s\r\n"), ufnInfo.szDescription));
+
+		CloseHandle(hUSBFn);
+
+		for (int nMode=0; nMode<ARRAY_COUNT(g_szUsbClassName); nMode++)
+		{
+			if (g_szUsbClassName[nMode][0] == ufnInfo.szName[0])
+				return nMode;
+		}
+	}
+
+	return -1;
+}
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
 {
@@ -149,23 +186,12 @@ static BOOL RunProgram(LPCWSTR lpszImageName, LPCWSTR lpszCmdLine, DWORD dwWait)
 	return bResult;
 }
 
-static BOOL CheckWifiMacAddress(void)
+static BOOL CheckWifiMacAddress(HANDLE hEtc)
 {
-	HANDLE hEtc;
 	BOOL bRet = FALSE;
 	BYTE abInfo[512]={0,};
  	int nRetry = 0;
 	PIP_ADAPTER_INFO pAdapterInfo = NULL;
-
-	hEtc = CreateFile(ETC_DRIVER_NAME,
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL, OPEN_EXISTING, 0, 0);
- 	if (INVALID_HANDLE_VALUE == hEtc)
-	{
-		RETAILMSG(1, (_T("ERROR : INVALID_HANDLE_VALUE == CreateFile(%s)\r\n"), ETC_DRIVER_NAME));
-		goto goto_Cleanup;
-	}
 
 	bRet = DeviceIoControl(hEtc, IOCTL_GET_BOARD_INFO, NULL, 100, abInfo, sizeof(abInfo), NULL, NULL);
 	if (FALSE == bRet)
@@ -279,11 +305,6 @@ goto_Retry:
 goto_Cleanup:
 	if (pAdapterInfo)
 		free(pAdapterInfo);
-	if (INVALID_HANDLE_VALUE != hEtc)
-	{
-		DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, FALSE, NULL, 0, NULL, NULL);
-		CloseHandle(hEtc);
-	}
 
 	return bRet;
 }
@@ -305,10 +326,19 @@ static void DirtyRectUpdate(HDC hDC)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	HANDLE hEtc = INVALID_HANDLE_VALUE;
+	BOOL bIsMassStorage = FALSE;
 	TCHAR szProgram[MAX_PATH] = {0,};
 	BOOL bDispUpdate = FALSE;
 
-	CheckWifiMacAddress();
+	hEtc = CreateFile(ETC_DRIVER_NAME,
+			GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL, OPEN_EXISTING, 0, 0);
+	if (INVALID_HANDLE_VALUE != hEtc)
+		CheckWifiMacAddress(hEtc);
+
+	bIsMassStorage = (1 == ufnGetCurrentClientName()) ? TRUE : FALSE;
 
 	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
@@ -374,10 +404,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 
 	HDC hDC = GetDC(HWND_DESKTOP);
 	BOOL bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
-	for (int i=0; (FALSE==bDirtyRect && i<3); i++)
+	for (int i=0; (FALSE==bDirtyRect && i<5); i++)
 	{
 		Sleep(1000);
 		bDirtyRect = (BOOL)ExtEscape(hDC, DRVESC_GET_DIRTYRECT, 0, NULL, 0, NULL);
+		if (bIsMassStorage)
+			bDirtyRect = DeviceIoControl(hEtc, IOCTL_IS_ATTACH_UFN, NULL, 0, NULL, 0, NULL, NULL);
 	}
 	if (FALSE == bDirtyRect)
 		DirtyRectUpdate(hDC);
@@ -389,6 +421,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		SetEvent(hEvent);
 		CloseHandle(hEvent);
 		RETAILMSG(0, (_T("SetEvent(PowerManager/ReloadActivityTimeouts)\r\n")));
+	}
+
+	if (INVALID_HANDLE_VALUE != hEtc)
+	{
+		DeviceIoControl(hEtc, IOCTL_SET_POWER_WLAN, NULL, FALSE, NULL, 0, NULL, NULL);
+		CloseHandle(hEtc);
 	}
 
 	return 0;

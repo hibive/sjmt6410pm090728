@@ -308,6 +308,10 @@ BOOL ETC_IOControl(DWORD OpenHandle, DWORD dwIoControlCode,
 		bRet = (g_pGPIOReg->GPEDAT & (0x1<<1));
 		break;
 
+	case IOCTL_IS_ATTACH_UFN:
+		bRet = g_pBspArgs->bIsAttachUfn;
+		break;
+
 	case IOCTL_GET_BOARD_REVISIOIN:
 		bRet = g_pBspArgs->bBoardRevision;
 		break;
