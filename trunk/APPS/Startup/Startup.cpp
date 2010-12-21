@@ -60,6 +60,32 @@ static int ufnGetCurrentClientName(void)
 
 	return -1;
 }
+static BOOL ufnChangeCurrentClient(int nMode)
+{
+	HANDLE hUSBFn = INVALID_HANDLE_VALUE;
+	UFN_CLIENT_INFO ufnInfo = {0,};
+	DWORD dwBytes;
+
+	if (ARRAY_COUNT(g_szUsbClassName) <= nMode)
+		return FALSE;
+
+	hUSBFn = CreateFile(USB_FUN_DEV_NAME, DEVACCESS_BUSNAMESPACE, 0, NULL,
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (INVALID_HANDLE_VALUE != hUSBFn)
+	{
+		_stprintf_s(ufnInfo.szName, UFN_CLIENT_NAME_MAX_CHARS, _T("%s"), g_szUsbClassName[nMode]);
+		DeviceIoControl(hUSBFn,	IOCTL_UFN_CHANGE_CURRENT_CLIENT, ufnInfo.szName, sizeof(ufnInfo.szName), NULL, 0, &dwBytes, NULL);
+
+		RETAILMSG(0, (_T("IOCTL_UFN_CHANGE_CURRENT_CLIENT\r\n")));
+		RETAILMSG(0, (_T("    ClientName = %s\r\n"), ufnInfo.szName));
+		
+		CloseHandle(hUSBFn);
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
 
 static BOOL RegOpenCreateStr(LPCTSTR lpSubKey, LPCTSTR lpName, LPTSTR lpData, DWORD dwCnt, BOOL bCreate)
 {
@@ -339,6 +365,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLin
 		CheckWifiMacAddress(hEtc);
 
 	bIsMassStorage = (1 == ufnGetCurrentClientName()) ? TRUE : FALSE;
+	if (bIsMassStorage)
+	{
+		ufnChangeCurrentClient(0);	// Serial_Class
+		Sleep(1000);
+		ufnChangeCurrentClient(1);	// Mass_Storage_Class
+	}
 
 	sndPlaySound(_T("\\Windows\\Startup.wav"), SND_FILENAME | SND_ASYNC);
 
