@@ -316,7 +316,7 @@ IF MODEL_OMNIBOOK_GW610
 	"FriendlyName"="PocketMory FAT FileSystem1"
 	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
 	"Folder"="eBook Store"
-	"FormatExfat"=dword:1
+;	"FormatExfat"=dword:1
 	"CheckForFormat"=dword:1
 	"EnableWriteBack"=dword:1
 
@@ -357,7 +357,7 @@ IF MODEL_OMNIBOOK_GW610
 	"FriendlyName"="PocketMory FAT FileSystem2"
 	"Flags"=dword:00000014			; FATFS_ENABLE_BACKUP_FAT | FATFS_DISABLE_AUTOSCAN
 	"Folder"="User Storage"
-	"FormatExfat"=dword:1
+;	"FormatExfat"=dword:1
 	"CheckForFormat"=dword:1
 	"EnableWriteBack"=dword:1
 
